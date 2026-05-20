@@ -1251,7 +1251,7 @@ function renderMgr(){
     return`<div class="ov-task">
       <div class="ov-dot ${dotCls}"></div>
       <div class="ov-info">
-        <div class="ov-title">${t.text}</div>
+        <div class="ov-title" style="cursor:pointer;" onclick="openTaskModal(${t.id})">${t.text} <span style="font-size:10px;color:var(--olive);font-weight:600;">↗ details</span></div>
         <div class="ov-meta">${EL[t.effort]} · by ${t.by}${t.deadline?` · ⏰ ${fmtCd(t.deadline)}`:''}</div>
         <div class="ov-status ${dotCls}">${stTxt}</div>
         ${workersHTML(t)}
