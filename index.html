@@ -905,14 +905,17 @@ function saveP(id,val){const t=tasks.find(x=>x.id===id);if(t){t.progress=parseIn
 function releaseTask(id){
   id=parseInt(id);
   const t=tasks.find(x=>x.id===id);if(!t)return;
-  const u=users.find(x=>x.id===currentUser);if(!u)return;
+  const u=users.find(x=>x.id===currentUser);
+  if(!u){showToast('Error: no user found');console.error('releaseTask: currentUser=',currentUser,'users=',users.map(x=>x.id));return;}
   // Read slider value
   const s=document.querySelector(`input[oninput="slideP(${id},this.value)"]`);
   if(s){t.progress=parseInt(s.value);}
+  console.log('Release task: progress=',t.progress,'user=',u.name,'effort=',t.effort,'EP=',EP[t.effort]);
   addWorkerRecord(t,currentUser);
   const frac=t.progress/100;
   const ePts=Math.round(EP[t.effort]*frac);
   const dPts=Math.round(getDBonus(t.deadline)*frac);
+  console.log('Points: frac=',frac,'ePts=',ePts,'dPts=',dPts);
   if(frac>0){
     u.effortPts+=ePts;u.deadlinePts+=dPts;u.weeklyEffort+=ePts;u.weeklyDeadline+=dPts;
     compLog.unshift({text:t.text+` (${t.progress}% partial)`,who:u.name,ePts,dPts,time:new Date()});
@@ -975,7 +978,7 @@ function getBadges(u) {
 }
 
 function renderPublicLb() {
-  const hosts  = users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode)).filter(h=>hostTotal(h,publicLbMode)>0);
+  const hosts  = users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
   const maxE   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const ranks  = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
@@ -996,16 +999,18 @@ function renderPublicLb() {
     ${hosts.map((h,i)=>{
       const e  = publicLbMode==='weekly' ? h.weeklyEffort   : h.effortPts;
       const dp = publicLbMode==='weekly' ? h.weeklyDeadline : h.deadlinePts;
-      const badges = publicLbMode==='all' ? getBadges(h) : [];
+      const total = e + dp;
+      const maxVal = Math.max(maxE, 1);
+      const badges = publicLbMode==='all' ? getBadges(h).filter(b=>!['🥇','🥈','🥉'].includes(b.icon)) : [];
       return `<div class="lb-row" style="flex-wrap:wrap;gap:8px 10px;">
         <div class="lb-rank">${ranks[i]||'·'}</div>
         <div class="lb-av" style="${avatarStyle(h,i)}">${initials(h.name)}</div>
         <div class="lb-name" style="width:80px;">${h.name.split(' ')[0]}</div>
         <div class="lb-bars" style="flex:1;min-width:120px;">
-          <div class="lb-br"><span class="lb-bl">Effort</span><div class="lb-bb"><div class="lb-bf lb-ef" style="width:${maxE?((e/maxE)*100):0}%"></div></div></div>
-          <div class="lb-br"><span class="lb-bl">Deadline</span><div class="lb-bb"><div class="lb-bf lb-df" style="width:${maxD?((dp/maxD)*100):0}%"></div></div></div>
+          <div class="lb-br"><span class="lb-bl">Effort</span><div class="lb-bb"><div class="lb-bf lb-ef" style="width:${total>0?(e/maxVal)*100:0}%"></div></div></div>
+          <div class="lb-br"><span class="lb-bl">Deadline</span><div class="lb-bb"><div class="lb-bf lb-df" style="width:${total>0?(dp/Math.max(maxD,1))*100:0}%"></div></div></div>
         </div>
-        <div class="lb-tot">${e+dp}</div>
+        <div class="lb-tot">${total}</div>
         ${badges.length?`<div style="width:100%;padding-left:38px;display:flex;gap:5px;flex-wrap:wrap;">${badges.map(b=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(23,72,84,.07);color:var(--teal);">${b.icon} ${b.label}</span>`).join('')}</div>`:'' }
       </div>`;
     }).join('')}`;
