@@ -520,6 +520,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showTab('pool',this)">Task Pool</button>
     <button class="nav-tab" onclick="showTab('mine',this)">My Tasks</button>
+    <button class="nav-tab" onclick="showTab('done',this)">Completed</button>
     <button class="nav-tab" onclick="showTab('lb',this)">Board</button>
   </div>
   <div id="tab-pool" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
@@ -527,6 +528,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="pool-wrap" id="pool-wrap"></div>
   </div>
   <div id="tab-mine" style="flex:1;display:none;overflow:hidden;"><div class="my-wrap" id="my-wrap"></div></div>
+  <div id="tab-done" style="flex:1;display:none;overflow:hidden;"><div class="my-wrap" id="done-wrap"></div></div>
   <div id="tab-lb"   style="flex:1;display:none;overflow:hidden;"><div class="lb-wrap" id="lb-wrap"></div></div>
 </div>
 
@@ -764,8 +766,9 @@ function renderHost(){
 function showTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['pool','mine','lb'].forEach(t=>{const el2=document.getElementById('tab-'+t);if(el2)el2.style.display=t===tab?'flex':'none';});
+  ['pool','mine','done','lb'].forEach(t=>{const el2=document.getElementById('tab-'+t);if(el2)el2.style.display=t===tab?'flex':'none';});
   if(tab==='mine')renderMyTasks();
+  if(tab==='done')renderCompleted();
   if(tab==='lb')renderLeaderboard();
 }
 function renderStats(){
@@ -794,7 +797,7 @@ function renderPool(){
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
   if(open.length){html+=`<div class="sec-head">🟢 Open Tasks <span class="sec-count">${open.length}</span></div>`;html+=open.map(t=>taskCard(t,'open')).join('');}
   if(!yours.length&&!open.length&&!done.length)html='<div style="text-align:center;padding:60px 20px;color:rgba(23,72,84,.4);"><div style="font-size:32px;margin-bottom:8px;">🏓</div><div style="font-size:22px;font-weight:500;">No tasks yet</div></div>';
-  if(done.length){html+=`<div class="sec-head">✅ Completed <span class="sec-count">${done.length}</span></div>`;html+=done.map(t=>taskCard(t,'done')).join('');}
+  // Completed tasks are now in their own tab — not shown in pool
   document.getElementById('pool-wrap').innerHTML=html;
 }
 function taskCard(t,ctx){
@@ -849,7 +852,7 @@ function openTaskModal(id){
 }
 function closeTaskModal(e){if(!e||e.target===document.getElementById('task-modal'))document.getElementById('task-modal').style.display='none';}
 function switchToMine(){
-  const tabs=['pool','mine','lb'];
+  const tabs=['pool','mine','done','lb'];
   document.querySelectorAll('.nav-tab').forEach((tab,i)=>tab.classList.toggle('active',i===1));
   tabs.forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t==='mine'?'flex':'none';});
   renderMyTasks();
@@ -909,7 +912,7 @@ function releaseTask(id){
     showToast(`Released · +${ePts+dPts} partial pts`);
   }else showToast('Released back to pool');
   addWorkerRecord(t,currentUser);t.claimedBy=null;t.assignedTo=null;saveData();renderHost();
-  document.querySelectorAll('.nav-tab').forEach((el,i)=>{el.classList.toggle('active',i===0);['pool','mine','lb'].forEach((tab,j)=>{document.getElementById('tab-'+tab).style.display=j===0?'flex':'none';});});
+  document.querySelectorAll('.nav-tab').forEach((el,i)=>{el.classList.toggle('active',i===0);['pool','mine','done','lb'].forEach((tab,j)=>{document.getElementById('tab-'+tab).style.display=j===0?'flex':'none';});});
 }
 function completeTask(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
@@ -999,11 +1002,45 @@ function renderPublicLb() {
 }
 
 // Also update the in-app leaderboard to show badges
+// ─── COMPLETED TAB ───────────────────────────────────────────
+function renderCompleted(){
+  const done = tasks.filter(t=>t.done).sort((a,b)=>new Date(b.doneAt)-new Date(a.doneAt));
+  const wrap = document.getElementById('done-wrap');
+  if(!wrap) return;
+  if(!done.length){
+    wrap.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No completed tasks yet</div><div class="empty-hint">Completed tasks will appear here.</div></div>';
+    return;
+  }
+  wrap.innerHTML = done.map(t=>{
+    const doer = users.find(u=>u.id===t.doneBy);
+    const pts  = EP[t.effort] + (t.earnedDPts||0);
+    const when = t.doneAt ? new Date(t.doneAt).toLocaleDateString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    // Show all workers who contributed
+    const contribs = (t.workers||[]).map(w=>{
+      const u=users.find(x=>x.id===w.uid);
+      return u?`<span class="wchip ${t.doneBy===w.uid?'done':''}">${u.name.split(' ')[0]} ${t.doneBy===w.uid?'✅':w.progress+'%'}</span>`:'';
+    }).join('');
+    return`<div class="tc done" style="opacity:1;cursor:default;">
+      <div class="tc-title" style="text-decoration:line-through;color:rgba(23,72,84,.4);">${t.text}</div>
+      <div class="tc-badges">
+        <span class="bdg bdg-pts">${pts}pts</span>
+        <span class="bdg ${EC[t.effort]}">${EL[t.effort]}</span>
+        <span class="bdg bdg-by">by ${t.by}</span>
+        ${when?`<span class="bdg" style="background:rgba(23,72,84,.05);color:rgba(23,72,84,.45);">${when}</span>`:''}
+      </div>
+      ${contribs?`<div class="workers-row">${contribs}</div>`:''}
+      <div style="font-size:11px;color:var(--teal-mid);font-weight:500;margin-top:6px;">✅ Done by ${doer?.name||'unknown'}</div>
+    </div>`;
+  }).join('');
+}
+
+
 function renderLeaderboard(){
-  const hosts=users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode)).filter(h=>hostTotal(h,lbMode)>0);
-  const maxE=Math.max(...hosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
-  const maxD=Math.max(...hosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
-  const ranks=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣'];
+  // Show ALL associates — including those with 0 points
+  const allHosts=users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
+  const maxE=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
+  const maxD=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
+  const rankMedals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
   const d=daysToMonday();
   document.getElementById('lb-wrap').innerHTML=`
     <div class="lb-toggle">
@@ -1015,19 +1052,22 @@ function renderLeaderboard(){
         ${lbMode==='weekly'?'Weekly Board':'All-Time Board'}
         ${lbMode==='weekly'?`<span class="lb-reset-note">Resets in ${d}d</span>`:''}
       </div>
-      ${!hosts.length?'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:12px 0;">No points earned yet — complete tasks to appear here!</div>':hosts.map((h,i)=>{
-        const e=lbMode==='weekly'?h.weeklyEffort:h.effortPts,d2=lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts;
-        const badges = lbMode==='all' ? getBadges(h) : [];
+      ${!allHosts.length?'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:12px 0;">No associates added yet.</div>':allHosts.map((h,i)=>{
+        const e=lbMode==='weekly'?h.weeklyEffort:h.effortPts;
+        const dp=lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts;
+        const total=e+dp;
+        // Achievement badges — points milestones only, NOT rank medals
+        const achieveBadges=lbMode==='all'?getBadges(h):[];
         return`<div class="lb-row" style="flex-wrap:wrap;">
-          <div class="lb-rank">${ranks[i]||'·'}</div>
+          <div class="lb-rank">${rankMedals[i]||'·'}</div>
           <div class="lb-av" style="${avatarStyle(h,i)}">${initials(h.name)}</div>
           <div class="lb-name">${h.name.split(' ')[0]}</div>
           <div class="lb-bars">
-            <div class="lb-br"><span class="lb-bl">Effort</span><div class="lb-bb"><div class="lb-bf lb-ef" style="width:${(e/maxE)*100}%"></div></div></div>
-            <div class="lb-br"><span class="lb-bl">Deadline</span><div class="lb-bb"><div class="lb-bf lb-df" style="width:${(d2/maxD)*100}%"></div></div></div>
+            <div class="lb-br"><span class="lb-bl">Effort</span><div class="lb-bb"><div class="lb-bf lb-ef" style="width:${maxE>1?(e/maxE)*100:0}%"></div></div></div>
+            <div class="lb-br"><span class="lb-bl">Deadline</span><div class="lb-bb"><div class="lb-bf lb-df" style="width:${maxD>1?(dp/maxD)*100:0}%"></div></div></div>
           </div>
-          <div class="lb-tot">${e+d2}</div>
-          ${badges.length?`<div style="width:100%;padding-left:38px;display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">${badges.map(b=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(23,72,84,.07);color:var(--teal);">${b.icon} ${b.label}</span>`).join('')}</div>`:''}
+          <div class="lb-tot">${total}</div>
+          ${achieveBadges.length?`<div style="width:100%;padding-left:38px;display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">${achieveBadges.map(b=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(23,72,84,.07);color:var(--teal);">${b.icon} ${b.label}</span>`).join('')}</div>`:''}
         </div>`;
       }).join('')}
     </div>`;
