@@ -573,7 +573,7 @@ let nextUid=1, nextTid=1, lastWeeklyReset=getMonday();
 let currentUser=null, currentRole=null;
 let selectedRole=null, selectedName=null;
 let pinBuf='', pinEditId=null;
-let lbMode='weekly', ovFilter='all', isAssigning=false, timerInt=null, mgrTab='tasks', peopleEditId=null, newPersonRole='associate';
+let lbMode='weekly', ovFilter='pending', isAssigning=false, timerInt=null, mgrTab='tasks', peopleEditId=null, newPersonRole='associate';
 
 // ─── SUPABASE ───────────────────────────────────────────────────────────────
 const SUPA_URL='https://dndnkvxefjgcufllkkpj.supabase.co';
@@ -1323,10 +1323,10 @@ function renderMgr(){
   const hosts=users.filter(u=>u.role==='associate');
   // filter overview
   let ovTasks=tasks;
-  if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy);
+  if(ovFilter==='all')ovTasks=tasks.filter(t=>!t.done);
+  else if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy);
   else if(ovFilter==='active')ovTasks=tasks.filter(t=>t.claimedBy&&!t.done);
   else if(ovFilter==='overdue')ovTasks=tasks.filter(t=>!t.done&&t.deadline&&t.deadline<now());
-  else if(ovFilter==='done')ovTasks=tasks.filter(t=>t.done);
   const ovHTML=ovTasks.length?ovTasks.map(t=>{
     const ds=dlStatus(t.deadline),pts=EP[t.effort]+getDBonus(t.deadline);
     const claimer=t.claimedBy?users.find(u=>u.id===t.claimedBy):null;
@@ -1383,9 +1383,9 @@ function renderMgr(){
     </div>
     <!-- Task Overview FIRST -->
     <div class="mgr-card">
-      <div class="mgr-card-title" style="display:flex;justify-content:space-between;align-items:baseline;">All Tasks <span style="font-size:13px;color:rgba(23,72,84,.45);">${ovTasks.length} shown</span></div>
+      <div class="mgr-card-title" style="display:flex;justify-content:space-between;align-items:baseline;">Active Tasks <span style="font-size:13px;color:rgba(23,72,84,.45);">${ovTasks.length} shown</span></div>
       <div class="ov-filters">
-        ${['all','pending','active','overdue','done'].map(f=>`<button class="ov-f ${ovFilter===f?'on':''}" onclick="setOvFilter('${f}',this)">${f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
+        ${['all','pending','active','overdue'].map(f=>`<button class="ov-f ${ovFilter===f?'on':''}" onclick="setOvFilter('${f}',this)">${f==='all'?'All Active':f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('')}
       </div>
       <div id="ov-list">${ovHTML}</div>
     </div>
