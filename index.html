@@ -1354,12 +1354,11 @@ function renderMgr(){
         <div class="ov-status ${dotCls}">${stTxt}</div>
         ${workersHTML(t)}
         ${!t.done?`<div class="ov-assign-row">
-          <select class="ov-asel" id="ov-sel-${t.id}">
+          <select class="ov-asel" id="ov-sel-${t.id}" onchange="reassign(${t.id})">
             <option value="">Assign to...</option>
-            <option value="0">🔓 Unassign</option>
-            ${hosts.map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name}</option>`).join('')}
+            <option value="0" ${!t.assignedTo?'selected':''}>🔓 Unassign</option>
+            ${hosts.map(u=>`<option value="${u.id}" ${String(t.assignedTo)===String(u.id)?'selected':''}>${u.name}</option>`).join('')}
           </select>
-          <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
         </div>`:''}
       </div>
@@ -1455,10 +1454,12 @@ function addTask(){
 function setOvFilter(f){ovFilter=f;renderMgr();}
 function reassign(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
-  const val=document.getElementById('ov-sel-'+id)?.value;
-  if(val===undefined||val===''){showToast('Pick a host first!');return;}
+  const sel=document.getElementById('ov-sel-'+id);
+  if(!sel)return;
+  const val=sel.value;
+  if(val===''){ return; } // placeholder selected, do nothing
   if(val==='0'){t.assignedTo=null;t.assignedBy=null;showToast('Task unassigned');}
-  else{const uid=parseInt(val,10);const h=users.find(u=>u.id===uid||String(u.id)===val);t.assignedTo=uid;t.assignedBy=currentRole;showToast(`Assigned to ${h?.name||'host'}!`);}
+  else{const uid=parseInt(val,10);const h=users.find(u=>u.id===uid||String(u.id)===val);t.assignedTo=uid;t.assignedBy=currentRole;showToast(`Assigned to ${h?.name||'associate'}!`);}
   saveData();renderMgr();
 }
 function openEditModal(id){
