@@ -637,8 +637,9 @@ async function loadData(){
     showToast('⚠ Could not connect to database');
   }
 }
+let recentSave = false;
 setInterval(async()=>{
-  if(isSaving||saveTimer)return;
+  if(isSaving||saveTimer||recentSave)return;
   try{
     const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}});
     const rows=await res.json();
@@ -1457,10 +1458,14 @@ function reassign(id){
   const sel=document.getElementById('ov-sel-'+id);
   if(!sel)return;
   const val=sel.value;
-  if(val===''){ return; } // placeholder selected, do nothing
+  if(val===''){return;}
+  stopTimer();
+  recentSave=true;
   if(val==='0'){t.assignedTo=null;t.assignedBy=null;showToast('Task unassigned');}
   else{const uid=parseInt(val,10);const h=users.find(u=>u.id===uid||String(u.id)===val);t.assignedTo=uid;t.assignedBy=currentRole;showToast(`Assigned to ${h?.name||'associate'}!`);}
-  saveData();renderMgr();
+  saveData();
+  renderMgr();
+  setTimeout(()=>{recentSave=false;startTimer();}, 5000);
 }
 function openEditModal(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
