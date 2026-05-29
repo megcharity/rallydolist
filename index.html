@@ -1105,11 +1105,67 @@ function setLbMode(m){lbMode=m;renderLeaderboard();}
 
 
 // ─── ADD TASK PANEL ──────────────────────────────────────────────────────────
+function mgrMarkComplete(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const associates=users.filter(u=>u.role==='associate');
+  const opts=associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+
+  // Create inline modal
+  let modal=document.getElementById('mgr-complete-modal');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='mgr-complete-modal';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(23,72,84,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML=`
+    <div style="background:var(--cream);border-radius:10px;padding:24px;width:100%;max-width:380px;" onclick="event.stopPropagation()">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--teal);margin-bottom:16px;">Mark as Complete</div>
+      <div style="font-size:13px;color:rgba(23,72,84,.6);margin-bottom:16px;">${t.text.substring(0,60)}${t.text.length>60?'...':''}</div>
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--olive);margin-bottom:5px;">Completed by</label>
+      <select id="mgr-done-by" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--teal);background:#fff;outline:none;margin-bottom:16px;">
+        <option value="manager">Manager</option>
+        ${opts}
+      </select>
+      <div style="display:flex;gap:10px;">
+        <button onclick="confirmMgrComplete(${id})" style="flex:1;padding:11px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Mark Complete</button>
+        <button onclick="document.getElementById('mgr-complete-modal').style.display='none'" style="flex:1;padding:11px;border:1.5px solid var(--border);border-radius:6px;background:var(--cream);color:var(--teal);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+  modal.style.display='flex';
+  modal.onclick=()=>modal.style.display='none';
+}
+
+function confirmMgrComplete(id){
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  const sel=document.getElementById('mgr-done-by');
+  const val=sel?sel.value:'manager';
+  let doneBy=null;
+  let doneByName='Manager';
+  if(val!=='manager'){
+    const u=users.find(x=>String(x.id)===String(val));
+    if(u){doneBy=u.id;doneByName=u.name;}
+  }
+  const ePts=EP[t.effort];
+  const dPts=getDBonus(t.deadline);
+  t.done=true;t.doneBy=doneBy;t.doneAt=new Date();t.earnedDPts=dPts;t.claimedBy=null;t.assignedTo=null;t.progress=100;
+  if(doneBy){
+    const u=users.find(x=>x.id===doneBy);
+    if(u){u.effortPts+=ePts;u.deadlinePts+=dPts;u.weeklyEffort+=ePts;u.weeklyDeadline+=dPts;}
+  }
+  compLog.unshift({text:t.text,who:doneByName,ePts,dPts,time:new Date()});
+  document.getElementById('mgr-complete-modal').style.display='none';
+  showToast(`Done by ${doneByName}! +${ePts+dPts}pts`);
+  saveData();renderMgr();
+}
+
+
+// ─── ADD TASK PANEL ──────────────────────────────────────────────────────────
 function openAddTask() {
   // Populate "Added By" and assign dropdown fresh each time
   const byLabel = currentUser
     ? (users.find(x=>x.id===currentUser)?.name || currentRole)
-    : ({owner:'Owner',director:'Director',manager:'Manager'}[currentRole] || 'Manager');
+    : ({manager:'Manager'}[currentRole] || 'Manager');
   const byEl = document.getElementById('f-by-display');
   if(byEl) byEl.value = byLabel;
   const hosts = users.filter(u=>u.role==='associate');
@@ -1361,6 +1417,7 @@ function renderMgr(){
             ${hosts.map(u=>`<option value="${u.id}" ${String(t.assignedTo)===String(u.id)?'selected':''}>${u.name}</option>`).join('')}
           </select>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
+          <button class="ov-abtn" style="background:rgba(78,98,44,.1);border-color:rgba(78,98,44,.3);color:var(--olive);" onclick="mgrMarkComplete(${t.id})">✓ Done</button>
         </div>`:''}
       </div>
       <div class="ov-pts">${pts}pts</div>
