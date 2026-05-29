@@ -338,6 +338,93 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   .mgr-stats-grid{grid-template-columns:1fr 1fr;}
   .name-grid{grid-template-columns:repeat(3,1fr);}
 }
+
+/* ── HUB TABS (Associate/Manager hub screen) ── */
+#s-cl-hub{display:none;flex-direction:column;}
+#s-cl-hub.active{display:flex;}
+.hub-tabs{display:flex;background:var(--cream-dark);padding:0 16px;border-bottom:2px solid var(--border);flex-shrink:0;}
+.hub-tab{padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(23,72,84,.45);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;letter-spacing:.02em;position:relative;}
+.hub-tab:hover{color:var(--teal);}
+.hub-tab.active{color:var(--teal);font-weight:700;border-bottom-color:var(--teal);}
+.hub-tab.has-badge{color:var(--amber);}
+
+/* ── CHECKLIST HUB BODY ── */
+.cl-hub{padding:16px 16px 80px;}
+.cl-hub-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500;color:var(--teal);margin-bottom:4px;}
+.cl-hub-sub{font-size:12px;color:rgba(23,72,84,.45);font-weight:500;margin-bottom:20px;letter-spacing:.02em;}
+
+/* ── CHECKLIST CARDS ── */
+.cl-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.cl-card:hover{border-color:var(--teal);transform:translateY(-1px);box-shadow:0 6px 18px var(--shadow);}
+.cl-card.done{border-color:var(--olive);background:rgba(78,98,44,.04);}
+.cl-card.overdue{border-color:rgba(248,154,28,.5);background:rgba(248,154,28,.04);}
+.cl-card-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0;}
+.cl-card-icon{font-size:24px;flex-shrink:0;}
+.cl-card-info{flex:1;min-width:0;}
+.cl-card-name{font-size:14px;font-weight:700;color:var(--teal);margin-bottom:2px;}
+.cl-card-meta{font-size:11px;color:rgba(23,72,84,.45);font-weight:500;}
+.cl-card-right{text-align:right;flex-shrink:0;}
+.cl-card-pct{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--teal);}
+.cl-card-count{font-size:10px;font-weight:600;color:rgba(23,72,84,.4);}
+
+/* ── CHECKLIST BADGES ── */
+.cl-badge{display:inline-block;margin-top:4px;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:4px;}
+.cl-badge.daily{background:rgba(23,72,84,.08);color:var(--teal);}
+.cl-badge.weekly{background:rgba(248,154,28,.15);color:#b87000;}
+.cl-badge.monthly{background:rgba(78,98,44,.12);color:var(--olive);}
+.cl-badge.done{background:rgba(78,98,44,.12);color:var(--olive);}
+
+/* ── CHECKLIST SCREEN ── */
+#s-checklist{display:none;flex-direction:column;}
+#s-checklist.active{display:flex;}
+.cl-screen-hdr{background:var(--teal);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0;}
+.cl-screen-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:#fff;}
+.cl-screen-user{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+
+/* ── CHECKLIST PROGRESS ── */
+.cl-progress-bar-wrap{padding:12px 16px;background:var(--cream-dark);border-bottom:1px solid var(--border);flex-shrink:0;}
+.cl-prog-row{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--olive);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
+.cl-prog-track{height:6px;background:rgba(23,72,84,.1);border-radius:3px;overflow:hidden;}
+.cl-prog-fill{height:100%;background:var(--olive);border-radius:3px;transition:width .4s ease;}
+
+/* ── CHECKLIST ITEMS ── */
+.cl-items-body{flex:1;overflow-y:auto;padding:12px 16px 20px;}
+.cl-section-head{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--olive);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
+.cl-section-head::after{content:'';flex:1;height:1px;background:rgba(23,72,84,.1);}
+
+/* ── CHECK-TYPE ITEM ── */
+.cl-item{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .2s;}
+.cl-item:hover{border-color:var(--teal);}
+.cl-item.checked{opacity:.6;background:rgba(78,98,44,.04);border-color:rgba(78,98,44,.3);}
+.cl-check{width:22px;height:22px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px;}
+.cl-item.checked .cl-check{background:var(--olive);border-color:var(--olive);}
+.cl-item.checked .cl-check::after{content:'✓';font-size:13px;font-weight:700;color:#fff;}
+.cl-item-text{font-size:13px;font-weight:500;color:var(--teal);line-height:1.45;flex:1;}
+.cl-item.checked .cl-item-text{text-decoration:line-through;color:rgba(23,72,84,.4);}
+.cl-item-link{font-size:11px;color:var(--teal);text-decoration:underline;text-underline-offset:2px;margin-top:4px;display:block;}
+
+/* ── RATE-TYPE ITEM ── */
+.cl-rate-item{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;transition:all .2s;}
+.cl-rate-item.rated{border-color:rgba(78,98,44,.3);background:rgba(78,98,44,.04);}
+.cl-rate-text{font-size:13px;font-weight:500;color:var(--teal);margin-bottom:8px;line-height:1.45;}
+.cl-rate-stars{display:flex;gap:6px;}
+.cl-rate-star{font-size:22px;cursor:pointer;opacity:.25;transition:all .15s;line-height:1;}
+.cl-rate-star.lit{opacity:1;}
+.cl-rate-star:hover{transform:scale(1.15);}
+
+/* ── SIGN OFF FOOTER ── */
+.cl-signoff{padding:16px 20px;background:var(--cream);border-top:1px solid var(--border);flex-shrink:0;}
+.cl-signoff-btn{width:100%;padding:12px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.03em;}
+.cl-signoff-btn:hover{opacity:.9;}
+.cl-signoff-btn:disabled{opacity:.35;cursor:not-allowed;}
+.cl-signoff-sub{font-size:11px;color:rgba(23,72,84,.45);text-align:center;margin-top:8px;min-height:16px;}
+
+/* ── POSITION PICKER SCREEN ── */
+.pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-width:600px;width:100%;margin:0 auto 24px;}
+.pos-card{border:1.5px solid var(--border);border-radius:8px;padding:18px 12px;cursor:pointer;transition:all .2s;text-align:center;background:var(--cream);}
+.pos-card:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 8px 20px var(--shadow);}
+.pos-icon{font-size:26px;margin-bottom:8px;}
+.pos-name{font-size:13px;font-weight:700;color:var(--teal);}
 </style>
 </head>
 <body>
@@ -647,7 +734,7 @@ setInterval(async()=>{
     users=d.users||users;tasks=d.tasks||tasks;compLog=d.compLog||compLog;
     nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
     const active=document.querySelector('.screen.active');
-    if(active?.id==='s-host')renderHost();
+    if(active?.id==='s-host'||active?.id==='s-cl-hub')renderHost();
     if(active?.id==='s-mgr')renderMgr();
   }catch(e){}
 },8000);
@@ -1320,7 +1407,14 @@ function deletePerson(id) {
 function goMgr(){showScreen('s-mgr');renderMgr();}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
-  if(currentUser){showScreen('s-host');renderHost();}
+  if(currentUser){
+    if(document.getElementById('hub-tasks').querySelector('.nav-tabs')) {
+      showScreen('s-cl-hub');
+      showHubTab('tasks', document.getElementById('hub-tab-tasks'));
+    } else {
+      showScreen('s-host');renderHost();
+    }
+  }
   else{showScreen('s-role');document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('sel'));document.getElementById('role-continue').disabled=true;}
 }
 function renderMgr(){
@@ -1507,7 +1601,7 @@ function doLogout(){
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('sel'));
   showToast('Logged out');
 }
-function startTimer(){stopTimer();timerInt=setInterval(()=>{const a=document.querySelector('.screen.active');if(a?.id==='s-host'){renderStats();renderPool();}},2000);}
+function startTimer(){stopTimer();timerInt=setInterval(()=>{const a=document.querySelector('.screen.active');if(a?.id==='s-host'||a?.id==='s-cl-hub'){renderStats();renderPool();}},2000);}
 function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null;}}
 function fireConfetti(){const cols=['#174854','#4e622c','#f89a1c','#f58664','#cee4cf'];for(let i=0;i<35;i++){const el=document.createElement('div');el.className='cp';el.style.cssText=`left:${Math.random()*100}vw;top:0;background:${cols[~~(Math.random()*cols.length)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*.5}s;animation-duration:${1+Math.random()*.8}s;`;document.body.appendChild(el);setTimeout(()=>el.remove(),2200);}}
 let toastT;function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);}
@@ -1590,18 +1684,11 @@ function goToHub() {
   const doListLabel = isManager ? 'Do List' : (isBartender ? 'Bar Do List' : 'Do List');
   tabsEl.innerHTML = `
     <button class="hub-tab active" onclick="showHubTab('tasks',this)" id="hub-tab-tasks">${doListLabel}</button>
-    <button class="hub-tab${hasDueChecklists()?'has-badge':''}" onclick="showHubTab('cl',this)" id="hub-tab-cl">Checklists${hasDueChecklists()?' ●':''}</button>
+    <button class="hub-tab${hasDueChecklists()?' has-badge':''}" onclick="showHubTab('cl',this)" id="hub-tab-cl">Checklists${hasDueChecklists()?' ●':''}</button>
   `;
 
-  // Mount the do list into hub-tasks
-  const hubTasks = document.getElementById('hub-tasks');
-  const hostScreen = document.getElementById('s-host');
-  if(hostScreen) {
-    // Move host screen content into hub
-    hubTasks.innerHTML = hostScreen.querySelector('.nav-tabs') ? hostScreen.innerHTML : '<div style="padding:20px;color:rgba(23,72,84,.4);">Task pool loading...</div>';
-  }
-
   showScreen('s-cl-hub');
+  // Show tasks tab by default — showHubTab('tasks') calls renderHost() to populate hub-tasks
   showHubTab('tasks', document.getElementById('hub-tab-tasks'));
 }
 
@@ -1611,7 +1698,25 @@ function showHubTab(tab, el) {
   document.getElementById('hub-tasks').style.display = tab === 'tasks' ? 'flex' : 'none';
   document.getElementById('hub-cl').style.display = tab === 'cl' ? 'block' : 'none';
   if(tab === 'cl') renderClHub();
-  if(tab === 'tasks') renderHost();
+  if(tab === 'tasks') {
+    // Populate hub-tasks with s-host's inner content (tabs + tab panels, no header)
+    const hubTasks = document.getElementById('hub-tasks');
+    if(!hubTasks.querySelector('.nav-tabs')) {
+      // Copy the nav tabs + tab content divs from s-host into hub-tasks
+      const hostScreen = document.getElementById('s-host');
+      const navTabs = hostScreen.querySelector('.nav-tabs');
+      const tabPool = hostScreen.querySelector('#tab-pool');
+      const tabMine = hostScreen.querySelector('#tab-mine');
+      const tabDone = hostScreen.querySelector('#tab-done');
+      const tabLb   = hostScreen.querySelector('#tab-lb');
+      if(navTabs) hubTasks.appendChild(navTabs);
+      if(tabPool) hubTasks.appendChild(tabPool);
+      if(tabMine) hubTasks.appendChild(tabMine);
+      if(tabDone) hubTasks.appendChild(tabDone);
+      if(tabLb)   hubTasks.appendChild(tabLb);
+    }
+    renderHost();
+  }
 }
 
 function goBackFromClHub() {
