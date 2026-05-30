@@ -494,6 +494,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .sr-multi-opt.sel { background:#174854; color:#fff; border-color:#174854; }
     .sr-multi-opt:hover:not(.sel) { border-color:#174854; color:#174854; }
 
+  
+    /* ── PROGRAM TOGGLES ── */
+    .sr-prog-toggle { display:inline-flex; align-items:center; gap:7px; padding:8px 14px; border-radius:20px; border:1.5px solid rgba(23,72,84,.2); font-size:13px; font-weight:600; color:rgba(23,72,84,.5); cursor:pointer; transition:all .12s; user-select:none; }
+    .sr-prog-toggle.active { background:#174854; color:#fff; border-color:#174854; }
+    .sr-prog-toggle:hover:not(.active) { border-color:#174854; color:#174854; }
+    .sr-prog-block { background:rgba(23,72,84,.03); border:1px solid rgba(23,72,84,.08); border-radius:8px; padding:14px; margin-bottom:10px; }
+
   </style>
 </head>
 <body>
@@ -1809,6 +1816,161 @@ function srToggleName(key, name, checked) {
   });
 }
 
+// ── PROGRAM / EVENTS HELPERS ────────────────────────────────────
+function srEventBlock(pfx, i, locked) {
+  const name   = srGet(pfx+'_ev'+i+'_name');
+  const rating = srGet(pfx+'_ev'+i+'_rating');
+  if(locked) {
+    if(!name) return '';
+    let h = '<div style="margin:6px 0 8px 0;padding:10px;background:rgba(23,72,84,.04);border-radius:8px;">';
+    h += '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">'+name+(rating?' &middot; '+rating+'/5':'')+' ⭐</div>';
+    [['well','Went well'],['improve','Improve'],['poc','POC feedback'],['followup','Follow-up']].forEach(function(pair) {
+      var v = srGet(pfx+'_ev'+i+'_'+pair[0]);
+      if(v) h += '<div style="font-size:12px;color:rgba(23,72,84,.65);margin-top:2px;"><strong>'+pair[1]+':</strong> '+v+'</div>';
+    });
+    return h + '</div>';
+  }
+  var h = '<div class="sr-event-block" style="margin-top:10px;">';
+  h += '<div class="sr-event-title">EVENT '+i+'</div>';
+  h += '<div class="sr-row2">';
+  h += '<div><div class="sr-label">Event Name</div><input class="sr-inp" placeholder="Event name" value="'+srGet(pfx+'_ev'+i+'_name').replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_ev'+i+'_name\',this.value)"></div>';
+  h += '<div><div class="sr-label">Overall Rating (1-5)</div><input class="sr-inp" type="number" min="1" max="5" placeholder="1-5" value="'+srGet(pfx+'_ev'+i+'_rating')+'" oninput="srSet(\''+pfx+'_ev'+i+'_rating\',this.value)"></div>';
+  h += '</div>';
+  [['well','What went well'],['improve','What could be improved'],['poc','Feedback from POC']].forEach(function(pair) {
+    h += '<div class="sr-label">'+pair[1]+'</div>';
+    h += '<textarea class="sr-ta" rows="2" placeholder="Notes..." oninput="srSet(\''+pfx+'_ev'+i+'_'+pair[0]+'\',this.value)">'+srGet(pfx+'_ev'+i+'_'+pair[0])+'</textarea>';
+  });
+  h += '<div class="sr-row2">';
+  h += '<div><div class="sr-label">Follow-up needed?</div><select class="sr-inp" onchange="srSet(\''+pfx+'_ev'+i+'_need_followup\',this.value)">';
+  h += '<option value="">-</option>';
+  h += '<option'+(srGet(pfx+'_ev'+i+'_need_followup')==='Yes'?' selected':'')+'>Yes</option>';
+  h += '<option'+(srGet(pfx+'_ev'+i+'_need_followup')==='No'?' selected':'')+'>No</option>';
+  h += '</select></div>';
+  h += '<div style="flex:2"><div class="sr-label">Follow-up notes</div><input class="sr-inp" placeholder="Notes..." value="'+srGet(pfx+'_ev'+i+'_followup').replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_ev'+i+'_followup\',this.value)"></div>';
+  h += '</div></div>';
+  return h;
+}
+
+function srActivBlock(pfx, i, locked) {
+  var name = srGet(pfx+'_ac'+i+'_name');
+  var att  = srGet(pfx+'_ac'+i+'_attendance');
+  var notes= srGet(pfx+'_ac'+i+'_notes');
+  if(locked) {
+    if(!name) return '';
+    var h = '<div style="margin:6px 0 8px 0;padding:10px;background:rgba(23,72,84,.04);border-radius:8px;">';
+    h += '<div style="font-weight:700;font-size:13px;margin-bottom:4px;">'+name+'</div>';
+    if(att)   h += '<div style="font-size:12px;color:rgba(23,72,84,.65);">Attendance: '+att+'</div>';
+    if(notes) h += '<div style="font-size:12px;color:rgba(23,72,84,.65);">'+notes+'</div>';
+    return h + '</div>';
+  }
+  var h = '<div class="sr-event-block" style="margin-top:10px;">';
+  h += '<div class="sr-event-title">ACTIVATION '+i+'</div>';
+  h += '<div class="sr-label">Activation Name</div><input class="sr-inp" placeholder="Name..." value="'+name.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_ac'+i+'_name\',this.value)">';
+  h += '<div class="sr-label">People Present</div><input class="sr-inp" type="number" placeholder="# of people" value="'+att+'" oninput="srSet(\''+pfx+'_ac'+i+'_attendance\',this.value)">';
+  h += '<div class="sr-label">Notes</div><textarea class="sr-ta" rows="2" placeholder="Notes..." oninput="srSet(\''+pfx+'_ac'+i+'_notes\',this.value)">'+notes+'</textarea>';
+  return h + '</div>';
+}
+
+function srProgramSection(pfx, locked) {
+  var hasEvents = srGet(pfx+'_prog_events') === 'true';
+  var hasActiv  = srGet(pfx+'_prog_activ')  === 'true';
+  var hasPickle = srGet(pfx+'_prog_pickle')  === 'true';
+  var numEvents = parseInt(srGet(pfx+'_prog_event_count')) || 0;
+  var numActiv  = parseInt(srGet(pfx+'_prog_activ_count')) || 0;
+
+  var html = '';
+
+  if(!locked) {
+    // Toggle buttons
+    html += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">';
+    html += srProgToggle(pfx,'events','🎉 Events',hasEvents);
+    html += srProgToggle(pfx,'activ','⚡ Activations',hasActiv);
+    html += srProgToggle(pfx,'pickle','🏓 Pickleball Programming',hasPickle);
+    html += '</div>';
+  }
+
+  // Events
+  if(hasEvents) {
+    if(!locked) {
+      html += '<div class="sr-prog-block">';
+      html += '<div class="sr-label" style="margin-top:0;">How many events?&nbsp;';
+      html += '<select class="sr-inp" style="width:80px;display:inline-block;" onchange="srSetCount(\''+pfx+'_prog_event_count\',this.value)">';
+      [0,1,2,3,4,5,6].forEach(function(n) {
+        html += '<option value="'+n+'"'+(numEvents===n?' selected':'')+'>'+n+'</option>';
+      });
+      html += '</select></div>';
+      for(var i=1;i<=numEvents;i++) html += srEventBlock(pfx,i,false);
+      html += '</div>';
+    } else {
+      html += '<div class="sr-label">🎉 Events ('+numEvents+')</div>';
+      for(var i=1;i<=numEvents;i++) html += srEventBlock(pfx,i,true);
+    }
+  }
+
+  // Activations
+  if(hasActiv) {
+    if(!locked) {
+      html += '<div class="sr-prog-block">';
+      html += '<div class="sr-label" style="margin-top:0;">How many activations?&nbsp;';
+      html += '<select class="sr-inp" style="width:80px;display:inline-block;" onchange="srSetCount(\''+pfx+'_prog_activ_count\',this.value)">';
+      [0,1,2,3,4,5].forEach(function(n) {
+        html += '<option value="'+n+'"'+(numActiv===n?' selected':'')+'>'+n+'</option>';
+      });
+      html += '</select></div>';
+      for(var i=1;i<=numActiv;i++) html += srActivBlock(pfx,i,false);
+      html += '</div>';
+    } else {
+      html += '<div class="sr-label">⚡ Activations ('+numActiv+')</div>';
+      for(var i=1;i<=numActiv;i++) html += srActivBlock(pfx,i,true);
+    }
+  }
+
+  // Pickleball
+  if(hasPickle) {
+    var pkName  = srGet(pfx+'_pk_name');
+    var pkNotes = srGet(pfx+'_pk_notes');
+    if(!locked) {
+      html += '<div class="sr-prog-block">';
+      html += '<div class="sr-label" style="margin-top:0;">Program Name</div><input class="sr-inp" placeholder="e.g. Open Play, Clinic..." value="'+pkName.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_pk_name\',this.value)">';
+      html += '<div class="sr-label">Notes</div><textarea class="sr-ta" rows="2" placeholder="Any notes..." oninput="srSet(\''+pfx+'_pk_notes\',this.value)">'+pkNotes+'</textarea>';
+      html += '</div>';
+    } else {
+      html += '<div class="sr-label">🏓 Pickleball Programming</div>';
+      if(pkName)  html += '<div style="font-size:13px;font-weight:600;color:#174854;margin:4px 0;">'+pkName+'</div>';
+      if(pkNotes) html += '<div style="font-size:13px;color:rgba(23,72,84,.7);">'+pkNotes+'</div>';
+    }
+  }
+
+  if(!hasEvents && !hasActiv && !hasPickle && locked) {
+    html = '<div style="color:rgba(23,72,84,.35);font-size:13px;">None</div>';
+  }
+
+  return html;
+}
+
+function srProgToggle(pfx, type, label, active) {
+  return '<label class="sr-prog-toggle'+(active?' active':'')+'" data-prog-toggle="'+pfx+'_'+type+'" onclick="srToggleProg(\''+pfx+'\',\''+type+'\')"><input type="checkbox" style="display:none;"'+(active?' checked':'')+'>'+label+'</label>';
+}
+
+function srToggleProg(pfx, type) {
+  var key = pfx+'_prog_'+type;
+  var current = srGet(key) === 'true';
+  srSet(key, current ? 'false' : 'true');
+  // Re-render just the programming section — not the whole form
+  var wrap = document.getElementById(pfx+'-prog-wrap');
+  if(wrap) wrap.innerHTML = srProgramSection(pfx, false);
+  // Update toggle visual
+  var lbl = document.querySelector('[data-prog-toggle="'+pfx+'_'+type+'"]');
+  if(lbl) lbl.classList.toggle('active', !current);
+}
+
+function srSetCount(key, val) {
+  srSet(key, val);
+  var pfx = key.split('_prog_')[0];
+  var wrap = document.getElementById(pfx+'-prog-wrap');
+  if(wrap) wrap.innerHTML = srProgramSection(pfx, false);
+}
+
 function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
   const d = new Date();
   const dayName2 = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
@@ -1851,10 +2013,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${row2(`<div>${lbl('Counted up until')}${srTimeSel('am_count_time',AL)}</div>`,
               `<div>${lbl('AM Court Reservations')}${inp('am_court_res','#',undefined,AL)}</div>`)}
 
+      ${sec('AM · PEAK TIMES')}
+      ${lbl('Peak times')}${inp('am_peak_times','Busiest times this shift...',undefined,AL)}
+
       ${sec('AM · EVENTS & PROGRAMMING')}
-      ${row2(`<div>${lbl('Events on shift')}${inp('am_events','Events',undefined,AL)}</div>`,
-              `<div>${lbl('Peak times')}${inp('am_peak_times','Peak times',undefined,AL)}</div>`)}
-      ${lbl('Programming (on/off court)')}${inp('am_programming','Programming notes',undefined,AL)}
+      ${AL ? srProgramSection('am', true) : '<div id="am-prog-wrap">'+srProgramSection('am',false)+'</div>'}
 
       ${sec('AM · TEAM')}
       ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="am_host_desk">${srMultiCheck('am_host_desk',['Host'],AL)}</div></div>`,
@@ -1915,10 +2078,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${row2(`<div>${lbl('Food')}${ta('pm_eighty_food',"Food items 86'd...",2,PL)}</div>`,
               `<div>${lbl('Bar / Beverage')}${ta('pm_eighty_bar',"Bar/bev items 86'd...",2,PL)}</div>`)}
 
+      ${sec('PM · PEAK TIMES')}
+      ${lbl('Peak times')}${inp('pm_peak_times','Busiest times this shift...',undefined,PL)}
+
       ${sec('PM · EVENTS & PROGRAMMING')}
-      ${row2(`<div>${lbl('Events on shift')}${inp('pm_events','Events',undefined,PL)}</div>`,
-              `<div>${lbl('Peak times')}${inp('pm_peak_times','Peak times',undefined,PL)}</div>`)}
-      ${lbl('Programming (on/off court)')}${inp('pm_programming','Programming notes',undefined,PL)}
+      ${PL ? srProgramSection('pm', true) : '<div id="pm-prog-wrap">'+srProgramSection('pm',false)+'</div>'}
 
       ${sec('PM · TEAM')}
       ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="pm_host_desk">${srMultiCheck('pm_host_desk',['Host'],PL)}</div></div>`,
@@ -1936,22 +2100,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${ta('pm_shift_notes','End of night notes. What went well, what needs following up, anything for tomorrow...',4,PL)}
     </div>`;
 
-  // ── EVENTS ────────────────────────────────────────────────────
-  let evHtml = `<div class="sr-shift-block">
-    <div class="sr-shift-header"><span>📋 EVENTS</span></div>`;
-  for(let i=1;i<=6;i++) {
-    evHtml += `<div class="sr-event-block">
-      <div class="sr-event-title">EVENT ${i}</div>
-      ${row2(`<div style="flex:2">${lbl('Event Name')}${inp('ev'+i+'_name','Event name',undefined,PL)}</div>`,
-              `<div style="flex:1">${lbl('Rating (1–5)')}${inp('ev'+i+'_rating','1–5','number',PL)}</div>`)}
-      ${lbl('What went well')}${ta('ev'+i+'_well','Notes...',2,PL)}
-      ${lbl('What could be improved')}${ta('ev'+i+'_improve','Notes...',2,PL)}
-      ${lbl('Feedback from POC')}${ta('ev'+i+'_poc','Notes...',2,PL)}
-      ${row2(`<div>${lbl('Follow-up needed?')}${inp('ev'+i+'_need_followup','Yes/No',undefined,PL)}</div>`,
-              `<div style="flex:2">${lbl('Follow-up notes')}${inp('ev'+i+'_followup','Notes...',undefined,PL)}</div>`)}
-    </div>`;
-  }
-  evHtml += '</div>';
+  const evHtml = ''; // Events now live inside each shift section
 
   // ── DAY SUMMARY ───────────────────────────────────────────────
   const sumBlock = `
