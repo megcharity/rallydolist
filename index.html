@@ -747,30 +747,27 @@ async function loadTeam(){
       headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
     });
     const rows=await res.json();
-    if(!Array.isArray(rows)||!rows.length) return;
-    // Merge team into users — preserve existing points data
-    rows.forEach(r=>{
-      const existing=users.find(u=>u.id===r.id);
-      if(existing){
-        // update name/positions/role but keep points
-        existing.name=r.name;
-        existing.positions=r.positions||[];
-        existing.role=r.pin_role||'associate';
-      } else {
-        // new person — add with zero points
-        users.push({
-          id:r.id,
-          name:r.name,
-          positions:r.positions||[],
-          role:r.pin_role||'associate',
-          effortPts:0,deadlinePts:0,
-          weeklyEffort:0,weeklyDeadline:0
-        });
-      }
+    console.log('rally_team rows:', rows);
+    if(!Array.isArray(rows)||!rows.length){
+      console.warn('No team members found in rally_team');
+      return;
+    }
+    // Replace users entirely from rally_team — preserve points by matching id
+    const newUsers = rows.map(r=>{
+      const existing = users.find(u=>String(u.id)===String(r.id));
+      return {
+        id: r.id,
+        name: r.name,
+        positions: r.positions||[],
+        role: r.pin_role||'associate',
+        effortPts:   existing ? existing.effortPts   : 0,
+        deadlinePts: existing ? existing.deadlinePts : 0,
+        weeklyEffort:   existing ? existing.weeklyEffort   : 0,
+        weeklyDeadline: existing ? existing.weeklyDeadline : 0
+      };
     });
-    // Remove anyone no longer in rally_team
-    const activeIds=rows.map(r=>r.id);
-    users=users.filter(u=>activeIds.includes(u.id));
+    users = newUsers;
+    console.log('Users after loadTeam:', users.map(u=>u.name+' ('+u.role+')'));
   }catch(e){console.warn('Team load failed',e);}
 }
 
@@ -789,8 +786,8 @@ async function loadData(){
       if(d.nextUid)nextUid=d.nextUid;
       if(d.nextTid)nextTid=d.nextTid;
       if(d.lastWeeklyReset)lastWeeklyReset=d.lastWeeklyReset;
-      // Load legacy users for points data (will be overwritten by rally_team names)
-      if(d.users)users=d.users;
+      // Note: users now come from rally_team, not rally_state
+      // Keep legacy user points if IDs match (handled in loadTeam)
     }
     // Always fetch live team from rally_team
     await loadTeam();
