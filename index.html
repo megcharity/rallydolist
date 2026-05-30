@@ -2346,34 +2346,41 @@ async function renderClHub() {
 async function startChecklist(key) {
   currentChecklistKey = key;
   clState = {};
+  let isSignedOff = false;
 
-  // Show checklist screen immediately with empty state
+  // Show screen immediately with empty state while we fetch
   renderChecklist();
   showScreen('s-checklist');
 
-  // Fetch today's existing progress from Supabase (within 12 hours)
+  // Fetch today's most recent record — signed off OR in progress
   try {
     const u = users.find(x => x.id === currentUser);
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
     const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
     const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
-    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&signed_off_at=is.null&order=created_at.desc&limit=1`;
+    // Fetch most recent record today (any status)
+    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&order=id.desc&limit=1`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
 
-    const res = await fetch(url, {
-      headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` }
-    });
+    const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
     const rows = await res.json();
+
     if(Array.isArray(rows) && rows[0] && rows[0].items) {
       clState = rows[0].items;
-      renderChecklist(); // re-render with restored state
-      showToast('Progress restored ✓');
+      isSignedOff = !!rows[0].signed_off_at;
+      renderChecklist(isSignedOff);
+      updateClProgress();
+      if(isSignedOff) {
+        showToast('Already signed off today ✓');
+      } else {
+        showToast('Progress restored ✓');
+      }
     }
   } catch(e) { console.warn('Could not restore checklist progress', e); }
 }
 
-function renderChecklist() {
+function renderChecklist(signedOff = false) {
   const items = ALL_CHECKLISTS[currentChecklistKey] || [];
   const key = currentChecklistKey;
   const labels = {
@@ -2410,6 +2417,17 @@ function renderChecklist() {
   });
 
   document.getElementById('cl-items-body').innerHTML = html;
+  // Show signed-off banner if applicable
+  const banner = document.getElementById('cl-signedoff-banner');
+  if(banner) banner.style.display = signedOff ? 'block' : 'none';
+  // Lock sign-off button if already signed off
+  const signoffBtn = document.querySelector('.cl-signoff-btn');
+  if(signoffBtn) {
+    signoffBtn.textContent = signedOff ? '✓ Already Signed Off' : 'Sign Off & Submit ✓';
+    signoffBtn.disabled = signedOff;
+    signoffBtn.style.opacity = signedOff ? '0.5' : '';
+    signoffBtn.style.cursor = signedOff ? 'default' : '';
+  }
   updateClProgress();
 }
 
