@@ -2466,26 +2466,42 @@ function autoSaveCl() {
 }
 
 async function saveClProgress(signedOff = false) {
+  // Get name from current user, or fall back to role label
   const u = users.find(x => x.id === currentUser);
-  if(!u) return;
+  const personName = u ? u.name : (currentRole === 'manager' ? 'Manager' : 'Unknown');
+
+  if(!currentChecklistKey) return;
+
   const payload = {
-    shift: currentChecklistKey,
-    manager_name: u.name,
-    date: getTodayStr(),
-    items: clState,
+    shift:        currentChecklistKey,
+    manager_name: personName,
+    date:         getTodayStr(),
+    items:        clState,
     signed_off_at: signedOff ? new Date().toISOString() : null
   };
   try {
-    await fetch(`https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_checklist`, {
-      method: 'POST',
-      headers: {
+    // Try to update existing record for this shift+date+person first
+    const existing = await fetch(
+      `https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
+      { headers: {
         'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs',
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs'
+      }}
+    );
+    const rows = await existing.json();
+    const existingId = Array.isArray(rows) && rows[0] ? rows[0].id : null;
+
+    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_checklist';
+    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+    const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal' };
+
+    if(existingId) {
+      // Update existing row
+      await fetch(`${SUPA}?id=eq.${existingId}`, { method:'PATCH', headers:hdrs, body:JSON.stringify(payload) });
+    } else {
+      // Insert new row
+      await fetch(SUPA, { method:'POST', headers:hdrs, body:JSON.stringify(payload) });
+    }
   } catch(e) { console.warn('Checklist save failed', e); }
 }
 
