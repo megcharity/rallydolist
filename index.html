@@ -1668,29 +1668,56 @@ async function srSave(lockAM = false) {
 
 async function srSaveAM() {
   if(!confirm('Save and lock the AM shift? The PM manager will be able to continue the report.')) return;
-  await srSave(true);
-  showToast('AM shift saved ✅');
-  renderShiftReportForm();
+  // Set lock flags before saving
+  const u = users.find(x => x.id === currentUser);
+  srData.am_locked    = true;
+  srData.am_locked_by = u ? u.name : 'Manager';
+  srData.am_locked_at = new Date().toISOString();
+  srAmLocked   = true;
+  srAmEditMode = false;
+  await srSave(false); // data already has am_locked set
+  showToast('AM shift saved ✅ — PM section now unlocked');
+  // Re-render WITHOUT re-fetching so data isn't lost
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, false);
+  srUpdateSummary();
 }
 
 async function srSubmitPM() {
-  srData.pm_submitted = true;
-  srData.pm_submitted_by = (users.find(x=>x.id===currentUser)||{}).name || 'Manager';
+  const u = users.find(x => x.id === currentUser);
+  srData.pm_submitted    = true;
+  srData.pm_submitted_by = u ? u.name : 'Manager';
   srData.pm_submitted_at = new Date().toISOString();
   await srSave(false);
   showToast('Shift report submitted ✅');
-  renderShiftReportForm();
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, true);
+  srUpdateSummary();
 }
 
 function srUnlockAM() {
   srAmEditMode = true;
-  renderShiftReportForm();
+  const u = users.find(x => x.id === currentUser);
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, false, !!srData.pm_submitted);
+  srUpdateSummary();
 }
 
 function srLockAMAgain() {
   srAmEditMode = false;
   srSave(false);
-  renderShiftReportForm();
+  const u = users.find(x => x.id === currentUser);
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, !!srData.pm_submitted);
+  srUpdateSummary();
 }
 
 async function renderShiftReportForm() {
@@ -1774,7 +1801,7 @@ async function loadSrTeam() {
 }
 
 function srMultiCheck(key, positions, locked) {
-  // Gather candidates from all given positions
+  // Gather candidates filtered by position
   const seen = new Set();
   const candidates = [];
   (Array.isArray(positions) ? positions : [positions]).forEach(pos => {
@@ -1784,32 +1811,29 @@ function srMultiCheck(key, positions, locked) {
   });
 
   const selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
-
   if(locked) return `<div class="sr-locked-val">${selected.join(', ')||'—'}</div>`;
 
   if(!candidates.length) {
-    // Fallback to plain input if no team loaded
     return `<input class="sr-inp" placeholder="Type names..." value="${srGet(key)}" oninput="srSet('${key}',this.value)" />`;
   }
 
-  return `<div class="sr-multi-check">
+  // Pill-style multi-select checkboxes
+  return `<div class="sr-multi-check" data-sr-key="${key}">
     ${candidates.map(name => {
       const checked = selected.includes(name);
-      return `<label class="sr-multi-opt${checked?' sel':''}">
-        <input type="checkbox" ${checked?'checked':''} onchange="srToggleName('${key}','${name}',this.checked)" style="display:none;">
-        ${name}
-      </label>`;
+      return `<div class="sr-multi-opt${checked?' sel':''}" onclick="srToggleName('${key}','${name}',this)">${name}</div>`;
     }).join('')}
   </div>`;
 }
 
-function srToggleName(key, name, checked) {
+function srToggleName(key, name, el) {
   let selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
-  if(checked) { if(!selected.includes(name)) selected.push(name); }
-  else { selected = selected.filter(n => n !== name); }
+  const isSelected = selected.includes(name);
+  if(isSelected) selected = selected.filter(n => n !== name);
+  else selected.push(name);
   srSet(key, selected.join(', '));
-  // Update visual immediately
-  const container = document.querySelector(`[data-sr-key="${key}"]`);
+  // Update pill visuals in this container
+  const container = el.closest('[data-sr-key]') || el.parentElement;
   if(container) container.querySelectorAll('.sr-multi-opt').forEach(opt => {
     const nm = opt.textContent.trim();
     opt.classList.toggle('sel', selected.includes(nm));
@@ -1901,6 +1925,7 @@ function srProgramSection(pfx, locked) {
       });
       html += '</select></div>';
       for(var i=1;i<=numEvents;i++) html += srEventBlock(pfx,i,false);
+      html += '<button onclick="srSave(false);showToast(\'Events saved ✓\')" style="margin-top:10px;padding:6px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">Save Events ✓</button>';
       html += '</div>';
     } else {
       html += '<div class="sr-label">🎉 Events ('+numEvents+')</div>';
@@ -1919,6 +1944,7 @@ function srProgramSection(pfx, locked) {
       });
       html += '</select></div>';
       for(var i=1;i<=numActiv;i++) html += srActivBlock(pfx,i,false);
+      html += '<button onclick="srSave(false);showToast(\'Activations saved ✓\')" style="margin-top:10px;padding:6px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">Save Activations ✓</button>';
       html += '</div>';
     } else {
       html += '<div class="sr-label">⚡ Activations ('+numActiv+')</div>';
@@ -1938,6 +1964,7 @@ function srProgramSection(pfx, locked) {
       html += '<div><div class="sr-label" style="margin-top:0;">Number of Players</div><input class="sr-inp" type="number" placeholder="0" value="'+pkPlayers+'" oninput="srSet(\''+pfx+'_pk_players\',this.value)"></div>';
       html += '</div>';
       html += '<div class="sr-label">Notes</div><textarea class="sr-ta" rows="2" placeholder="Any notes..." oninput="srSet(\''+pfx+'_pk_notes\',this.value)">'+pkNotes+'</textarea>';
+      html += '<button onclick="srSave(false);showToast(\'Pickleball saved ✓\')" style="margin-top:10px;padding:6px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">Save ✓</button>';
       html += '</div>';
     } else {
       html += '<div class="sr-label">🏓 Pickleball Programming</div>';
@@ -2042,6 +2069,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
               `<div>${lbl('Bar / Beverage')}${ta('am_eighty_bar',"Bar/bev items 86'd...",2,AL)}</div>`)}
 
       ${sec('AM · REPAIRS, MAINTENANCE & CLEANING')}
+      <div style="margin-bottom:8px;"><a href="https://rallyrmtracker.netlify.app/" target="_blank" style="font-size:12px;font-weight:600;color:#174854;text-decoration:none;padding:4px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;">🔧 Open R&M Tracker ↗</a></div>
       ${ta('am_rm_issues','Maintenance issues, cleaning flags, R&M follow-ups...',3,AL)}
 
       ${sec('AM · SHIFT NOTES & HANDOFF TO PM')}
@@ -2099,6 +2127,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${lbl('Coaching & Feedback Notes')}${ta('pm_coaching','Shoutouts, coaching conversations, corrections...',3,PL)}
 
       ${sec('PM · REPAIRS, MAINTENANCE & CLEANING')}
+      <div style="margin-bottom:8px;"><a href="https://rallyrmtracker.netlify.app/" target="_blank" style="font-size:12px;font-weight:600;color:#174854;text-decoration:none;padding:4px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;">🔧 Open R&M Tracker ↗</a></div>
       ${ta('pm_rm_issues','Maintenance issues, cleaning flags, R&M follow-ups...',3,PL)}
 
       ${sec('PM · SHIFT NOTES & CLOSE')}
