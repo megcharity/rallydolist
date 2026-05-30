@@ -1376,8 +1376,8 @@ async function renderMgrClHub() {
   const renderCard = (cl) => {
     const prog = getClProgress(cl.key);
     const isEmpty = !ALL_CHECKLISTS[cl.key] || ALL_CHECKLISTS[cl.key].length === 0;
-    const isDone = !isEmpty && prog.pct === 100;
-    const isUrgent = cl.overdue || (cl.type === 'monthly');
+    const isDone = !isEmpty && (prog.pct === 100 || prog.signedOff);
+    const isUrgent = !isDone && (cl.overdue || (cl.type === 'monthly'));
     const cls = isDone ? 'done' : isUrgent ? 'overdue' : '';
     const action = isEmpty ? "showToast('Coming soon')" : "startMgrChecklist('" + cl.key + "')";
     return '<div class="cl-card ' + cls + '" onclick="' + action + '">' +
@@ -2236,10 +2236,9 @@ function getAvailableChecklists() {
 
 function getClProgress(key) {
   const items = ALL_CHECKLISTS[key] || [];
-  if(!items.length) return { done: 0, total: 0, pct: 0 };
-  // Use cache if available (populated by loadClProgressCache)
+  if(!items.length) return { done: 0, total: 0, pct: 0, signedOff: false };
   if(clProgressCache[key]) return clProgressCache[key];
-  return { done: 0, total: items.length, pct: 0 };
+  return { done: 0, total: items.length, pct: 0, signedOff: false };
 }
 
 async function loadClProgressCache() {
@@ -2249,13 +2248,16 @@ async function loadClProgressCache() {
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
     const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
     const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
-    let url = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&signed_off_at=is.null&select=shift,items`;
+    // Fetch ALL today's records (signed off and in-progress)
+    let url = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&select=shift,items,signed_off_at&order=created_at.desc`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
     const res = await fetch(url, { headers: {'apikey':KEY,'Authorization':`Bearer ${KEY}`} });
     const rows = await res.json();
     if(!Array.isArray(rows)) return;
     clProgressCache = {};
+    // Use most recent record per shift (already ordered desc)
     rows.forEach(r => {
+      if(clProgressCache[r.shift]) return; // already have a newer record
       const items = ALL_CHECKLISTS[r.shift] || [];
       if(!items.length || !r.items) return;
       let done = 0;
@@ -2264,7 +2266,12 @@ async function loadClProgressCache() {
         if(i.type === 'check' && s.done) done++;
         if(i.type === 'rate' && s.rating) done++;
       });
-      clProgressCache[r.shift] = { done, total: items.length, pct: Math.round(done/items.length*100) };
+      clProgressCache[r.shift] = {
+        done,
+        total: items.length,
+        pct: Math.round(done/items.length*100),
+        signedOff: !!r.signed_off_at
+      };
     });
   } catch(e) { console.warn('Could not load checklist progress cache', e); }
 }
