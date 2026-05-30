@@ -488,11 +488,17 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .sr-locked-val { padding:7px 10px; background:rgba(23,72,84,.04); border:1.5px solid rgba(23,72,84,.1); border-radius:7px; font-size:13px; color:rgba(23,72,84,.7); min-height:34px; }
 
   
-    /* ── SHIFT REPORT MULTI-CHECK ── */
-    .sr-multi-check { display:flex; flex-wrap:wrap; gap:6px; padding:4px 0; }
-    .sr-multi-opt { padding:5px 11px; border-radius:20px; border:1.5px solid rgba(23,72,84,.2); font-size:12px; font-weight:600; color:rgba(23,72,84,.55); cursor:pointer; transition:all .12s; user-select:none; }
-    .sr-multi-opt.sel { background:#174854; color:#fff; border-color:#174854; }
-    .sr-multi-opt:hover:not(.sel) { border-color:#174854; color:#174854; }
+    /* ── SHIFT REPORT TEAM DROPDOWN ── */
+    .sr-dd-wrap { position:relative; width:100%; }
+    .sr-dd-trigger { display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border:1.5px solid rgba(23,72,84,.18); border-radius:7px; background:#fff; cursor:pointer; font-size:13px; color:#174854; user-select:none; }
+    .sr-dd-trigger:hover { border-color:#174854; }
+    .sr-dd-summary { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:rgba(23,72,84,.7); }
+    .sr-dd-arrow { font-size:10px; color:rgba(23,72,84,.4); margin-left:8px; flex-shrink:0; }
+    .sr-dd-list { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1.5px solid rgba(23,72,84,.18); border-radius:8px; box-shadow:0 4px 16px rgba(23,72,84,.12); z-index:100; max-height:200px; overflow-y:auto; }
+    .sr-dd-item { display:flex; align-items:center; gap:8px; padding:9px 12px; font-size:13px; color:#174854; cursor:pointer; border-bottom:1px solid rgba(23,72,84,.06); }
+    .sr-dd-item:last-child { border-bottom:none; }
+    .sr-dd-item:hover { background:rgba(23,72,84,.04); }
+    .sr-dd-item input[type=checkbox] { width:15px; height:15px; accent-color:#174854; cursor:pointer; flex-shrink:0; }
 
   
     /* ── PROGRAM TOGGLES ── */
@@ -1640,49 +1646,51 @@ async function srSave(lockAM = false) {
   const u = users.find(x => x.id === currentUser);
   const today = getTodayStr();
   if(lockAM) {
-    srData.am_locked = true;
+    srData.am_locked    = true;
     srData.am_locked_by = u ? u.name : 'Manager';
     srData.am_locked_at = new Date().toISOString();
     srAmLocked = true;
   }
-  const payload = {
-    date: today,
-    data: srData,
-    am_locked: !!srData.am_locked,
-    pm_submitted: !!srData.pm_submitted
-  };
+  // Store everything in the data jsonb column — no separate bool columns needed
+  const payload = { date: today, data: srData };
   try {
+    let saved = false;
     if(srRecordId) {
-      await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?id=eq.${srRecordId}`,
-        {method:'PATCH', headers:SR_HDRS(), body:JSON.stringify(payload)});
-    } else {
-      const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports`,
+      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?id=eq.${srRecordId}`,
+        {method:'PATCH', headers:SR_HDRS({'Prefer':'return=representation'}), body:JSON.stringify(payload)});
+      const rows = await r.json();
+      saved = Array.isArray(rows) && rows.length > 0;
+      if(!saved) {
+        // PATCH returned empty — row may not exist, try POST
+        srRecordId = null;
+      }
+    }
+    if(!srRecordId) {
+      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports`,
         {method:'POST', headers:SR_HDRS({'Prefer':'return=representation'}), body:JSON.stringify(payload)});
-      const rows = await res.json();
+      const rows = await r.json();
       if(Array.isArray(rows) && rows[0]) srRecordId = rows[0].id;
     }
     const lbl = document.getElementById('sr-save-label');
     if(lbl) { lbl.textContent = 'Saved ✓'; setTimeout(()=>{ if(lbl) lbl.textContent = ''; }, 2000); }
+    console.log('SR saved, id:', srRecordId, 'am_locked:', srData.am_locked);
   } catch(e) { console.warn('SR save failed', e); }
 }
 
 async function srSaveAM() {
   if(!confirm('Save and lock the AM shift? The PM manager will be able to continue the report.')) return;
-  // Set lock flags before saving
   const u = users.find(x => x.id === currentUser);
+  // Set lock state in srData before saving
   srData.am_locked    = true;
   srData.am_locked_by = u ? u.name : 'Manager';
   srData.am_locked_at = new Date().toISOString();
   srAmLocked   = true;
   srAmEditMode = false;
-  await srSave(false); // data already has am_locked set
+  // Save to Supabase
+  await srSave(false);
+  // Re-render from in-memory srData — never re-fetch
+  srRerender();
   showToast('AM shift saved ✅ — PM section now unlocked');
-  // Re-render WITHOUT re-fetching so data isn't lost
-  const panel = document.getElementById('mgr-tab-shiftreport');
-  const d = new Date();
-  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
-  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, false);
-  srUpdateSummary();
 }
 
 async function srSubmitPM() {
@@ -1691,32 +1699,31 @@ async function srSubmitPM() {
   srData.pm_submitted_by = u ? u.name : 'Manager';
   srData.pm_submitted_at = new Date().toISOString();
   await srSave(false);
+  srRerender();
   showToast('Shift report submitted ✅');
-  const panel = document.getElementById('mgr-tab-shiftreport');
-  const d = new Date();
-  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
-  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, true);
-  srUpdateSummary();
 }
 
 function srUnlockAM() {
   srAmEditMode = true;
-  const u = users.find(x => x.id === currentUser);
-  const d = new Date();
-  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
-  const panel = document.getElementById('mgr-tab-shiftreport');
-  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, false, !!srData.pm_submitted);
-  srUpdateSummary();
+  srRerender();
 }
 
 function srLockAMAgain() {
   srAmEditMode = false;
   srSave(false);
+  srRerender();
+}
+
+// Shared re-render from memory — never re-fetches Supabase
+function srRerender() {
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  if(!panel) return;
   const u = users.find(x => x.id === currentUser);
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
-  const panel = document.getElementById('mgr-tab-shiftreport');
-  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, true, !!srData.pm_submitted);
+  const amLocked  = srAmLocked && !srAmEditMode;
+  const pmDone    = !!srData.pm_submitted;
+  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, amLocked, pmDone);
   srUpdateSummary();
 }
 
@@ -1739,12 +1746,12 @@ async function renderShiftReportForm() {
     const rows = await res.json();
     if(Array.isArray(rows) && rows[0]) {
       srRecordId = rows[0].id;
-      srData = rows[0].data || {};
-      srAmLocked = !!rows[0].am_locked;
+      srData     = rows[0].data || {};
+      srAmLocked = !!srData.am_locked; // read from data jsonb
     } else {
-      srRecordId = null;
-      srData = {};
-      srAmLocked = false;
+      srRecordId   = null;
+      srData       = {};
+      srAmLocked   = false;
       srAmEditMode = false;
     }
   } catch(e) { srData = {}; srRecordId = null; srAmLocked = false; }
@@ -1801,7 +1808,6 @@ async function loadSrTeam() {
 }
 
 function srMultiCheck(key, positions, locked) {
-  // Gather candidates filtered by position
   const seen = new Set();
   const candidates = [];
   (Array.isArray(positions) ? positions : [positions]).forEach(pos => {
@@ -1817,28 +1823,47 @@ function srMultiCheck(key, positions, locked) {
     return `<input class="sr-inp" placeholder="Type names..." value="${srGet(key)}" oninput="srSet('${key}',this.value)" />`;
   }
 
-  // Pill-style multi-select checkboxes
-  return `<div class="sr-multi-check" data-sr-key="${key}">
-    ${candidates.map(name => {
-      const checked = selected.includes(name);
-      return `<div class="sr-multi-opt${checked?' sel':''}" onclick="srToggleName('${key}','${name}',this)">${name}</div>`;
-    }).join('')}
+  const summary = selected.length ? selected.join(', ') : 'Select...';
+  return `<div class="sr-dd-wrap" id="srdd_${key}">
+    <div class="sr-dd-trigger" onclick="srToggleDD('${key}')">
+      <span class="sr-dd-summary" id="srdd_sum_${key}">${summary}</span>
+      <span class="sr-dd-arrow">▾</span>
+    </div>
+    <div class="sr-dd-list" id="srdd_list_${key}" style="display:none;">
+      ${candidates.map(name => `
+        <label class="sr-dd-item">
+          <input type="checkbox" ${selected.includes(name)?'checked':''} onchange="srDDToggle('${key}','${name}',this.checked)">
+          ${name}
+        </label>`).join('')}
+    </div>
   </div>`;
 }
 
-function srToggleName(key, name, el) {
-  let selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const isSelected = selected.includes(name);
-  if(isSelected) selected = selected.filter(n => n !== name);
-  else selected.push(name);
-  srSet(key, selected.join(', '));
-  // Update pill visuals in this container
-  const container = el.closest('[data-sr-key]') || el.parentElement;
-  if(container) container.querySelectorAll('.sr-multi-opt').forEach(opt => {
-    const nm = opt.textContent.trim();
-    opt.classList.toggle('sel', selected.includes(nm));
+function srToggleDD(key) {
+  const list = document.getElementById('srdd_list_'+key);
+  if(!list) return;
+  // Close all other open dropdowns first
+  document.querySelectorAll('.sr-dd-list').forEach(l => {
+    if(l.id !== 'srdd_list_'+key) l.style.display = 'none';
   });
+  list.style.display = list.style.display === 'none' ? 'block' : 'none';
 }
+
+function srDDToggle(key, name, checked) {
+  let selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(checked) { if(!selected.includes(name)) selected.push(name); }
+  else selected = selected.filter(n => n !== name);
+  srSet(key, selected.join(', '));
+  const sum = document.getElementById('srdd_sum_'+key);
+  if(sum) sum.textContent = selected.length ? selected.join(', ') : 'Select...';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  if(!e.target.closest('.sr-dd-wrap')) {
+    document.querySelectorAll('.sr-dd-list').forEach(l => l.style.display = 'none');
+  }
+});
 
 // ── PROGRAM / EVENTS HELPERS ────────────────────────────────────
 function srEventBlock(pfx, i, locked) {
@@ -2052,12 +2077,12 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${AL ? srProgramSection('am', true) : '<div id="am-prog-wrap">'+srProgramSection('am',false)+'</div>'}
 
       ${sec('AM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="am_host_desk">${srMultiCheck('am_host_desk',['Host'],AL)}</div></div>`,
-              `<div>${lbl('Café')}<div data-sr-key="am_cafe">${srMultiCheck('am_cafe',['Barista'],AL)}</div></div>`)}
-      ${row2(`<div>${lbl('Captain(s)')}<div data-sr-key="am_captains">${srMultiCheck('am_captains',['Captain'],AL)}</div></div>`,
-              `<div>${lbl('Team Lead')}<div data-sr-key="am_team_lead">${srMultiCheck('am_team_lead',['Manager'],AL)}</div></div>`)}
-      ${row2(`<div>${lbl('Swarmer')}<div data-sr-key="am_swarmer">${srMultiCheck('am_swarmer',['Swarmer'],AL)}</div></div>`,
-              `<div>${lbl('Bar')}<div data-sr-key="am_bar">${srMultiCheck('am_bar',['Bartender'],AL)}</div></div>`)}
+      ${row2(`<div>${lbl('Host Desk')}${srMultiCheck('am_host_desk',['Host'],AL)}</div>`,
+              `<div>${lbl('Café')}${srMultiCheck('am_cafe',['Barista'],AL)}</div>`)}
+      ${row2(`<div>${lbl('Captain(s)')}${srMultiCheck('am_captains',['Captain'],AL)}</div>`,
+              `<div>${lbl('Team Lead')}${srMultiCheck('am_team_lead',['Manager'],AL)}</div>`)}
+      ${row2(`<div>${lbl('Swarmer')}${srMultiCheck('am_swarmer',['Swarmer'],AL)}</div>`,
+              `<div>${lbl('Bar')}${srMultiCheck('am_bar',['Bartender'],AL)}</div>`)}
       ${lbl('Staffing Adjustments')}${inp('am_staffing','Any cuts, callouts, adjustments...',undefined,AL)}
       ${lbl('Coaching & Feedback Notes')}${ta('am_coaching','Shoutouts, coaching conversations, corrections...',3,AL)}
 
@@ -2118,11 +2143,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${PL ? srProgramSection('pm', true) : '<div id="pm-prog-wrap">'+srProgramSection('pm',false)+'</div>'}
 
       ${sec('PM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="pm_host_desk">${srMultiCheck('pm_host_desk',['Host'],PL)}</div></div>`,
-              `<div>${lbl('Captain(s)')}<div data-sr-key="pm_captains">${srMultiCheck('pm_captains',['Captain'],PL)}</div></div>`)}
-      ${row2(`<div>${lbl('Team Lead')}<div data-sr-key="pm_team_lead">${srMultiCheck('pm_team_lead',['Manager'],PL)}</div></div>`,
-              `<div>${lbl('Bar')}<div data-sr-key="pm_bar">${srMultiCheck('pm_bar',['Bartender'],PL)}</div></div>`)}
-      ${row2(`<div>${lbl('Swarmer')}<div data-sr-key="pm_swarmer">${srMultiCheck('pm_swarmer',['Swarmer'],PL)}</div></div>`,
+      ${row2(`<div>${lbl('Host Desk')}${srMultiCheck('pm_host_desk',['Host'],PL)}</div>`,
+              `<div>${lbl('Captain(s)')}${srMultiCheck('pm_captains',['Captain'],PL)}</div>`)}
+      ${row2(`<div>${lbl('Team Lead')}${srMultiCheck('pm_team_lead',['Manager'],PL)}</div>`,
+              `<div>${lbl('Bar')}${srMultiCheck('pm_bar',['Bartender'],PL)}</div>`)}
+      ${row2(`<div>${lbl('Swarmer')}${srMultiCheck('pm_swarmer',['Swarmer'],PL)}</div>`,
               `<div>${lbl('Staffing Adjustments')}${inp('pm_staffing','Adjustments...',undefined,PL)}</div>`)}
       ${lbl('Coaching & Feedback Notes')}${ta('pm_coaching','Shoutouts, coaching conversations, corrections...',3,PL)}
 
