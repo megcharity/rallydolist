@@ -1600,6 +1600,7 @@ let srRecordId = null;   // DB id of today's report
 let srSaveTimer = null;
 let srAmLocked = false;  // AM section locked after AM saves
 let srAmEditMode = false; // Temporarily unlocked for edit
+let srPmEditMode = false; // PM temporarily unlocked for edit
 
 const SR_SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
 const SR_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
@@ -1619,7 +1620,53 @@ function srSet(key, val) {
   srUpdateSummary();
 }
 
-function srUpdateSummary() {
+// Cache for comparison data
+let srCompData = { yesterday: null, lastWeek: null };
+
+async function srLoadCompData() {
+  try {
+    const d = new Date();
+    const yest = new Date(d); yest.setDate(d.getDate()-1);
+    const lw   = new Date(d); lw.setDate(d.getDate()-7);
+    const fmt  = dt => dt.toISOString().slice(0,10);
+    const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`};
+    const [r1,r2] = await Promise.all([
+      fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(yest)}&order=id.desc&limit=1`,{headers:hdrs}),
+      fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(lw)}&order=id.desc&limit=1`,{headers:hdrs})
+    ]);
+    const [j1,j2] = await Promise.all([r1.json(),r2.json()]);
+    srCompData.yesterday = (Array.isArray(j1)&&j1[0]&&j1[0].data) ? j1[0].data : null;
+    srCompData.lastWeek  = (Array.isArray(j2)&&j2[0]&&j2[0].data) ? j2[0].data : null;
+  } catch(e) { console.warn('SR comp load failed',e); }
+}
+
+function srExtractMetrics(d) {
+  if(!d) return null;
+  const food  = parseFloat(d.pm_food_sales)||0;
+  const bev   = parseFloat(d.pm_bev_sales)||0;
+  const total = food+bev;
+  const cvrs  = parseFloat(d.pm_covers)||0;
+  return {
+    courts: (parseFloat(d.am_court_res)||0)+(parseFloat(d.pm_court_res)||0),
+    covers: cvrs,
+    food, bev, total,
+    ppa:  cvrs ? total/cvrs : 0,
+    posC: parseFloat(d.pm_pos_comps_amt)||0,
+    negC: parseFloat(d.pm_neg_comps_amt)||0
+  };
+}
+
+function srDelta(today, comp, key, isCurrency) {
+  if(!comp || !comp[key] || !today[key]) return '';
+  const diff = today[key] - comp[key];
+  const pct  = comp[key] ? Math.round((diff/comp[key])*100) : 0;
+  const sign = diff >= 0 ? '+' : '';
+  const color= diff >= 0 ? '#4e622c' : '#c04020';
+  const val  = isCurrency ? sign+'$'+Math.abs(diff).toFixed(0) : sign+diff.toFixed(0);
+  return `<span style="font-size:10px;font-weight:700;color:${color};">${val} (${sign}${pct}%)</span>`;
+}
+
+async function srUpdateSummary() {
   const amRes  = parseFloat(srGet('am_court_res')) || 0;
   const pmRes  = parseFloat(srGet('pm_court_res')) || 0;
   const covers = parseFloat(srGet('pm_covers'))    || 0;
@@ -1630,15 +1677,35 @@ function srUpdateSummary() {
   const posC   = parseFloat(srGet('pm_pos_comps_amt')) || 0;
   const negC   = parseFloat(srGet('pm_neg_comps_amt')) || 0;
 
-  const set = (id, val) => { const el = document.getElementById('sr_sum_'+id); if(el) el.textContent = val; };
-  set('courts',  amRes + pmRes || '—');
-  set('covers',  covers || '—');
-  set('food',    food   ? '$'+food.toFixed(2)  : '—');
-  set('bev',     bev    ? '$'+bev.toFixed(2)   : '—');
-  set('total',   total  ? '$'+total.toFixed(2) : '—');
-  set('ppa',     ppa    ? '$'+ppa.toFixed(2)   : '—');
-  set('pos_comps', posC ? '$'+posC.toFixed(2)  : '—');
-  set('neg_comps', negC ? '$'+negC.toFixed(2)  : '—');
+  const today = { courts:amRes+pmRes, covers, food, bev, total, ppa, posC, negC };
+  const yest  = srExtractMetrics(srCompData.yesterday);
+  const lw    = srExtractMetrics(srCompData.lastWeek);
+
+  const metrics = [
+    {id:'courts',  label:'Total Courts', val:amRes+pmRes||null, key:'courts', currency:false},
+    {id:'covers',  label:'Covers',       val:covers||null,      key:'covers', currency:false},
+    {id:'food',    label:'Food Sales',   val:food||null,        key:'food',   currency:true},
+    {id:'bev',     label:'Bev Sales',    val:bev||null,         key:'bev',    currency:true},
+    {id:'total',   label:'Total Sales',  val:total||null,       key:'total',  currency:true},
+    {id:'ppa',     label:'PPA',          val:ppa||null,         key:'ppa',    currency:true},
+    {id:'pos_comps',label:'+ Comps',     val:posC||null,        key:'posC',   currency:true},
+    {id:'neg_comps',label:'- Comps',     val:negC||null,        key:'negC',   currency:true},
+  ];
+
+  metrics.forEach(m => {
+    const el = document.getElementById('sr_sum_'+m.id);
+    if(!el) return;
+    const valStr = m.val === null ? '—'
+      : m.currency ? '$'+m.val.toFixed(2)
+      : m.val.toFixed(0);
+
+    const dYest = yest ? srDelta(today, yest, m.key, m.currency) : '';
+    const dLw   = lw   ? srDelta(today, lw,   m.key, m.currency) : '';
+
+    el.innerHTML = `<div style="font-size:17px;font-weight:700;color:#174854;">${valStr}</div>`
+      + (dYest ? `<div style="margin-top:2px;">${dYest} <span style="font-size:9px;color:rgba(23,72,84,.35);">vs yday</span></div>` : '')
+      + (dLw   ? `<div style="margin-top:1px;">${dLw} <span style="font-size:9px;color:rgba(23,72,84,.35);">vs last wk</span></div>` : '');
+  });
 }
 
 async function srSave(lockAM = false) {
@@ -1730,8 +1797,19 @@ function srLockAMAgain() {
   srRerender();
 }
 
+function srUnlockPM() {
+  srPmEditMode = true;
+  srRerender();
+}
+
+function srLockPMAgain() {
+  srPmEditMode = false;
+  srSave(false);
+  srRerender();
+}
+
 // Shared re-render from memory — never re-fetches Supabase
-function srRerender() {
+async function srRerender() {
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
   const u = users.find(x => x.id === currentUser);
@@ -1740,7 +1818,13 @@ function srRerender() {
   const amLocked  = srAmLocked && !srAmEditMode;
   const pmDone    = !!srData.pm_submitted;
   panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, amLocked, pmDone);
+  await srLoadCompData();
   srUpdateSummary();
+}
+
+// Check if report is from a previous day (past midnight) — lock both sections
+function srIsPastMidnight() {
+  return srData.date && srData.date !== getTodayStr();
 }
 
 async function renderShiftReportForm() {
@@ -1783,9 +1867,11 @@ async function renderShiftReportForm() {
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
   const pmSubmitted = !!srData.pm_submitted;
-  const amLocked = srAmLocked && !srAmEditMode;
+  const amLocked = (srAmLocked && !srAmEditMode) || pastMidnight;
 
   panel.innerHTML = buildSrHTML(u.name, today, dayName, amLocked, pmSubmitted);
+  // Load comparison data then update summary
+  await srLoadCompData();
   srUpdateSummary();
 }
 
@@ -2076,11 +2162,13 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 
   // ── AM SECTION ────────────────────────────────────────────────
   const AL = amLocked; // shorthand
-  const amStatus = srAmLocked
-    ? (srAmEditMode
-        ? `<span style="color:#c87a00;font-size:12px;font-weight:600;">✏️ Editing AM</span><button onclick="srLockAMAgain()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Lock again</button>`
-        : `<span style="color:#4e622c;font-size:12px;font-weight:600;">✅ AM saved by ${srData.am_locked_by||'AM manager'}</span><button onclick="srUnlockAM()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Edit</button>`)
-    : '';
+  const amStatus = pastMidnight
+    ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Locked — previous day</span>'
+    : srAmLocked
+      ? (srAmEditMode
+          ? `<span style="color:#c87a00;font-size:12px;font-weight:600;">✏️ Editing AM</span><button onclick="srLockAMAgain()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Lock again</button>`
+          : `<span style="color:#4e622c;font-size:12px;font-weight:600;">✅ AM saved by ${srData.am_locked_by||'AM manager'}</span><button onclick="srUnlockAM()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Edit</button>`)
+      : '';
 
   const amSection = `
     <div class="sr-shift-block ${AL?'sr-locked':''}">
@@ -2132,13 +2220,22 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
     </div>`;
 
   // ── PM SECTION ────────────────────────────────────────────────
-  const PL = pmSubmitted;
+  // Past midnight = both sections fully locked (read-only)
+  const pastMidnight = srIsPastMidnight();
+  const PL = pmSubmitted && !srPmEditMode || pastMidnight;
 
   const pmSection = `
     <div class="sr-shift-block ${PL?'sr-locked':''}">
       <div class="sr-shift-header">
         <span>🌙 PM SHIFT</span>
-        ${PL ? `<span style="color:#4e622c;font-size:12px;font-weight:600;">✅ Submitted by ${srData.pm_submitted_by||'PM manager'}</span>` : ''}
+        ${pastMidnight
+          ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Locked — previous day</span>'
+          : pmSubmitted && !srPmEditMode
+            ? `<span style="color:#4e622c;font-size:12px;font-weight:600;">✅ Submitted by ${srData.pm_submitted_by||'PM manager'}</span><button onclick="srUnlockPM()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Edit</button>`
+            : srPmEditMode
+              ? '<span style="color:#c87a00;font-size:12px;font-weight:600;">✏️ Editing PM</span><button onclick="srLockPMAgain()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Lock again</button>'
+              : ''
+        }
       </div>
 
       ${sec('PM MANAGER')}
@@ -2193,15 +2290,18 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
   const sumBlock = `
     <div class="sr-shift-block">
       <div class="sr-shift-header"><span>📊 DAY SUMMARY</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;padding:4px 0 8px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;padding:4px 0 8px;">
         ${['courts','covers','food','bev','total','ppa','pos_comps','neg_comps'].map((k,i)=>
-          `<div style="text-align:center;"><div style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:4px;">${['Total Courts','Covers','Food Sales','Bev Sales','Total Sales','PPA','+ Comps','- Comps'][i]}</div><div id="sr_sum_${k}" style="font-size:17px;font-weight:700;color:#174854;">—</div></div>`
+          `<div style="text-align:center;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:4px;">${['Total Courts','Covers','Food Sales','Bev Sales','Total Sales','PPA','+ Comps','- Comps'][i]}</div>
+            <div id="sr_sum_${k}"><div style="font-size:17px;font-weight:700;color:#174854;">—</div></div>
+          </div>`
         ).join('')}
       </div>
     </div>`;
 
   // ── SUBMIT BUTTON ─────────────────────────────────────────────
-  const submitBar = !pmSubmitted ? `
+  const submitBar = pastMidnight ? '' : !pmSubmitted ? `
     <div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
       <button onclick="srSubmitPM()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Full Report ✅</button>
     </div>` : `
@@ -2418,7 +2518,7 @@ function doLogout(){
   stopTimer();
   currentUser=null;currentRole=null;selectedRole=null;selectedName=null;
   // Reset shift report state so next manager gets a fresh fetch
-  srData={}; srRecordId=null; srAmLocked=false; srAmEditMode=false;
+  srData={}; srRecordId=null; srAmLocked=false; srAmEditMode=false; srPmEditMode=false;
   clearTimeout(srSaveTimer);
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   showScreen('s-role');
