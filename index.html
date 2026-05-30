@@ -1718,7 +1718,8 @@ async function srSave(lockAM = false) {
     srAmLocked = true;
   }
   const managerName = u ? u.name : (srData.am_locked_by || 'Manager');
-  const payload = { date: today, manager: managerName, data: srData };
+  srData._manager = managerName; // store inside data jsonb
+  const payload = { date: today, data: srData };
   const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${SR_KEY}`, 'Content-Type':'application/json' };
   try {
     // If we don't have an ID, check if today's record already exists (another manager may have created it)
