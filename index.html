@@ -1793,17 +1793,21 @@ let srTeamByPos = {}; // { Host: [{id,name},...], Bartender: [...], ... }
 
 async function loadSrTeam() {
   try {
-    const res = await fetch('${SUPA_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role',
-      {headers:{'apikey':'${SUPA_KEY}','Authorization':'Bearer ${SUPA_KEY}'}});
+    const res = await fetch('https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role',
+      {headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs'}});
     const rows = await res.json();
+    console.log('SR team loaded:', rows);
     srTeamByPos = {};
     if(!Array.isArray(rows)) return;
     rows.forEach(r => {
+      // Normalise position names to match what we filter by
       (r.positions||[]).forEach(pos => {
-        if(!srTeamByPos[pos]) srTeamByPos[pos] = [];
-        srTeamByPos[pos].push({id:r.id, name:r.name});
+        const key = pos.trim();
+        if(!srTeamByPos[key]) srTeamByPos[key] = [];
+        srTeamByPos[key].push({id:r.id, name:r.name});
       });
     });
+    console.log('srTeamByPos keys:', Object.keys(srTeamByPos));
   } catch(e) { console.warn('SR team load failed', e); }
 }
 
@@ -2078,7 +2082,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 
       ${sec('AM · TEAM')}
       ${row2(`<div>${lbl('Host Desk')}${srMultiCheck('am_host_desk',['Host'],AL)}</div>`,
-              `<div>${lbl('Café')}${srMultiCheck('am_cafe',['Barista'],AL)}</div>`)}
+              `<div>${lbl('Café')}${srMultiCheck('am_cafe',['Barista','Other'],AL)}</div>`)}
       ${row2(`<div>${lbl('Captain(s)')}${srMultiCheck('am_captains',['Captain'],AL)}</div>`,
               `<div>${lbl('Team Lead')}${srMultiCheck('am_team_lead',['Manager'],AL)}</div>`)}
       ${row2(`<div>${lbl('Swarmer')}${srMultiCheck('am_swarmer',['Swarmer'],AL)}</div>`,
