@@ -1615,8 +1615,7 @@ function srGet(key) { return srData[key] !== undefined ? srData[key] : ''; }
 function srSet(key, val) {
   srData[key] = val;
   clearTimeout(srSaveTimer);
-  srSaveTimer = setTimeout(() => srSave(false), 2000);
-  // Update auto-calculated day summary fields live
+  srSaveTimer = setTimeout(() => srSave(false), 3000); // 3s debounce
   srUpdateSummary();
 }
 
@@ -1651,29 +1650,46 @@ async function srSave(lockAM = false) {
     srData.am_locked_at = new Date().toISOString();
     srAmLocked = true;
   }
-  // Store everything in the data jsonb column — no separate bool columns needed
   const payload = { date: today, data: srData };
+  const baseHdrs = {
+    'apikey': SR_KEY,
+    'Authorization': `Bearer ${SR_KEY}`,
+    'Content-Type': 'application/json'
+  };
   try {
-    let saved = false;
     if(srRecordId) {
-      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?id=eq.${srRecordId}`,
-        {method:'PATCH', headers:SR_HDRS({'Prefer':'return=representation'}), body:JSON.stringify(payload)});
-      const rows = await r.json();
-      saved = Array.isArray(rows) && rows.length > 0;
-      if(!saved) {
-        // PATCH returned empty — row may not exist, try POST
-        srRecordId = null;
+      // Update existing record
+      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?id=eq.${srRecordId}`, {
+        method: 'PATCH',
+        headers: { ...baseHdrs, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      if(!r.ok) {
+        console.warn('PATCH failed', r.status, await r.text());
+        srRecordId = null; // fall through to POST
       }
     }
     if(!srRecordId) {
-      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports`,
-        {method:'POST', headers:SR_HDRS({'Prefer':'return=representation'}), body:JSON.stringify(payload)});
-      const rows = await r.json();
-      if(Array.isArray(rows) && rows[0]) srRecordId = rows[0].id;
+      // Insert new record, get back the id
+      const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports`, {
+        method: 'POST',
+        headers: { ...baseHdrs, 'Prefer': 'return=representation', 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const text = await r.text();
+      if(r.ok && text) {
+        try {
+          const rows = JSON.parse(text);
+          if(Array.isArray(rows) && rows[0]) srRecordId = rows[0].id;
+        } catch(e) {}
+      } else if(!r.ok) {
+        console.warn('POST failed', r.status, text);
+        return;
+      }
     }
     const lbl = document.getElementById('sr-save-label');
     if(lbl) { lbl.textContent = 'Saved ✓'; setTimeout(()=>{ if(lbl) lbl.textContent = ''; }, 2000); }
-    console.log('SR saved, id:', srRecordId, 'am_locked:', srData.am_locked);
+    console.log('SR saved ✓ id:', srRecordId);
   } catch(e) { console.warn('SR save failed', e); }
 }
 
@@ -1730,7 +1746,7 @@ function srRerender() {
 async function renderShiftReportForm() {
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
-  panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading...</div>';
+  panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading today\'s shift report...</div>';
 
   const today = getTodayStr();
   const u = users.find(x => x.id === currentUser);
@@ -1739,22 +1755,30 @@ async function renderShiftReportForm() {
   // Load team roster for multi-check fields
   await loadSrTeam();
 
-  // Load today's shared report (any manager)
+  // Load today's shared report (any manager — shared across the whole day)
   try {
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
       {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
+    console.log('SR load:', rows);
     if(Array.isArray(rows) && rows[0]) {
       srRecordId = rows[0].id;
       srData     = rows[0].data || {};
-      srAmLocked = !!srData.am_locked; // read from data jsonb
+      srAmLocked = !!srData.am_locked;
+      console.log('SR found: id='+srRecordId+' am_locked='+srAmLocked);
     } else {
       srRecordId   = null;
       srData       = {};
       srAmLocked   = false;
       srAmEditMode = false;
+      console.log('SR: no record today, starting fresh');
     }
-  } catch(e) { srData = {}; srRecordId = null; srAmLocked = false; }
+  } catch(e) {
+    console.warn('SR load failed', e);
+    panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(220,80,60,.6);">Failed to load shift report.<br><small>'+e.message+'</small><br><br><button onclick="renderShiftReportForm()" style="padding:8px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit;">Retry</button></div>';
+    return;
+  }
 
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
@@ -2393,6 +2417,9 @@ function doLogout(){
   // "Out" — full logout, clear everything
   stopTimer();
   currentUser=null;currentRole=null;selectedRole=null;selectedName=null;
+  // Reset shift report state so next manager gets a fresh fetch
+  srData={}; srRecordId=null; srAmLocked=false; srAmEditMode=false;
+  clearTimeout(srSaveTimer);
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   showScreen('s-role');
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('sel'));
