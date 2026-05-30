@@ -1376,7 +1376,7 @@ function renderMgrClHub() {
     const prog = getClProgress(cl.key);
     const isEmpty = !ALL_CHECKLISTS[cl.key] || ALL_CHECKLISTS[cl.key].length === 0;
     const isDone = !isEmpty && prog.pct === 100;
-    const isUrgent = (cl.type === 'weekly' && dow === 1) || (cl.type === 'monthly' && dom === 1);
+    const isUrgent = cl.overdue || (cl.type === 'monthly');
     const cls = isDone ? 'done' : isUrgent ? 'overdue' : '';
     const action = isEmpty ? "showToast('Coming soon')" : "startMgrChecklist('" + cl.key + "')";
     return '<div class="cl-card ' + cls + '" onclick="' + action + '">' +
@@ -2149,60 +2149,88 @@ function getMonthlyBadge() {
   return getDateOfMonth() === 1 ? 'Due Today' : 'Due This Month';
 }
 
+// ── CHECKLIST VISIBILITY RULES ──────────────────────────────
+// Daily: always visible, overdue if not signed off by end of day
+// Weekly: always visible, overdue badge if Sunday has passed
+// Monthly: only visible on first Sunday of month, stays until signed off
+
+function isSunday() { return getDayOfWeek() === 0; }
+function isFirstSunday() {
+  const d = new Date();
+  return d.getDay() === 0 && d.getDate() <= 7;
+}
+function isWeeklyOverdue() {
+  // Overdue if it's past Sunday (Mon–Sat) and not signed off
+  return getDayOfWeek() !== 0;
+}
+function isMonthlyVisible(key) {
+  // Visible on first Sunday, OR if it exists and hasn't been signed off yet this month
+  if(isFirstSunday()) return true;
+  // Also show if it was started/saved this month but not yet signed off
+  const today = getTodayStr();
+  const thisMonth = today.slice(0, 7); // YYYY-MM
+  const log = clLogs.find(l => l.key === key && l.date && l.date.slice(0,7) === thisMonth && l.signed_off_at);
+  // If already signed off this month, hide it; if first Sunday, show; otherwise hide
+  return false;
+}
+
 function getAvailableChecklists() {
   const isManager = currentRole === 'manager';
   const pos = (currentPosition || '').toLowerCase();
   const list = [];
   const dow = getDayOfWeek();
-  const wb = getWeeklyBadge();
-  const mb = getMonthlyBadge();
   // bar weekly key for Mon–Thu
   const barWeeklyKey = {1:'bar_weekly_mon',2:'bar_weekly_tue',3:'bar_weekly_wed',4:'bar_weekly_thu'}[dow];
 
+  const weeklyOverdue = isWeeklyOverdue(); // past Sunday
+  const showMonthly   = isFirstSunday();   // only first Sunday
+
+  const weeklyBadge  = weeklyOverdue ? '⚠ Overdue' : (isSunday() ? 'Due Today' : 'Due This Week');
+  const monthlyBadge = '📅 Due Today';
+
   if(isManager) {
-    list.push({ key:'manager_opening', label:'Opening Checklist', icon:'🌅', type:'daily' });
-    list.push({ key:'manager_closing', label:'Closing Checklist', icon:'🌙', type:'daily' });
-    list.push({ key:'manager_weekly', label:'Weekly Manager Tasks', icon:'📅', type:'weekly', badge:wb });
-    list.push({ key:'manager_monthly', label:'Monthly Manager Tasks', icon:'🗓', type:'monthly', badge:mb });
-    list.push({ key:'bar_opening', label:'Bar Opening', icon:'🍺', type:'daily' });
-    list.push({ key:'bar_closing', label:'Bar Closing', icon:'🍺', type:'daily' });
-    if(barWeeklyKey) list.push({ key:barWeeklyKey, label:'Bar Weekly Tasks', icon:'📅', type:'weekly', badge: dow===1?'Due Today':'Due This Week' });
-    list.push({ key:'bar_monthly', label:'Bar Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'manager_opening', label:'Opening Checklist',      icon:'🌅', type:'daily' });
+    list.push({ key:'manager_closing', label:'Closing Checklist',      icon:'🌙', type:'daily' });
+    list.push({ key:'manager_weekly',  label:'Weekly Manager Tasks',   icon:'📅', type:'weekly',  badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'manager_monthly', label:'Monthly Manager Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
+    list.push({ key:'bar_opening',     label:'Bar Opening',            icon:'🍺', type:'daily' });
+    list.push({ key:'bar_closing',     label:'Bar Closing',            icon:'🍺', type:'daily' });
+    list.push({ key:barWeeklyKey||'bar_weekly_mon', label:'Bar Weekly Tasks', icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'bar_monthly', label:'Bar Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'bartender') {
-    list.push({ key:'bar_opening', label:'Bar Opening', icon:'🌅', type:'daily' });
-    list.push({ key:'bar_closing', label:'Bar Closing', icon:'🌙', type:'daily' });
-    if(barWeeklyKey) list.push({ key:barWeeklyKey, label:'Bar Weekly Tasks', icon:'📅', type:'weekly', badge: dow===1?'Due Today':'Due This Week' });
-    list.push({ key:'bar_monthly', label:'Bar Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'bar_opening',     label:'Bar Opening',            icon:'🌅', type:'daily' });
+    list.push({ key:'bar_closing',     label:'Bar Closing',            icon:'🌙', type:'daily' });
+    list.push({ key:barWeeklyKey||'bar_weekly_mon', label:'Bar Weekly Tasks', icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'bar_monthly', label:'Bar Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'captain') {
-    list.push({ key:'captain_opening', label:'Opening Checklist', icon:'🌅', type:'daily' });
-    list.push({ key:'captain_closing', label:'Closing Checklist', icon:'🌙', type:'daily' });
-    list.push({ key:'captain_weekly', label:'Weekly Tasks', icon:'📅', type:'weekly', badge:wb });
-    list.push({ key:'captain_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'captain_opening', label:'Opening Checklist',      icon:'🌅', type:'daily' });
+    list.push({ key:'captain_closing', label:'Closing Checklist',      icon:'🌙', type:'daily' });
+    list.push({ key:'captain_weekly',  label:'Weekly Tasks',           icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'captain_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'swarmer') {
-    list.push({ key:'swarmer_opening', label:'Opening Checklist', icon:'🌅', type:'daily' });
-    list.push({ key:'swarmer_closing', label:'Closing Checklist', icon:'🌙', type:'daily' });
-    list.push({ key:'swarmer_weekly', label:'Weekly Tasks', icon:'📅', type:'weekly', badge:wb });
-    list.push({ key:'swarmer_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'swarmer_opening', label:'Opening Checklist',      icon:'🌅', type:'daily' });
+    list.push({ key:'swarmer_closing', label:'Closing Checklist',      icon:'🌙', type:'daily' });
+    list.push({ key:'swarmer_weekly',  label:'Weekly Tasks',           icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'swarmer_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'host') {
-    list.push({ key:'host_opening', label:'Opening Checklist', icon:'🌅', type:'daily' });
-    list.push({ key:'host_closing', label:'Closing Checklist', icon:'🌙', type:'daily' });
-    list.push({ key:'host_weekly', label:'Weekly Tasks', icon:'📅', type:'weekly', badge:wb });
-    list.push({ key:'host_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'host_opening',    label:'Opening Checklist',      icon:'🌅', type:'daily' });
+    list.push({ key:'host_closing',    label:'Closing Checklist',      icon:'🌙', type:'daily' });
+    list.push({ key:'host_weekly',     label:'Weekly Tasks',           icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'host_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'barista') {
-    list.push({ key:'barista_opening', label:'Café Opening', icon:'☕', type:'daily' });
-    list.push({ key:'barista_closing', label:'Café Closing', icon:'🌙', type:'daily' });
-    list.push({ key:'barista_weekly', label:'Weekly Tasks', icon:'📅', type:'weekly', badge:wb });
-    list.push({ key:'barista_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:mb });
+    list.push({ key:'barista_opening', label:'Café Opening',           icon:'☕', type:'daily' });
+    list.push({ key:'barista_closing', label:'Café Closing',           icon:'🌙', type:'daily' });
+    list.push({ key:'barista_weekly',  label:'Weekly Tasks',           icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
+    if(showMonthly) list.push({ key:'barista_monthly', label:'Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else {
-    // Other / unknown position — show placeholder
-    list.push({ key:'other_opening', label:'Opening Checklist', icon:'🌅', type:'daily', empty:true });
-    list.push({ key:'other_closing', label:'Closing Checklist', icon:'🌙', type:'daily', empty:true });
+    list.push({ key:'other_opening',   label:'Opening Checklist',      icon:'🌅', type:'daily', empty:true });
+    list.push({ key:'other_closing',   label:'Closing Checklist',      icon:'🌙', type:'daily', empty:true });
   }
 
   return list;
