@@ -1348,7 +1348,8 @@ function showMgrTab(tab, el) {
   if(tab === 'checklists')  renderMgrClHub();
 }
 
-function renderMgrClHub() {
+async function renderMgrClHub() {
+  await loadClProgressCache();
   const body = document.getElementById('mgr-cl-hub-body');
   if(!body) return;
   const savedPos = currentPosition;
@@ -2040,6 +2041,7 @@ const ALL_CHECKLISTS = {
 let currentPosition = null;
 let currentChecklistKey = null;
 let clState = {};  // {itemId: {done, rating, issue, fixed, fixNote}}
+let clProgressCache = {}; // {key: {done, total, pct}} — loaded from Supabase for hub display
 let clLogs = [];
 
 // ── DATE HELPERS ──────────────────────────────────────────────
@@ -2235,18 +2237,40 @@ function getAvailableChecklists() {
 function getClProgress(key) {
   const items = ALL_CHECKLISTS[key] || [];
   if(!items.length) return { done: 0, total: 0, pct: 0 };
-  const log = clLogs.find(l => l.key === key && l.date === getTodayStr() && !l.signed_off_at);
-  const state = log ? log.state : {};
-  let done = 0;
-  items.forEach(i => {
-    const s = state[i.id] || {};
-    if(i.type === 'check' && s.done) done++;
-    if(i.type === 'rate' && s.rating) done++;
-  });
-  return { done, total: items.length, pct: items.length ? Math.round(done/items.length*100) : 0 };
+  // Use cache if available (populated by loadClProgressCache)
+  if(clProgressCache[key]) return clProgressCache[key];
+  return { done: 0, total: items.length, pct: 0 };
 }
 
-function renderClHub() {
+async function loadClProgressCache() {
+  // Fetch today's progress for all checklists from Supabase
+  try {
+    const u = users.find(x => x.id === currentUser);
+    const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
+    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+    let url = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&signed_off_at=is.null&select=shift,items`;
+    if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
+    const res = await fetch(url, { headers: {'apikey':KEY,'Authorization':`Bearer ${KEY}`} });
+    const rows = await res.json();
+    if(!Array.isArray(rows)) return;
+    clProgressCache = {};
+    rows.forEach(r => {
+      const items = ALL_CHECKLISTS[r.shift] || [];
+      if(!items.length || !r.items) return;
+      let done = 0;
+      items.forEach(i => {
+        const s = r.items[i.id] || {};
+        if(i.type === 'check' && s.done) done++;
+        if(i.type === 'rate' && s.rating) done++;
+      });
+      clProgressCache[r.shift] = { done, total: items.length, pct: Math.round(done/items.length*100) };
+    });
+  } catch(e) { console.warn('Could not load checklist progress cache', e); }
+}
+
+async function renderClHub() {
+  await loadClProgressCache();
   const list = getAvailableChecklists();
   const body = document.getElementById('cl-hub-body');
   const u = users.find(x => x.id === currentUser);
@@ -2312,14 +2336,34 @@ function renderClHub() {
 }
 
 // ── CHECKLIST INTERACTION ─────────────────────────────────────
-function startChecklist(key) {
+async function startChecklist(key) {
   currentChecklistKey = key;
   clState = {};
-  // Load existing log for today if exists
-  const existing = clLogs.find(l => l.key === key && l.date === getTodayStr() && !l.signed_off_at);
-  if(existing) clState = existing.state || {};
+
+  // Show checklist screen immediately with empty state
   renderChecklist();
   showScreen('s-checklist');
+
+  // Fetch today's existing progress from Supabase (within 12 hours)
+  try {
+    const u = users.find(x => x.id === currentUser);
+    const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
+    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+
+    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&signed_off_at=is.null&order=created_at.desc&limit=1`;
+    if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
+
+    const res = await fetch(url, {
+      headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` }
+    });
+    const rows = await res.json();
+    if(Array.isArray(rows) && rows[0] && rows[0].items) {
+      clState = rows[0].items;
+      renderChecklist(); // re-render with restored state
+      showToast('Progress restored ✓');
+    }
+  } catch(e) { console.warn('Could not restore checklist progress', e); }
 }
 
 function renderChecklist() {
@@ -2465,6 +2509,17 @@ function autoSaveCl() {
 }
 
 async function saveClProgress(signedOff = false) {
+  // Update local cache immediately
+  if(currentChecklistKey) {
+    const items = ALL_CHECKLISTS[currentChecklistKey] || [];
+    let done = 0;
+    items.forEach(i => {
+      const s = clState[i.id] || {};
+      if(i.type === 'check' && s.done) done++;
+      if(i.type === 'rate' && s.rating) done++;
+    });
+    clProgressCache[currentChecklistKey] = { done, total: items.length, pct: items.length ? Math.round(done/items.length*100) : 0 };
+  }
   // Get name from current user, or fall back to role label
   const u = users.find(x => x.id === currentUser);
   const personName = u ? u.name : (currentRole === 'manager' ? 'Manager' : 'Unknown');
