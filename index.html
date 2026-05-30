@@ -487,6 +487,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .sr-shift-header { display:flex; justify-content:space-between; align-items:center; font-size:13px; font-weight:700; color:#174854; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(23,72,84,.08); }
     .sr-locked-val { padding:7px 10px; background:rgba(23,72,84,.04); border:1.5px solid rgba(23,72,84,.1); border-radius:7px; font-size:13px; color:rgba(23,72,84,.7); min-height:34px; }
 
+  
+    /* ── SHIFT REPORT MULTI-CHECK ── */
+    .sr-multi-check { display:flex; flex-wrap:wrap; gap:6px; padding:4px 0; }
+    .sr-multi-opt { padding:5px 11px; border-radius:20px; border:1.5px solid rgba(23,72,84,.2); font-size:12px; font-weight:600; color:rgba(23,72,84,.55); cursor:pointer; transition:all .12s; user-select:none; }
+    .sr-multi-opt.sel { background:#174854; color:#fff; border-color:#174854; }
+    .sr-multi-opt:hover:not(.sel) { border-color:#174854; color:#174854; }
+
   </style>
 </head>
 <body>
@@ -1688,6 +1695,9 @@ async function renderShiftReportForm() {
   const u = users.find(x => x.id === currentUser);
   if(!u) { panel.innerHTML = '<div style="padding:24px;color:rgba(23,72,84,.4);">No user found.</div>'; return; }
 
+  // Load team roster for multi-check fields
+  await loadSrTeam();
+
   // Load today's shared report (any manager)
   try {
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
@@ -1712,6 +1722,91 @@ async function renderShiftReportForm() {
 
   panel.innerHTML = buildSrHTML(u.name, today, dayName, amLocked, pmSubmitted);
   srUpdateSummary();
+}
+
+// Generate 30-min time options 6:00 AM – 11:30 PM
+function srTimeOptions(selectedVal) {
+  let opts = '<option value="">— select —</option>';
+  for(let h = 6; h <= 23; h++) {
+    for(let m of [0, 30]) {
+      if(h === 23 && m === 30) continue;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const h12  = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const mStr = m === 0 ? '00' : '30';
+      const label = `${h12}:${mStr} ${ampm}`;
+      const val   = label;
+      opts += `<option value="${val}"${selectedVal===val?' selected':''}>${label}</option>`;
+    }
+  }
+  return opts;
+}
+
+function srTimeSel(key, locked) {
+  if(locked) return `<div class="sr-locked-val">${srGet(key)||'—'}</div>`;
+  return `<select class="sr-inp" onchange="srSet('${key}',this.value)">${srTimeOptions(srGet(key))}</select>`;
+}
+
+// Multi-select checklist for team members filtered by position
+// srTeam is loaded once per renderShiftReportForm
+let srTeamByPos = {}; // { Host: [{id,name},...], Bartender: [...], ... }
+
+async function loadSrTeam() {
+  try {
+    const res = await fetch('${SUPA_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role',
+      {headers:{'apikey':'${SUPA_KEY}','Authorization':'Bearer ${SUPA_KEY}'}});
+    const rows = await res.json();
+    srTeamByPos = {};
+    if(!Array.isArray(rows)) return;
+    rows.forEach(r => {
+      (r.positions||[]).forEach(pos => {
+        if(!srTeamByPos[pos]) srTeamByPos[pos] = [];
+        srTeamByPos[pos].push({id:r.id, name:r.name});
+      });
+    });
+  } catch(e) { console.warn('SR team load failed', e); }
+}
+
+function srMultiCheck(key, positions, locked) {
+  // Gather candidates from all given positions
+  const seen = new Set();
+  const candidates = [];
+  (Array.isArray(positions) ? positions : [positions]).forEach(pos => {
+    (srTeamByPos[pos] || []).forEach(m => {
+      if(!seen.has(m.name)) { seen.add(m.name); candidates.push(m.name); }
+    });
+  });
+
+  const selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
+
+  if(locked) return `<div class="sr-locked-val">${selected.join(', ')||'—'}</div>`;
+
+  if(!candidates.length) {
+    // Fallback to plain input if no team loaded
+    return `<input class="sr-inp" placeholder="Type names..." value="${srGet(key)}" oninput="srSet('${key}',this.value)" />`;
+  }
+
+  return `<div class="sr-multi-check">
+    ${candidates.map(name => {
+      const checked = selected.includes(name);
+      return `<label class="sr-multi-opt${checked?' sel':''}">
+        <input type="checkbox" ${checked?'checked':''} onchange="srToggleName('${key}','${name}',this.checked)" style="display:none;">
+        ${name}
+      </label>`;
+    }).join('')}
+  </div>`;
+}
+
+function srToggleName(key, name, checked) {
+  let selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(checked) { if(!selected.includes(name)) selected.push(name); }
+  else { selected = selected.filter(n => n !== name); }
+  srSet(key, selected.join(', '));
+  // Update visual immediately
+  const container = document.querySelector(`[data-sr-key="${key}"]`);
+  if(container) container.querySelectorAll('.sr-multi-opt').forEach(opt => {
+    const nm = opt.textContent.trim();
+    opt.classList.toggle('sel', selected.includes(nm));
+  });
 }
 
 function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
@@ -1749,11 +1844,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 
       ${sec('AM MANAGER')}
       ${row2(`<div>${lbl('Manager Name')}${inp('am_manager_name','Manager name',undefined,AL)}</div>`,
-              `<div>${lbl('Shift Start')}${inp('am_shift_start','e.g. 9:00 AM',undefined,AL)}</div>`)}
-      ${lbl('Shift End')}${inp('am_shift_end','e.g. 2:00 PM',undefined,AL)}
+              `<div>${lbl('Shift Start')}${srTimeSel('am_shift_start',AL)}</div>`)}
+      ${lbl('Shift End')}${srTimeSel('am_shift_end',AL)}
 
       ${sec('AM · COURT RESERVATIONS')}
-      ${row2(`<div>${lbl('Counted up until')}${inp('am_count_time','Time',undefined,AL)}</div>`,
+      ${row2(`<div>${lbl('Counted up until')}${srTimeSel('am_count_time',AL)}</div>`,
               `<div>${lbl('AM Court Reservations')}${inp('am_court_res','#',undefined,AL)}</div>`)}
 
       ${sec('AM · EVENTS & PROGRAMMING')}
@@ -1762,13 +1857,13 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${lbl('Programming (on/off court)')}${inp('am_programming','Programming notes',undefined,AL)}
 
       ${sec('AM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}${inp('am_host_desk','Host desk',undefined,AL)}</div>`,
-              `<div>${lbl('Café')}${inp('am_cafe','Café',undefined,AL)}</div>`)}
-      ${row2(`<div>${lbl('Captain(s)')}${inp('am_captains','Captain(s)',undefined,AL)}</div>`,
-              `<div>${lbl('Team Lead')}${inp('am_team_lead','Team lead',undefined,AL)}</div>`)}
-      ${row2(`<div>${lbl('Swarmer')}${inp('am_swarmer','Swarmer',undefined,AL)}</div>`,
-              `<div>${lbl('Bar')}${inp('am_bar','Bar',undefined,AL)}</div>`)}
-      ${lbl('Staffing Adjustments')}${inp('am_staffing','Any staffing changes...',undefined,AL)}
+      ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="am_host_desk">${srMultiCheck('am_host_desk',['Host'],AL)}</div></div>`,
+              `<div>${lbl('Café')}<div data-sr-key="am_cafe">${srMultiCheck('am_cafe',['Barista'],AL)}</div></div>`)}
+      ${row2(`<div>${lbl('Captain(s)')}<div data-sr-key="am_captains">${srMultiCheck('am_captains',['Captain'],AL)}</div></div>`,
+              `<div>${lbl('Team Lead')}<div data-sr-key="am_team_lead">${srMultiCheck('am_team_lead',['Manager'],AL)}</div></div>`)}
+      ${row2(`<div>${lbl('Swarmer')}<div data-sr-key="am_swarmer">${srMultiCheck('am_swarmer',['Swarmer'],AL)}</div></div>`,
+              `<div>${lbl('Bar')}<div data-sr-key="am_bar">${srMultiCheck('am_bar',['Bartender'],AL)}</div></div>`)}
+      ${lbl('Staffing Adjustments')}${inp('am_staffing','Any cuts, callouts, adjustments...',undefined,AL)}
       ${lbl('Coaching & Feedback Notes')}${ta('am_coaching','Shoutouts, coaching conversations, corrections...',3,AL)}
 
       ${sec('AM · COMPS (anecdotal — PM adds $)')}
@@ -1799,8 +1894,8 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 
       ${sec('PM MANAGER')}
       ${row2(`<div>${lbl('Manager Name')}${inp('pm_manager_name','Manager name',undefined,PL)}</div>`,
-              `<div>${lbl('Shift Start')}${inp('pm_shift_start','e.g. 2:00 PM',undefined,PL)}</div>`)}
-      ${lbl('Shift End')}${inp('pm_shift_end','e.g. 11:00 PM',undefined,PL)}
+              `<div>${lbl('Shift Start')}${srTimeSel('pm_shift_start',PL)}</div>`)}
+      ${lbl('Shift End')}${srTimeSel('pm_shift_end',PL)}
 
       ${sec('PM · COURT RESERVATIONS & COVERS')}
       ${row2(`<div>${lbl('PM Court Reservations')}${inp('pm_court_res','#',undefined,PL)}</div>`,
@@ -1826,11 +1921,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${lbl('Programming (on/off court)')}${inp('pm_programming','Programming notes',undefined,PL)}
 
       ${sec('PM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}${inp('pm_host_desk','Host desk',undefined,PL)}</div>`,
-              `<div>${lbl('Captain(s)')}${inp('pm_captains','Captain(s)',undefined,PL)}</div>`)}
-      ${row2(`<div>${lbl('Team Lead')}${inp('pm_team_lead','Team lead',undefined,PL)}</div>`,
-              `<div>${lbl('Bar')}${inp('pm_bar','Bar',undefined,PL)}</div>`)}
-      ${row2(`<div>${lbl('Swarmer')}${inp('pm_swarmer','Swarmer',undefined,PL)}</div>`,
+      ${row2(`<div>${lbl('Host Desk')}<div data-sr-key="pm_host_desk">${srMultiCheck('pm_host_desk',['Host'],PL)}</div></div>`,
+              `<div>${lbl('Captain(s)')}<div data-sr-key="pm_captains">${srMultiCheck('pm_captains',['Captain'],PL)}</div></div>`)}
+      ${row2(`<div>${lbl('Team Lead')}<div data-sr-key="pm_team_lead">${srMultiCheck('pm_team_lead',['Manager'],PL)}</div></div>`,
+              `<div>${lbl('Bar')}<div data-sr-key="pm_bar">${srMultiCheck('pm_bar',['Bartender'],PL)}</div></div>`)}
+      ${row2(`<div>${lbl('Swarmer')}<div data-sr-key="pm_swarmer">${srMultiCheck('pm_swarmer',['Swarmer'],PL)}</div></div>`,
               `<div>${lbl('Staffing Adjustments')}${inp('pm_staffing','Adjustments...',undefined,PL)}</div>`)}
       ${lbl('Coaching & Feedback Notes')}${ta('pm_coaching','Shoutouts, coaching conversations, corrections...',3,PL)}
 
