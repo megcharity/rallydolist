@@ -1867,6 +1867,7 @@ async function renderShiftReportForm() {
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
   const pmSubmitted = !!srData.pm_submitted;
+  const pastMidnight = srIsPastMidnight();
   const amLocked = (srAmLocked && !srAmEditMode) || pastMidnight;
 
   panel.innerHTML = buildSrHTML(u.name, today, dayName, amLocked, pmSubmitted);
@@ -2143,6 +2144,7 @@ function srSetCount(key, val) {
 }
 
 function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
+  const pastMidnight = srIsPastMidnight();
   const d = new Date();
   const dayName2 = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
@@ -2220,8 +2222,6 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
     </div>`;
 
   // ── PM SECTION ────────────────────────────────────────────────
-  // Past midnight = both sections fully locked (read-only)
-  const pastMidnight = srIsPastMidnight();
   const PL = pmSubmitted && !srPmEditMode || pastMidnight;
 
   const pmSection = `
