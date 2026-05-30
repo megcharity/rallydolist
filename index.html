@@ -2193,10 +2193,6 @@ function getAvailableChecklists() {
     list.push({ key:'manager_closing', label:'Closing Checklist',      icon:'🌙', type:'daily' });
     list.push({ key:'manager_weekly',  label:'Weekly Manager Tasks',   icon:'📅', type:'weekly',  badge:weeklyBadge, overdue:weeklyOverdue });
     if(showMonthly) list.push({ key:'manager_monthly', label:'Monthly Manager Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
-    list.push({ key:'bar_opening',     label:'Bar Opening',            icon:'🍺', type:'daily' });
-    list.push({ key:'bar_closing',     label:'Bar Closing',            icon:'🍺', type:'daily' });
-    list.push({ key:barWeeklyKey||'bar_weekly_mon', label:'Bar Weekly Tasks', icon:'📅', type:'weekly', badge:weeklyBadge, overdue:weeklyOverdue });
-    if(showMonthly) list.push({ key:'bar_monthly', label:'Bar Monthly Tasks', icon:'🗓', type:'monthly', badge:monthlyBadge });
 
   } else if(pos === 'bartender') {
     list.push({ key:'bar_opening',     label:'Bar Opening',            icon:'🌅', type:'daily' });
@@ -2376,11 +2372,11 @@ function renderClItem(item) {
 
   if(item.type === 'check') {
     return `<div class="cl-item ${cls}" id="clitem-${item.id}">
-      <div class="cl-item-row" onclick="toggleClItem('${item.id}')">
+      <button class="cl-item-row" onclick="toggleClItem('${item.id}')" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:0;font:inherit;display:flex;align-items:flex-start;gap:10px;">
         <div class="cl-item-check"><span class="cl-item-tick">✓</span></div>
         <div class="cl-item-text">${item.text}</div>
         ${item.link ? `<a href="${item.link}" target="_blank" class="cl-ref-link" onclick="event.stopPropagation()">Ref ↗</a>` : ''}
-      </div>
+      </button>
     </div>`;
   }
 
@@ -2441,7 +2437,10 @@ function refreshClItem(id) {
   const item = items.find(i => i.id === id);
   if(!item) return;
   const el = document.getElementById('clitem-' + id);
-  if(el) el.outerHTML = renderClItem(item);
+  if(!el) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = renderClItem(item);
+  el.replaceWith(tmp.firstElementChild);
 }
 
 function updateClProgress() {
