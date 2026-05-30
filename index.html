@@ -677,11 +677,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
     <button class="nav-tab" onclick="showMgrTab('completed',this)">Completed</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
+    <button class="nav-tab" onclick="showMgrTab('scorecard',this)">Scorecard</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
   <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-body"></div></div>
   <div id="mgr-tab-completed" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-completed-body"></div></div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
+  <div id="mgr-tab-scorecard" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
   <div id="mgr-tab-people" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="people-body"></div></div>
 </div>
 
@@ -1341,11 +1343,13 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'flex' : 'none';
   document.getElementById('mgr-tab-completed').style.display   = tab === 'completed'   ? 'flex' : 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
+  document.getElementById('mgr-tab-scorecard').style.display   = tab === 'scorecard'   ? 'block' : 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
   if(tab === 'people')      renderPeople();
   if(tab === 'tasks')       renderMgr();
   if(tab === 'completed')   renderMgrCompleted();
   if(tab === 'checklists')  renderMgrClHub();
+  if(tab === 'scorecard')   renderScorecard();
 }
 
 async function renderMgrClHub() {
@@ -1470,6 +1474,77 @@ function savePerson(){}
 function deletePerson(){}
 
 
+
+async function renderScorecard() {
+  const body = document.getElementById('scorecard-body');
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading scorecard...</div>';
+
+  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await res.json();
+
+    if(!Array.isArray(rows) || !rows.length) {
+      body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No scores yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Scores are recorded when the opening manager completes the Arrival Walkthrough.</span></div>';
+      return;
+    }
+
+    // Group by manager
+    const byManager = {};
+    rows.forEach(r => {
+      if(!byManager[r.graded_manager]) byManager[r.graded_manager] = [];
+      byManager[r.graded_manager].push(r);
+    });
+
+    let html = '<div style="padding:16px 16px 80px;">';
+
+    // Summary cards per manager
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
+    Object.entries(byManager).forEach(([mgr, scores]) => {
+      const avg = Math.round(scores.reduce((s,r) => s+r.score, 0) / scores.length);
+      const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : 'D';
+      html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">${mgr}</div>
+        <div style="font-size:48px;font-weight:800;color:${gradeColor(grade)};line-height:1;font-family:'Cormorant Garamond',serif;">${grade}</div>
+        <div style="font-size:12px;color:rgba(23,72,84,.4);margin-top:4px;">${avg}% avg · ${scores.length} shift${scores.length!==1?'s':''}</div>
+      </div>`;
+    });
+    html += '</div>';
+
+    // Detailed history table
+    html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:rgba(23,72,84,.03);">
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Date</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Closing Manager</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Graded By</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Grade</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Score</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map((r,i) => `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};">
+            <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
+            <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
+            <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
+            <td style="padding:11px 14px;text-align:center;">
+              <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
+            </td>
+            <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.score}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+    html += '</div>';
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(220,80,60,.6);">Failed to load scorecard.</div>';
+    console.warn('Scorecard load failed', e);
+  }
+}
 function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
@@ -2584,6 +2659,69 @@ async function saveClProgress(signedOff = false) {
   } catch(e) { console.warn('Checklist save failed', e); }
 }
 
+
+// ── SCORECARD ─────────────────────────────────────────────────────────────
+// Walkthrough item IDs (mo_01–mo_22) grade the closing manager
+const WALKTHROUGH_IDS = ['mo_01','mo_02','mo_03','mo_04','mo_05','mo_06','mo_07','mo_08','mo_09','mo_10','mo_11','mo_12','mo_13','mo_14','mo_15','mo_16','mo_17','mo_18','mo_19','mo_20','mo_21','mo_22'];
+
+function calcWalkthroughScore(items) {
+  // items = clState object, only score walkthrough IDs that were rated
+  const rated = WALKTHROUGH_IDS.filter(id => items[id] && items[id].rating);
+  if(!rated.length) return null;
+  const pts = rated.reduce((sum, id) => {
+    const r = items[id].rating;
+    return sum + (r === 'good' ? 100 : r === 'needs' ? 50 : 0);
+  }, 0);
+  const pct = Math.round(pts / rated.length);
+  const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
+  return { pct, grade, rated: rated.length, total: WALKTHROUGH_IDS.length };
+}
+
+function gradeColor(grade) {
+  return {A:'#4e622c', B:'#174854', C:'#c87a00', D:'#c04020'}[grade] || '#174854';
+}
+function gradeBg(grade) {
+  return {A:'rgba(78,98,44,.12)', B:'rgba(23,72,84,.08)', C:'rgba(200,122,0,.12)', D:'rgba(192,64,32,.1)'}[grade] || 'transparent';
+}
+
+async function submitWalkthroughScore(items) {
+  // Called at sign-off of opening checklist — score the previous closing manager
+  const score = calcWalkthroughScore(items);
+  if(!score) return; // no walkthrough items rated
+
+  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+
+  // Find the most recent closing sign-off from yesterday or today
+  const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+  const yStr = yesterday.toISOString().slice(0,10);
+  const todayStr = getTodayStr();
+
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&signed_off_at=not.is.null&order=signed_off_at.desc&limit=1&select=manager_name,date`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await res.json();
+    const closingManager = Array.isArray(rows) && rows[0] ? rows[0].manager_name : 'Unknown';
+
+    const u = users.find(x => x.id === currentUser);
+    const gradingManager = u ? u.name : 'Manager';
+
+    const payload = {
+      shift_date: yStr,
+      graded_manager: closingManager,
+      grading_manager: gradingManager,
+      score: score.pct,
+      grade: score.grade,
+      items_rated: score.rated,
+      created_at: new Date().toISOString()
+    };
+
+    await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+    console.log(`Score submitted: ${closingManager} got ${score.grade} (${score.pct}%)`);
+  } catch(e) { console.warn('Score submit failed', e); }
+}
+
 async function signOffChecklist() {
   const items = ALL_CHECKLISTS[currentChecklistKey] || [];
   let done = 0;
@@ -2596,6 +2734,10 @@ async function signOffChecklist() {
   const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
   if(!confirm(msg)) return;
   await saveClProgress(true);
+  // If this is the opening checklist, score the closing manager
+  if(currentChecklistKey === 'manager_opening') {
+    await submitWalkthroughScore(clState);
+  }
   showToast('Checklist signed off! ✅');
   currentChecklistKey = null;
   clState = {};
