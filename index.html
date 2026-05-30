@@ -465,7 +465,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-fixed-btn.yes.sel{background:rgba(78,98,44,.12);border-color:var(--olive);color:var(--olive);}
 .cl-fixed-btn.no.sel{background:rgba(245,134,100,.15);border-color:var(--coral);color:#c04020;}
 
-</style>
+
+    /* ── SHIFT REPORT FORM ── */
+    .sr-section-header { font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:rgba(23,72,84,.4); padding:16px 0 8px; border-top:1px solid rgba(23,72,84,.08); margin-top:8px; }
+    .sr-section-header:first-child { border-top:none; margin-top:0; }
+    .sr-label { font-size:11px; font-weight:600; color:rgba(23,72,84,.5); margin-bottom:4px; margin-top:10px; }
+    .sr-inp { width:100%; padding:8px 10px; border:1.5px solid rgba(23,72,84,.18); border-radius:7px; font-size:13px; font-family:inherit; color:#174854; background:#fff; box-sizing:border-box; }
+    .sr-inp:focus { outline:none; border-color:#174854; }
+    .sr-ta { width:100%; padding:8px 10px; border:1.5px solid rgba(23,72,84,.18); border-radius:7px; font-size:13px; font-family:inherit; color:#174854; background:#fff; box-sizing:border-box; resize:vertical; }
+    .sr-ta:focus { outline:none; border-color:#174854; }
+    .sr-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .sr-event-block { background:rgba(23,72,84,.02); border:1px solid rgba(23,72,84,.08); border-radius:8px; padding:12px; margin-bottom:10px; }
+    .sr-event-title { font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:rgba(23,72,84,.35); margin-bottom:8px; }
+    .sr-computed { font-size:15px; font-weight:700; color:#174854; }
+    @media(max-width:600px) { .sr-row2 { grid-template-columns:1fr; } }
+
+  </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -678,12 +693,14 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab" onclick="showMgrTab('completed',this)">Completed</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('scorecard',this)">Scorecard</button>
+    <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
   <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-body"></div></div>
   <div id="mgr-tab-completed" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-completed-body"></div></div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
   <div id="mgr-tab-scorecard" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
+  <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
   <div id="mgr-tab-people" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="people-body"></div></div>
 </div>
 
@@ -1350,6 +1367,8 @@ function showMgrTab(tab, el) {
   if(tab === 'completed')   renderMgrCompleted();
   if(tab === 'checklists')  renderMgrClHub();
   if(tab === 'scorecard')   renderScorecard();
+  document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
+  if(tab === 'shiftreport') renderShiftReportForm();
 }
 
 async function renderMgrClHub() {
@@ -1545,6 +1564,250 @@ async function renderScorecard() {
     console.warn('Scorecard load failed', e);
   }
 }
+
+// ── SHIFT REPORT ──────────────────────────────────────────────────────────
+let srData = {}; // current shift report data
+let srSaveTimer = null;
+
+function srGet(key) { return srData[key] || ''; }
+function srSet(key, val) {
+  srData[key] = val;
+  clearTimeout(srSaveTimer);
+  srSaveTimer = setTimeout(srAutoSave, 2000);
+}
+
+async function srAutoSave() {
+  const u = users.find(x => x.id === currentUser);
+  if(!u) return;
+  const today = getTodayStr();
+  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  const payload = { date: today, manager: u.name, data: srData, submitted: false };
+  try {
+    const check = await fetch(`${SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&manager=eq.${encodeURIComponent(u.name)}&submitted=eq.false&select=id&limit=1`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await check.json();
+    if(Array.isArray(rows) && rows[0]) {
+      await fetch(`${SUPA}/rest/v1/rally_shift_reports?id=eq.${rows[0].id}`, {method:'PATCH',headers:hdrs,body:JSON.stringify(payload)});
+    } else {
+      await fetch(`${SUPA}/rest/v1/rally_shift_reports`, {method:'POST',headers:hdrs,body:JSON.stringify(payload)});
+    }
+  } catch(e) { console.warn('Shift report save failed', e); }
+}
+
+async function srSubmit() {
+  await srAutoSave();
+  const u = users.find(x => x.id === currentUser);
+  const today = getTodayStr();
+  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  try {
+    const check = await fetch(`${SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&manager=eq.${encodeURIComponent(u.name)}&submitted=eq.false&select=id&limit=1`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await check.json();
+    if(Array.isArray(rows) && rows[0]) {
+      await fetch(`${SUPA}/rest/v1/rally_shift_reports?id=eq.${rows[0].id}`,
+        {method:'PATCH',headers:hdrs,body:JSON.stringify({submitted:true,submitted_at:new Date().toISOString()})});
+    }
+    showToast('Shift report submitted ✅');
+    renderShiftReportForm(); // re-render to show submitted state
+  } catch(e) { alert('Submit failed. Try again.'); }
+}
+
+async function renderShiftReportForm() {
+  const panel = document.getElementById('mgr-tab-shiftreport');
+  const u = users.find(x => x.id === currentUser);
+  if(!u) { panel.innerHTML = '<div style="padding:24px;color:rgba(23,72,84,.4);">No user found.</div>'; return; }
+
+  const today = getTodayStr();
+  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+
+  // Load existing draft or submitted report for today
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&manager=eq.${encodeURIComponent(u.name)}&order=id.desc&limit=1`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await res.json();
+    if(Array.isArray(rows) && rows[0]) {
+      srData = rows[0].data || {};
+      if(rows[0].submitted) {
+        panel.innerHTML = renderSrSubmittedView(rows[0], u.name, today);
+        return;
+      }
+    } else {
+      srData = {};
+    }
+  } catch(e) { srData = {}; }
+
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const isAM = d.getHours() < 14; // Before 2pm = AM shift
+
+  panel.innerHTML = renderSrForm(u.name, today, dayName, isAM);
+}
+
+function renderSrSubmittedView(row, managerName, today) {
+  return `<div style="padding:24px;">
+    <div style="background:rgba(78,98,44,.08);border:1.5px solid rgba(78,98,44,.3);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:20px;">✅</span>
+      <div><strong>Shift report submitted</strong><div style="font-size:12px;color:rgba(23,72,84,.5);margin-top:2px;">Submitted by ${managerName} · ${today}</div></div>
+    </div>
+    ${renderSrReadOnly(row.data)}
+  </div>`;
+}
+
+function renderSrReadOnly(d) {
+  if(!d) return '';
+  const field = (label, val) => val ? `<div style="margin-bottom:10px;"><div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:2px;">${label}</div><div style="font-size:13px;color:#174854;">${val}</div></div>` : '';
+  return `<div style="display:grid;gap:16px;">
+    ${renderSrSectionRO('AM SHIFT', d, 'am')}
+    ${renderSrSectionRO('PM SHIFT', d, 'pm')}
+    ${renderSrEventsRO(d)}
+  </div>`;
+}
+
+function renderSrSectionRO(title, d, pfx) {
+  const f = (l, k) => d[pfx+'_'+k] ? `<div style="margin-bottom:8px;"><span style="font-size:11px;font-weight:600;color:rgba(23,72,84,.5);">${l}: </span><span style="font-size:13px;color:#174854;">${d[pfx+'_'+k]}</span></div>` : '';
+  return `<div style="background:#fff;border:1.5px solid rgba(23,72,84,.1);border-radius:10px;padding:16px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:12px;">${title}</div>
+    ${f('Manager',pfx==='am'?'manager_name':'manager_name')}
+    ${f('Shift Start','shift_start')} ${f('Shift End','shift_end')}
+    ${f('Court Reservations','court_res')} ${f('Peak Times','peak_times')}
+    ${f('Events','events')} ${f('Programming','programming')}
+    ${f('Team - Host Desk','host_desk')} ${f('Café','cafe')}
+    ${f('Captain(s)','captains')} ${f('Team Lead','team_lead')}
+    ${f('Swarmer','swarmer')} ${f('Bar','bar')}
+    ${f('Staffing Adjustments','staffing')}
+    ${f('Coaching Notes','coaching')}
+    ${f('Comp Notes','comp_notes')}
+    ${f('Positive Comps $','pos_comps_amt')} ${f('Negative Comps $','neg_comps_amt')}
+    ${f('86\'d Food','eighty_food')} ${f('86\'d Bar','eighty_bar')}
+    ${f('R&M Issues','rm_issues')}
+    ${f('Shift Notes','shift_notes')}
+  </div>`;
+}
+
+function renderSrEventsRO(d) {
+  let html = '';
+  for(let i=1;i<=6;i++) {
+    if(!d['ev'+i+'_name']) continue;
+    html += `<div style="background:#fff;border:1.5px solid rgba(23,72,84,.1);border-radius:10px;padding:16px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">EVENT ${i}</div>
+      <div style="font-size:14px;font-weight:700;color:#174854;margin-bottom:8px;">${d['ev'+i+'_name']} ${d['ev'+i+'_rating'] ? '· '+d['ev'+i+'_rating']+'/5 ⭐' : ''}</div>
+      ${d['ev'+i+'_well'] ? '<div style="margin-bottom:6px;font-size:12px;"><strong>Went well:</strong> '+d['ev'+i+'_well']+'</div>' : ''}
+      ${d['ev'+i+'_improve'] ? '<div style="margin-bottom:6px;font-size:12px;"><strong>Could improve:</strong> '+d['ev'+i+'_improve']+'</div>' : ''}
+      ${d['ev'+i+'_poc'] ? '<div style="margin-bottom:6px;font-size:12px;"><strong>POC feedback:</strong> '+d['ev'+i+'_poc']+'</div>' : ''}
+      ${d['ev'+i+'_followup'] ? '<div style="font-size:12px;color:#c87a00;"><strong>Follow-up:</strong> '+d['ev'+i+'_followup']+'</div>' : ''}
+    </div>`;
+  }
+  return html || '';
+}
+
+function renderSrForm(managerName, today, dayName, isAM) {
+  const inp = (id, placeholder='', type='text') =>
+    `<input type="${type}" class="sr-inp" id="sr_${id}" placeholder="${placeholder}" value="${srGet(id)}" oninput="srSet('${id}',this.value)" />`;
+  const ta = (id, placeholder='', rows=2) =>
+    `<textarea class="sr-ta" id="sr_${id}" rows="${rows}" placeholder="${placeholder}" oninput="srSet('${id}',this.value)">${srGet(id)}</textarea>`;
+  const sec = (title) =>
+    `<div class="sr-section-header">${title}</div>`;
+  const row2 = (a, b) =>
+    `<div class="sr-row2">${a}${b}</div>`;
+
+  const shift = (pfx, title, isClosing) => `
+    ${sec(title)}
+    <div class="sr-label">Manager</div>
+    ${row2(inp(pfx+'_manager_name', 'Manager name'), '')}
+    ${row2(inp(pfx+'_shift_start','Shift start'), inp(pfx+'_shift_end','Shift end'))}
+
+    ${sec(pfx.toUpperCase()+' · COURT RESERVATIONS')}
+    ${row2(inp(pfx+'_count_time','Counted up until (time)'), inp(pfx+'_court_res','Court reservations'))}
+    ${isClosing ? row2('<div><div class="sr-label">Covers on Toast</div>'+inp(pfx+'_covers','Covers on Toast')+'</div>','<div><div class="sr-label">Food Sales ($)</div>'+inp(pfx+'_food_sales','$0.00')+'</div>') : ''}
+    ${isClosing ? row2('<div><div class="sr-label">Bev Sales ($)</div>'+inp(pfx+'_bev_sales','$0.00')+'</div>','') : ''}
+
+    ${sec(pfx.toUpperCase()+' · EVENTS & PROGRAMMING')}
+    ${row2('<div><div class="sr-label">Events on shift</div>'+inp(pfx+'_events','Events on shift')+'</div>','<div><div class="sr-label">Peak times</div>'+inp(pfx+'_peak_times','Peak times')+'</div>')}
+    <div class="sr-label">Programming (on/off court)</div>
+    ${inp(pfx+'_programming','Programming notes')}
+
+    ${sec(pfx.toUpperCase()+' · TEAM')}
+    ${row2('<div><div class="sr-label">Host Desk</div>'+inp(pfx+'_host_desk','Host desk')+'</div>','<div><div class="sr-label">Café</div>'+inp(pfx+'_cafe','Café')+'</div>')}
+    ${row2('<div><div class="sr-label">Captain(s)</div>'+inp(pfx+'_captains','Captain(s)')+'</div>','<div><div class="sr-label">Team Lead</div>'+inp(pfx+'_team_lead','Team lead')+'</div>')}
+    ${row2('<div><div class="sr-label">Swarmer</div>'+inp(pfx+'_swarmer','Swarmer')+'</div>','<div><div class="sr-label">Bar</div>'+inp(pfx+'_bar','Bar')+'</div>')}
+    <div class="sr-label">Staffing Adjustments</div>
+    ${inp(pfx+'_staffing','Any staffing changes this shift...')}
+    <div class="sr-label">Coaching & Feedback Notes</div>
+    ${ta(pfx+'_coaching','Shoutouts, coaching conversations, corrections...',3)}
+
+    ${sec(pfx.toUpperCase()+' · COMPS')}
+    ${isClosing ? row2('<div><div class="sr-label">Positive Comps ($)</div>'+inp(pfx+'_pos_comps_amt','$0.00')+'</div>','<div><div class="sr-label">Negative Comps ($)</div>'+inp(pfx+'_neg_comps_amt','$0.00')+'</div>') : ''}
+    <div class="sr-label">${isClosing ? 'Positive Comp Notes' : 'Comp Notes (anecdotal — PM adds $)'}</div>
+    ${ta(pfx+'_comp_notes','Who, why, context...',2)}
+    ${isClosing ? '<div class="sr-label">Negative Comp Notes <span style=\"color:#c04020;font-size:10px;\">(required)</span></div>'+ta(pfx+'_neg_comp_notes','Required: who, reason, manager who approved...',2) : ''}
+
+    ${sec(pfx.toUpperCase()+' · 86\'D ITEMS')}
+    ${row2('<div><div class="sr-label">Food</div>'+ta(pfx+'_eighty_food','Food items 86\'d...',2)+'</div>','<div><div class="sr-label">Bar / Beverage</div>'+ta(pfx+'_eighty_bar','Bar/bev items 86\'d...',2)+'</div>')}
+
+    ${sec(pfx.toUpperCase()+' · REPAIRS, MAINTENANCE & CLEANING')}
+    ${ta(pfx+'_rm_issues','Maintenance issues, cleaning flags, R&M follow-ups...',3)}
+
+    ${sec(pfx.toUpperCase()+' · ' + (isClosing ? 'SHIFT NOTES & CLOSE' : 'SHIFT NOTES & HANDOFF TO PM'))}
+    ${ta(pfx+'_shift_notes', isClosing ? 'End of night notes. What went well, what needs following up, anything for tomorrow...' : 'Notes for the PM manager. What went well, what needs following up, anything PM needs to know...', 4)}
+  `;
+
+  // Events section
+  let evHtml = sec('EVENTS');
+  for(let i=1;i<=6;i++) {
+    evHtml += `
+      <div class="sr-event-block">
+        <div class="sr-event-title">EVENT ${i}</div>
+        ${row2('<div style="flex:2"><div class="sr-label">Event Name</div>'+inp('ev'+i+'_name','Event name')+'</div>','<div style="flex:1"><div class="sr-label">Rating (1–5)</div>'+inp('ev'+i+'_rating','1–5','number')+'</div>')}
+        <div class="sr-label">What went well</div>
+        ${ta('ev'+i+'_well','Notes...',2)}
+        <div class="sr-label">What could be improved</div>
+        ${ta('ev'+i+'_improve','Notes...',2)}
+        <div class="sr-label">Feedback from POC</div>
+        ${ta('ev'+i+'_poc','Notes...',2)}
+        ${row2('<div><div class="sr-label">Follow-up needed?</div>'+inp('ev'+i+'_need_followup','Yes/No')+'</div>','<div style="flex:2"><div class="sr-label">Follow-up notes</div>'+inp('ev'+i+'_followup','Follow-up notes')+'</div>')}
+      </div>`;
+  }
+
+  // Day Summary (PM only)
+  const daySummary = `
+    ${sec('DAY SUMMARY')}
+    <div style="background:rgba(23,72,84,.03);border:1px solid rgba(23,72,84,.1);border-radius:8px;padding:16px;margin-bottom:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div><div class="sr-label">Total Court Reservations</div><div class="sr-computed" id="sr_total_court_res">—</div></div>
+        <div><div class="sr-label">Covers on Toast</div><div class="sr-computed" id="sr_total_covers">${srGet('pm_covers')||'—'}</div></div>
+        <div><div class="sr-label">Food Sales</div><div class="sr-computed">${srGet('pm_food_sales') ? '$'+parseFloat(srGet('pm_food_sales')).toFixed(2) : '—'}</div></div>
+        <div><div class="sr-label">Bev Sales</div><div class="sr-computed">${srGet('pm_bev_sales') ? '$'+parseFloat(srGet('pm_bev_sales')).toFixed(2) : '—'}</div></div>
+        <div><div class="sr-label">Total Sales</div><div class="sr-computed">${(srGet('pm_food_sales')&&srGet('pm_bev_sales')) ? '$'+(parseFloat(srGet('pm_food_sales'))+parseFloat(srGet('pm_bev_sales'))).toFixed(2) : '—'}</div></div>
+        <div><div class="sr-label">PPA</div><div class="sr-computed">${(srGet('pm_covers')&&srGet('pm_food_sales')&&srGet('pm_bev_sales')) ? '$'+((parseFloat(srGet('pm_food_sales'))+parseFloat(srGet('pm_bev_sales')))/parseFloat(srGet('pm_covers'))).toFixed(2) : '—'}</div></div>
+        <div><div class="sr-label">Positive Comps</div><div class="sr-computed">${srGet('pm_pos_comps_amt') ? '$'+parseFloat(srGet('pm_pos_comps_amt')).toFixed(2) : '—'}</div></div>
+        <div><div class="sr-label">Negative Comps</div><div class="sr-computed">${srGet('pm_neg_comps_amt') ? '$'+parseFloat(srGet('pm_neg_comps_amt')).toFixed(2) : '—'}</div></div>
+      </div>
+    </div>`;
+
+  return `
+    <div style="padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fbf6ed;z-index:10;padding-bottom:12px;border-bottom:1px solid rgba(23,72,84,.1);">
+      <div>
+        <div style="font-family:Cormorant Garamond,serif;font-size:24px;font-weight:500;color:#174854;">Shift Report</div>
+        <div style="font-size:12px;color:rgba(23,72,84,.45);">${dayName}, ${today} · Rally Social Club</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:11px;color:rgba(23,72,84,.35);" id="sr-autosave-label">Auto-saving...</span>
+        <button onclick="srSubmit()" style="padding:8px 18px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Report</button>
+      </div>
+    </div>
+    <div class="sr-form" style="padding:16px;">
+      ${shift('am','AM SHIFT',false)}
+      ${shift('pm','PM SHIFT',true)}
+      ${evHtml}
+      ${daySummary}
+    </div>`;
+}
+
 function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
