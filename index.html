@@ -1828,7 +1828,7 @@ async function renderShiftReportForm() {
   // Load team roster for multi-check fields
   await loadSrTeam();
 
-  // Load today's shared report (any manager — shared across the whole day)
+  // Always fetch today's record fresh — ignore any cached srRecordId
   try {
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
       {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
@@ -1839,12 +1839,15 @@ async function renderShiftReportForm() {
       srRecordId = rows[0].id;
       srData     = rows[0].data || {};
       srAmLocked = !!srData.am_locked;
-      console.log('SR found: id='+srRecordId+' am_locked='+srAmLocked);
+      srAmEditMode = false;
+      srPmEditMode = false;
+      console.log('SR found: id='+srRecordId+' am_locked='+srAmLocked+' data keys:'+Object.keys(srData).length);
     } else {
       srRecordId   = null;
       srData       = {};
       srAmLocked   = false;
       srAmEditMode = false;
+      srPmEditMode = false;
       console.log('SR: no record today, starting fresh');
     }
   } catch(e) {
@@ -2506,9 +2509,10 @@ function doLogout(){
   // "Out" — full logout, clear everything
   stopTimer();
   currentUser=null;currentRole=null;selectedRole=null;selectedName=null;
+  // Flush any pending auto-save before clearing state
+  clearTimeout(srSaveTimer);
   // Reset shift report state so next manager gets a fresh fetch
   srData={}; srRecordId=null; srAmLocked=false; srAmEditMode=false; srPmEditMode=false;
-  clearTimeout(srSaveTimer);
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   showScreen('s-role');
   document.querySelectorAll('.role-card').forEach(c=>c.classList.remove('sel'));
