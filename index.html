@@ -1717,45 +1717,34 @@ async function srSave(lockAM = false) {
     srData.am_locked_at = new Date().toISOString();
     srAmLocked = true;
   }
-  const payload = { date: today, data: srData };
-  const baseHdrs = {
-    'apikey': SR_KEY,
-    'Authorization': `Bearer ${SR_KEY}`,
-    'Content-Type': 'application/json'
-  };
+  const managerName = u ? u.name : (srData.am_locked_by || 'Manager');
+  const payload = { date: today, manager: managerName, data: srData };
+  const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${SR_KEY}`, 'Content-Type':'application/json' };
   try {
+    // If we don't have an ID, check if today's record already exists (another manager may have created it)
+    if(!srRecordId) {
+      const chk = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&select=id&order=id.desc&limit=1`,
+        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
+      const existing = await chk.json();
+      if(Array.isArray(existing) && existing[0]) srRecordId = existing[0].id;
+    }
     if(srRecordId) {
-      // Update existing record
       const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?id=eq.${srRecordId}`, {
-        method: 'PATCH',
-        headers: { ...baseHdrs, 'Prefer': 'return=minimal' },
-        body: JSON.stringify(payload)
+        method:'PATCH', headers:{...baseHdrs,'Prefer':'return=minimal'}, body:JSON.stringify(payload)
       });
-      if(!r.ok) {
-        console.warn('PATCH failed', r.status, await r.text());
-        srRecordId = null; // fall through to POST
-      }
+      if(!r.ok) { console.warn('PATCH failed', r.status); srRecordId = null; }
     }
     if(!srRecordId) {
-      // Insert new record, get back the id
       const r = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports`, {
-        method: 'POST',
-        headers: { ...baseHdrs, 'Prefer': 'return=representation', 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        method:'POST', headers:{...baseHdrs,'Prefer':'return=representation'}, body:JSON.stringify(payload)
       });
       const text = await r.text();
       if(r.ok && text) {
-        try {
-          const rows = JSON.parse(text);
-          if(Array.isArray(rows) && rows[0]) srRecordId = rows[0].id;
-        } catch(e) {}
-      } else if(!r.ok) {
-        console.warn('POST failed', r.status, text);
-        return;
-      }
+        try { const rows=JSON.parse(text); if(Array.isArray(rows)&&rows[0]) srRecordId=rows[0].id; } catch(e){}
+      } else { console.warn('POST failed', r.status, text); return; }
     }
     const lbl = document.getElementById('sr-save-label');
-    if(lbl) { lbl.textContent = 'Saved ✓'; setTimeout(()=>{ if(lbl) lbl.textContent = ''; }, 2000); }
+    if(lbl) { lbl.textContent='Saved ✓'; setTimeout(()=>{if(lbl)lbl.textContent='';},2000); }
     console.log('SR saved ✓ id:', srRecordId);
   } catch(e) { console.warn('SR save failed', e); }
 }
