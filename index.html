@@ -1616,7 +1616,7 @@ function srGet(key) { return srData[key] !== undefined ? srData[key] : ''; }
 function srSet(key, val) {
   srData[key] = val;
   clearTimeout(srSaveTimer);
-  srSaveTimer = setTimeout(() => srSave(false), 3000); // 3s debounce
+  srSaveTimer = setTimeout(() => srSave(false), 800); // short debounce — save quickly
   srUpdateSummary();
 }
 
@@ -2509,9 +2509,7 @@ function doLogout(){
   // "Out" — full logout, clear everything
   stopTimer();
   currentUser=null;currentRole=null;selectedRole=null;selectedName=null;
-  // Flush any pending auto-save before clearing state
   clearTimeout(srSaveTimer);
-  // Reset shift report state so next manager gets a fresh fetch
   srData={}; srRecordId=null; srAmLocked=false; srAmEditMode=false; srPmEditMode=false;
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   showScreen('s-role');
