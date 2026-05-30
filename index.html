@@ -1949,7 +1949,7 @@ function srProgramSection(pfx, locked) {
 }
 
 function srProgToggle(pfx, type, label, active) {
-  return '<label class="sr-prog-toggle'+(active?' active':'')+'" data-prog-toggle="'+pfx+'_'+type+'" onclick="srToggleProg(\''+pfx+'\',\''+type+'\')"><input type="checkbox" style="display:none;"'+(active?' checked':'')+'>'+label+'</label>';
+  return '<div class="sr-prog-toggle'+(active?' active':'')+'" data-prog-toggle="'+pfx+'_'+type+'" onclick="srToggleProg(\''+pfx+'\',\''+type+'\')">'+label+'</div>';
 }
 
 function srToggleProg(pfx, type) {
