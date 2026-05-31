@@ -932,11 +932,9 @@ function checkPin(){
     currentRole=selectedRole;
     document.getElementById('pin-err').textContent='';
     if(selectedRole==='associate'){
-      // Show name picker
+      // Show position picker first
       selectedName=null;
-      renderNameGrid();
-      document.getElementById('name-go').disabled=true;
-      showScreen('s-name');
+      showAssocPositionPicker();
     } else {
       // Manager — pick their name first
       selectedName=null;
@@ -992,13 +990,8 @@ function goToHost(){
     showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));
     document.getElementById('mgr-hdr-user').textContent = u?.name?.split(' ')[0] || 'Manager';
   } else if(currentRole==='associate') {
-    const positions = u?.positions || [];
-    if(positions.length > 1) {
-      showPositionPicker();
-    } else {
-      currentPosition = positions[0] || 'Host';
-      goToHub();
-    }
+    // Position already picked before name — go straight to hub
+    goToHub();
   }
 }
 
@@ -2933,6 +2926,58 @@ function isFirstOfMonth() { return getDateOfMonth() === 1; }
 const POS_ICONS = {
   Manager:'🏢', Bartender:'🍺', Host:'👋', Swarmer:'⚡', Captain:'⭐', Barista:'☕', Other:'👤'
 };
+
+function showAssocPositionPicker() {
+  // Show position selection screen before name picker
+  const grid = document.getElementById('pos-grid');
+  const label = document.getElementById('pos-picker-name');
+  if(label) label.textContent = "What's your position today?";
+  if(grid) grid.innerHTML = `
+  <div class="pos-card" onclick="pickAssocPosition('Bartender')"><div class="pos-card-icon">🍺</div><div class="pos-card-name">Bartender</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Captain')"><div class="pos-card-icon">⚡</div><div class="pos-card-name">Captain</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Swarmer')"><div class="pos-card-icon">🌀</div><div class="pos-card-name">Swarmer</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Barista')"><div class="pos-card-icon">☕</div><div class="pos-card-name">Barista</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Host')"><div class="pos-card-icon">🎙</div><div class="pos-card-name">Host</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Manager')"><div class="pos-card-icon">📋</div><div class="pos-card-name">Manager</div></div>
+  <div class="pos-card" onclick="pickAssocPosition('Pickle Champ')"><div class="pos-card-icon">🏓</div><div class="pos-card-name">Pickle Champ</div></div>`;
+  // Override back button to go back to PIN
+  const backBtn = document.querySelector('#s-position .pin-back');
+  if(backBtn) backBtn.onclick = () => showScreen('s-pin');
+  showScreen('s-position');
+}
+
+function pickAssocPosition(pos) {
+  // Store selected position, then filter name grid by that position
+  currentPosition = pos;
+  renderNameGridForPosition(pos);
+  const nameTitle = document.querySelector('.name-title');
+  if(nameTitle) nameTitle.textContent = "Who's working today?";
+  // Back button goes back to position picker
+  const backBtn = document.querySelector('#s-name .pin-back');
+  if(backBtn) backBtn.onclick = showAssocPositionPicker;
+  document.getElementById('name-go').disabled = true;
+  showScreen('s-name');
+}
+
+function renderNameGridForPosition(pos) {
+  // Show only associates who have this position assigned
+  const posLower = pos.toLowerCase();
+  const filtered = users.filter(u => {
+    if(u.role !== 'associate') return false;
+    const uPositions = (u.positions || []).map(p => p.toLowerCase());
+    return uPositions.includes(posLower);
+  });
+  const grid = document.getElementById('name-grid');
+  if(!filtered.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(23,72,84,.45);font-size:13px;padding:20px;">No ' + pos + 's found — ask a manager to assign this position in the Portal.</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map((u,i) => `
+    <div class="name-card" id="nc-${u.id}" onclick="pickName(${u.id},this)">
+      <div class="name-av" style="${avatarStyle(u,i)}">${initials(u.name)}</div>
+      <div class="name-label">${u.name.split(' ')[0]}</div>
+    </div>`).join('');
+}
 
 function showPositionPicker() {
   const u = users.find(x => x.id === currentUser);
