@@ -2448,7 +2448,7 @@ function renderMgr(){
   const fab = document.getElementById('fab-add');
   if(fab) fab.classList.add('visible');
 
-  document.getElementById('mgr-body').innerHTML=`
+  document.getElementById('mgr-body').innerHTML=`<div style="display:flex;flex-direction:column;width:100%;">
     <div class="mgr-stats-grid">
       <div class="mgr-stat"><div class="mgr-stat-val">${done}</div><div class="mgr-stat-lbl">Done</div></div>
       <div class="mgr-stat"><div class="mgr-stat-val">${rate}%</div><div class="mgr-stat-lbl">Rate</div></div>
@@ -2475,7 +2475,7 @@ function renderMgr(){
     <div class="mgr-card">
       <div class="mgr-card-title">Completion Log</div>
       ${logHTML}
-    </div>`;
+    </div></div>`;
 }
 function updatePts(){
   const e=document.getElementById('f-effort')?.value||'med';
