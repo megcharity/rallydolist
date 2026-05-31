@@ -740,13 +740,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
-  <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;flex-direction:column;">
+  <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
       <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Active</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
     </div>
-    <div class="mgr-body" id="mgr-body"></div>
-    <div class="mgr-body" id="mgr-completed-body" style="display:none;"></div>
+    <div style="overflow-y:auto;flex:1;">
+      <div class="mgr-body" id="mgr-body"></div>
+      <div class="mgr-body" id="mgr-completed-body" style="display:none;"></div>
+    </div>
   </div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
@@ -1413,7 +1415,7 @@ function showMgrTab(tab, el) {
   mgrTab = tab;
   document.querySelectorAll('#mgr-tabs .nav-tab').forEach(t => t.classList.remove('active'));
   if(el) el.classList.add('active');
-  document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'flex' : 'none';
+  document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'block' : 'none';
   const completedEl = document.getElementById('mgr-tab-completed');
   if(completedEl) completedEl.style.display = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
