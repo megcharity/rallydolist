@@ -1422,7 +1422,18 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-scorecard').style.display   = 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
   if(tab === 'people')      renderPeople();
-  if(tab === 'tasks')       renderMgr();
+  if(tab === 'tasks') {
+    // Reset to Active view
+    const activeBtn = document.getElementById('task-view-active-btn');
+    const doneBtn   = document.getElementById('task-view-done-btn');
+    const mgrBody   = document.getElementById('mgr-body');
+    const doneBody  = document.getElementById('mgr-completed-body');
+    if(activeBtn) activeBtn.classList.add('active');
+    if(doneBtn)   doneBtn.classList.remove('active');
+    if(mgrBody)   mgrBody.style.display = 'block';
+    if(doneBody)  doneBody.style.display = 'none';
+    renderMgr();
+  }
 
   if(tab === 'checklists')  { switchClScoreTab('checklists'); }
   document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
