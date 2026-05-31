@@ -724,13 +724,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div class="nav-tabs" id="mgr-tabs">
     <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
-    <button class="nav-tab" onclick="showMgrTab('scorecard',this)">Scorecard</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
   <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-body"></div></div>
   <div id="mgr-tab-completed" style="display:none;"><div class="mgr-body" id="mgr-completed-body"></div></div>
-  <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
+  <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;">
+    <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
+      <button id="cl-view-cl-btn" class="task-view-btn active" onclick="switchClScoreTab('checklists')">Checklists</button>
+      <button id="cl-view-sc-btn" class="task-view-btn" onclick="switchClScoreTab('scorecard')">Scorecard</button>
+    </div>
+    <div id="cl-tab-checklists"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
+    <div id="cl-tab-scorecard" style="display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
+  </div>
   <div id="mgr-tab-scorecard" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
   <div id="mgr-tab-people" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="people-body"></div></div>
@@ -1392,13 +1398,12 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'flex' : 'none';
   document.getElementById('mgr-tab-completed').style.display   = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
-  document.getElementById('mgr-tab-scorecard').style.display   = tab === 'scorecard'   ? 'block' : 'none';
+  document.getElementById('mgr-tab-scorecard').style.display   = 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
   if(tab === 'people')      renderPeople();
   if(tab === 'tasks')       renderMgr();
 
-  if(tab === 'checklists')  renderMgrClHub();
-  if(tab === 'scorecard')   renderScorecard();
+  if(tab === 'checklists')  { switchClScoreTab('checklists'); }
   document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
   if(tab === 'shiftreport') renderShiftReportForm();
 }
@@ -2320,6 +2325,15 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${srAmLocked ? sumBlock : ''}
       ${srAmLocked ? submitBar : ''}
     </div>`;
+}
+
+function switchClScoreTab(view) {
+  document.getElementById('cl-view-cl-btn').classList.toggle('active', view === 'checklists');
+  document.getElementById('cl-view-sc-btn').classList.toggle('active', view === 'scorecard');
+  document.getElementById('cl-tab-checklists').style.display = view === 'checklists' ? 'block' : 'none';
+  document.getElementById('cl-tab-scorecard').style.display  = view === 'scorecard'  ? 'block' : 'none';
+  if(view === 'checklists') renderMgrClHub();
+  if(view === 'scorecard')  renderScorecard();
 }
 
 function switchTaskView(view) {
