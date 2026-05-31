@@ -507,6 +507,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .sr-prog-toggle:hover:not(.active) { border-color:#174854; color:#174854; }
     .sr-prog-block { background:rgba(23,72,84,.03); border:1px solid rgba(23,72,84,.08); border-radius:8px; padding:14px; margin-bottom:10px; }
 
+  
+    .task-view-btn { padding:6px 18px; border:none; background:rgba(23,72,84,.06); color:rgba(23,72,84,.5); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+    .task-view-btn:first-child { border-radius:7px 0 0 7px; }
+    .task-view-btn:last-child  { border-radius:0 7px 7px 0; }
+    .task-view-btn.active { background:#174854; color:#fff; }
+
   </style>
 </head>
 <body>
@@ -717,14 +723,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
   <div class="nav-tabs" id="mgr-tabs">
     <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
-    <button class="nav-tab" onclick="showMgrTab('completed',this)">Completed</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('scorecard',this)">Scorecard</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
   <div id="mgr-tab-tasks" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-body"></div></div>
-  <div id="mgr-tab-completed" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="mgr-completed-body"></div></div>
+  <div id="mgr-tab-completed" style="display:none;"><div class="mgr-body" id="mgr-completed-body"></div></div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
   <div id="mgr-tab-scorecard" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
@@ -1385,13 +1390,13 @@ function showMgrTab(tab, el) {
   document.querySelectorAll('#mgr-tabs .nav-tab').forEach(t => t.classList.remove('active'));
   if(el) el.classList.add('active');
   document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'flex' : 'none';
-  document.getElementById('mgr-tab-completed').style.display   = tab === 'completed'   ? 'flex' : 'none';
+  document.getElementById('mgr-tab-completed').style.display   = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
   document.getElementById('mgr-tab-scorecard').style.display   = tab === 'scorecard'   ? 'block' : 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
   if(tab === 'people')      renderPeople();
   if(tab === 'tasks')       renderMgr();
-  if(tab === 'completed')   renderMgrCompleted();
+
   if(tab === 'checklists')  renderMgrClHub();
   if(tab === 'scorecard')   renderScorecard();
   document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
@@ -2315,6 +2320,13 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${srAmLocked ? sumBlock : ''}
       ${srAmLocked ? submitBar : ''}
     </div>`;
+}
+
+function switchTaskView(view) {
+  document.getElementById('task-view-active-btn').classList.toggle('active', view === 'active');
+  document.getElementById('task-view-done-btn').classList.toggle('active', view === 'done');
+  if(view === 'active') renderMgr();
+  else renderMgrCompleted();
 }
 
 function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
