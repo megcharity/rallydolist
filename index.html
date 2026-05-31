@@ -1098,7 +1098,12 @@ function openTaskModal(id){
   const linkEl=document.getElementById('tm-link');
   if(t.instLink){linkEl.style.display='flex';linkEl.href=t.instLink;}else linkEl.style.display='none';
   const acts=document.getElementById('tm-actions');
-  if(isMgr){acts.innerHTML=`<button class="modal-btn primary" onclick="closeTaskModal();openEditModal(${t.id})">✏ Edit Task</button><button class="modal-btn secondary" onclick="closeTaskModal()">Close</button>`;}
+  if(isMgr){acts.innerHTML=`
+    <button class="modal-btn primary" onclick="closeTaskModal();openEditModal(${t.id})">✏ Edit</button>
+    ${!t.done?`<button class="modal-btn" style="background:rgba(78,98,44,.1);color:#4e622c;border:1.5px solid rgba(78,98,44,.3);" onclick="closeTaskModal();mgrCompleteTask(${t.id})">✅ Complete</button>`:''}
+    <button class="modal-btn" style="background:rgba(220,80,60,.06);color:#c04020;border:1.5px solid rgba(220,80,60,.2);" onclick="closeTaskModal();mgrRemoveTask(${t.id})">✕ Remove</button>
+    <button class="modal-btn secondary" onclick="closeTaskModal()">Close</button>
+  `;}
   else if(t.done){acts.innerHTML=`<button class="modal-btn secondary" style="flex:1;" onclick="closeTaskModal()">Close</button>`;}
   else if(t.claimedBy===me){acts.innerHTML=`<button class="modal-btn primary" onclick="closeTaskModal();switchToMine()">⚡ Go to My Tasks</button><button class="modal-btn secondary" onclick="closeTaskModal()">Close</button>`;}
   else{acts.innerHTML=`<button class="modal-btn primary" onclick="closeTaskModal();pickUp(${t.id})">⚡ Pick Up</button><button class="modal-btn secondary" onclick="closeTaskModal()">Close</button>`;}
@@ -2397,9 +2402,7 @@ function renderMgr(){
           </select>
           <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
-          <button class="ov-abtn" style="background:rgba(78,98,44,.1);color:#4e622c;border-color:rgba(78,98,44,.3);" onclick="mgrCompleteTask(${t.id})">✅ Complete</button>
-          <button class="ov-abtn" style="background:rgba(220,80,60,.06);color:#c04020;border-color:rgba(220,80,60,.2);" onclick="mgrRemoveTask(${t.id})">✕ Remove</button>
-        </div>`:'<div class="ov-assign-row"><button class="ov-abtn" style="background:rgba(220,80,60,.06);color:#c04020;border-color:rgba(220,80,60,.2);" onclick="mgrRemoveTask('+t.id+')">✕ Remove</button></div>'}
+        </div>`:''}
       <div class="ov-pts">${pts}pts</div>
     </div>`;
   }).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:10px 0;">Nothing here.</div>';
