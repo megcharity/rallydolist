@@ -2426,7 +2426,8 @@ function renderMgr(){
           <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
         </div>`:''}
-      <div class="ov-pts">${pts}pts</div>
+        <div class="ov-pts">${pts}pts</div>
+      </div>
     </div>`;
   }).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:10px 0;">Nothing here.</div>';
   const assignOpts=hosts.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
