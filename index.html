@@ -208,7 +208,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .lb-tot{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--teal);width:36px;text-align:right;}
 
 /* ── MANAGER SCREEN ── */
-.mgr-body{padding:16px 16px 80px;flex:1;overflow-y:auto;}
+.mgr-body{padding:16px 16px 80px;display:block;overflow-y:auto;width:100%;box-sizing:border-box;}
 .mgr-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
 .mgr-card-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--teal);margin-bottom:14px;}
 .mgr-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
@@ -745,7 +745,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Active</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
     </div>
-    <div style="overflow-y:auto;flex:1;">
+    <div style="overflow-y:auto;display:block;width:100%;">
       <div class="mgr-body" id="mgr-body"></div>
       <div class="mgr-body" id="mgr-completed-body" style="display:none;"></div>
     </div>
