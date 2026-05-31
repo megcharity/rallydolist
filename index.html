@@ -531,6 +531,18 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="fg full"><label>Task Description</label><textarea id="f-text" placeholder="What needs doing..."></textarea></div>
     <div class="fg full"><label>Instructions (optional)</label><textarea id="f-inst" placeholder="Step-by-step..."></textarea></div>
     <div class="fg full"><label>Resource Link (optional)</label><input type="url" id="f-link" placeholder="https://..."/></div>
+    <div class="fg full"><label>Job Code <span style="color:rgba(23,72,84,.4);font-weight:400;">(who should see this task)</span></label>
+      <select id="f-jobcode">
+        <option value="">Everyone</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>
+      </select>
+    </div>
     <div class="form-grid">
       <div class="fg"><label>Effort</label>
         <select id="f-effort" onchange="updatePts()">
@@ -552,7 +564,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="assign-toggle" onclick="toggleAssign()">
       <div class="toggle-track" id="assign-toggle"></div>
-      <span class="toggle-lbl">📌 Assign to specific associate</span>
+      <span class="toggle-lbl">📌 Assign to specific person (optional)</span>
     </div>
     <div id="assign-wrap" style="display:none;" class="fg"><label>Assign To</label>
       <select id="f-assign"><option value="">Select associate...</option></select>
@@ -1032,7 +1044,7 @@ function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
   const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
@@ -1064,6 +1076,7 @@ function taskCard(t,ctx){
       <span class="bdg bdg-pts ${db>0&&!isDone?'boost':''}">${pts}pts${db>0&&!isDone?` (+${db})`:''}</span>
       <span class="bdg ${EC[t.effort]}">${EL[t.effort]}</span>
       ${t.deadline?`<span class="cdw ${cdCls}">⏰ ${fmtCd(t.deadline)}</span>`:''}
+      ${t.jobCode?`<span class="bdg" style="background:rgba(23,72,84,.08);color:rgba(23,72,84,.6);">${t.jobCode}</span>`:''}
       <span class="bdg bdg-by">by ${t.by}</span>
     </div>
     ${workersHTML(t)}${progHTML}${extra}
@@ -2464,8 +2477,10 @@ function addTask(){
   const instructions=document.getElementById('f-inst')?.value.trim()||'';
   const instLink=document.getElementById('f-link')?.value.trim()||'';
   const assignTo=isAssigning?(parseInt(document.getElementById('f-assign')?.value)||null):null;
-  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null});
+  const jobCode=document.getElementById('f-jobcode')?.value||'';
+  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,jobCode,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null});
   document.getElementById('f-text').value='';document.getElementById('f-dl').value='';document.getElementById('f-inst').value='';document.getElementById('f-link').value='';
+  const jc=document.getElementById('f-jobcode');if(jc)jc.value='';
   isAssigning=false;
   const at=document.getElementById('assign-toggle');if(at)at.classList.remove('on');
   const aw=document.getElementById('assign-wrap');if(aw)aw.style.display='none';
@@ -2927,20 +2942,25 @@ const POS_ICONS = {
   Manager:'🏢', Bartender:'🍺', Host:'👋', Swarmer:'⚡', Captain:'⭐', Barista:'☕', Other:'👤'
 };
 
+const ASSOC_POSITIONS = [
+  {name:'Bartender', icon:'🍺'},
+  {name:'Captain',   icon:'⚡'},
+  {name:'Swarmer',   icon:'🌀'},
+  {name:'Barista',   icon:'☕'},
+  {name:'Host',      icon:'🎙'},
+  {name:'Team Lead', icon:'🌟'},
+  {name:'Pickle Champ', icon:'🏓'}
+];
+
 function showAssocPositionPicker() {
-  // Show position selection screen before name picker
   const grid = document.getElementById('pos-grid');
   const label = document.getElementById('pos-picker-name');
   if(label) label.textContent = "What's your position today?";
-  if(grid) grid.innerHTML = `
-  <div class="pos-card" onclick="pickAssocPosition('Bartender')"><div class="pos-card-icon">🍺</div><div class="pos-card-name">Bartender</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Captain')"><div class="pos-card-icon">⚡</div><div class="pos-card-name">Captain</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Swarmer')"><div class="pos-card-icon">🌀</div><div class="pos-card-name">Swarmer</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Barista')"><div class="pos-card-icon">☕</div><div class="pos-card-name">Barista</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Host')"><div class="pos-card-icon">🎙</div><div class="pos-card-name">Host</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Manager')"><div class="pos-card-icon">📋</div><div class="pos-card-name">Manager</div></div>
-  <div class="pos-card" onclick="pickAssocPosition('Pickle Champ')"><div class="pos-card-icon">🏓</div><div class="pos-card-name">Pickle Champ</div></div>`;
-  // Override back button to go back to PIN
+  if(grid) grid.innerHTML = ASSOC_POSITIONS.map(p =>
+    `<div class="pos-card" onclick="pickAssocPosition('${p.name}')">
+      <div class="pos-card-icon">${p.icon}</div>
+      <div class="pos-card-name">${p.name}</div>
+    </div>`).join('');
   const backBtn = document.querySelector('#s-position .pin-back');
   if(backBtn) backBtn.onclick = () => showScreen('s-pin');
   showScreen('s-position');
