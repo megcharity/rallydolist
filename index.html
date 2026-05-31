@@ -2397,8 +2397,9 @@ function renderMgr(){
           </select>
           <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
-        </div>`:''}
-      </div>
+          <button class="ov-abtn" style="background:rgba(78,98,44,.1);color:#4e622c;border-color:rgba(78,98,44,.3);" onclick="mgrCompleteTask(${t.id})">✅ Complete</button>
+          <button class="ov-abtn" style="background:rgba(220,80,60,.06);color:#c04020;border-color:rgba(220,80,60,.2);" onclick="mgrRemoveTask(${t.id})">✕ Remove</button>
+        </div>`:'<div class="ov-assign-row"><button class="ov-abtn" style="background:rgba(220,80,60,.06);color:#c04020;border-color:rgba(220,80,60,.2);" onclick="mgrRemoveTask('+t.id+')">✕ Remove</button></div>'}
       <div class="ov-pts">${pts}pts</div>
     </div>`;
   }).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:10px 0;">Nothing here.</div>';
@@ -2490,6 +2491,26 @@ function addTask(){
   closeAddTask();
   saveData();renderMgr();
 }
+function mgrCompleteTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if(!t) return;
+  t.done = true;
+  t.doneBy = currentUser;
+  t.doneAt = new Date();
+  t.claimedBy = null;
+  saveData();
+  showToast('Task marked complete ✅');
+  renderMgr();
+}
+
+function mgrRemoveTask(id) {
+  if(!confirm('Remove this task from the pool?')) return;
+  tasks = tasks.filter(x => x.id !== id);
+  saveData();
+  showToast('Task removed');
+  renderMgr();
+}
+
 function setOvFilter(f){ovFilter=f;renderMgr();}
 function reassign(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
