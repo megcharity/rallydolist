@@ -208,7 +208,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .lb-tot{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--teal);width:36px;text-align:right;}
 
 /* ── MANAGER SCREEN ── */
-.mgr-body{padding:16px 16px 80px;display:block;}
+.mgr-body{padding:16px 16px 80px;flex:1;overflow-y:auto;}
 .mgr-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
 .mgr-card-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--teal);margin-bottom:14px;}
 .mgr-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
@@ -740,8 +740,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
-  <div id="mgr-tab-tasks" style="display:none;overflow-y:auto;flex:1;flex-direction:column;">
-    <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
+  <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+    <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
       <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Active</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
     </div>
