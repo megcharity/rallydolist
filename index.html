@@ -208,7 +208,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .lb-tot{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--teal);width:36px;text-align:right;}
 
 /* ── MANAGER SCREEN ── */
-.mgr-body{padding:16px 16px 80px;flex:1;overflow-y:auto;}
+.mgr-body{padding:16px 16px 80px;flex:1;overflow-y:auto;min-width:0;}
+.mgr-body > *{display:block;width:100%;}
 .mgr-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
 .mgr-card-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--teal);margin-bottom:14px;}
 .mgr-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
