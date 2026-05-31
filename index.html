@@ -239,6 +239,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-f.on{background:var(--teal);border-color:var(--teal);color:var(--sage);}
 .ov-task{display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--border);}
 .ov-task:last-child{border-bottom:none;}
+#ov-list{display:flex;flex-direction:column;}
 .ov-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
 .ov-dot.pending{background:rgba(23,72,84,.2);}
 .ov-dot.active{background:var(--olive);}
@@ -1413,7 +1414,8 @@ function showMgrTab(tab, el) {
   document.querySelectorAll('#mgr-tabs .nav-tab').forEach(t => t.classList.remove('active'));
   if(el) el.classList.add('active');
   document.getElementById('mgr-tab-tasks').style.display       = tab === 'tasks'       ? 'flex' : 'none';
-  document.getElementById('mgr-tab-completed').style.display   = 'none';
+  const completedEl = document.getElementById('mgr-tab-completed');
+  if(completedEl) completedEl.style.display = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
   document.getElementById('mgr-tab-scorecard').style.display   = 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
