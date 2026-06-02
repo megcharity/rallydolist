@@ -884,10 +884,21 @@ setInterval(async()=>{
       const d=restoreDates(rows[0].data);
       tasks=d.tasks||tasks;compLog=d.compLog||compLog;
       nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
-      if(d.userPts) window._savedUserPts=d.userPts;
+      // Only update userPts from server if we're not mid-session (preserve in-memory points)
+      if(d.userPts && !saveTimer) {
+        window._savedUserPts=d.userPts;
+        // Merge server points into in-memory users — take the higher value to avoid overwriting
+        d.userPts.forEach(sp=>{
+          const u=users.find(x=>String(x.id)===String(sp.id));
+          if(u){
+            u.effortPts    = Math.max(u.effortPts||0,    sp.effortPts||0);
+            u.deadlinePts  = Math.max(u.deadlinePts||0,  sp.deadlinePts||0);
+            u.weeklyEffort = Math.max(u.weeklyEffort||0, sp.weeklyEffort||0);
+            u.weeklyDeadline=Math.max(u.weeklyDeadline||0,sp.weeklyDeadline||0);
+          }
+        });
+      }
     }
-    // Refresh team roster every poll cycle too
-    await loadTeam();
     const active=document.querySelector('.screen.active');
     if(active?.id==='s-host'||active?.id==='s-cl-hub')renderHost();
     if(active?.id==='s-mgr')renderMgr();
