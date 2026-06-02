@@ -799,7 +799,7 @@ async function flushSave(){
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
-      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset},updated_at:new Date().toISOString()})
+      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
     });
   }catch(e){console.warn('Save fail',e);}
   isSaving=false;
@@ -830,17 +830,20 @@ async function loadTeam(){
       return;
     }
     // Replace users entirely from rally_team — preserve points by matching id
+    const savedPts = (window._savedUserPts)||[];
     const newUsers = rows.map(r=>{
       const existing = users.find(u=>String(u.id)===String(r.id));
+      const saved    = savedPts.find(p=>String(p.id)===String(r.id));
+      const pts      = saved || existing || {};
       return {
         id: r.id,
         name: r.name,
         positions: r.positions||[],
         role: r.pin_role||'associate',
-        effortPts:   existing ? existing.effortPts   : 0,
-        deadlinePts: existing ? existing.deadlinePts : 0,
-        weeklyEffort:   existing ? existing.weeklyEffort   : 0,
-        weeklyDeadline: existing ? existing.weeklyDeadline : 0
+        effortPts:     pts.effortPts     || 0,
+        deadlinePts:   pts.deadlinePts   || 0,
+        weeklyEffort:  pts.weeklyEffort  || 0,
+        weeklyDeadline:pts.weeklyDeadline|| 0
       };
     });
     users = newUsers;
@@ -863,8 +866,7 @@ async function loadData(){
       if(d.nextUid)nextUid=d.nextUid;
       if(d.nextTid)nextTid=d.nextTid;
       if(d.lastWeeklyReset)lastWeeklyReset=d.lastWeeklyReset;
-      // Note: users now come from rally_team, not rally_state
-      // Keep legacy user points if IDs match (handled in loadTeam)
+      if(d.userPts) window._savedUserPts = d.userPts; // persist points across team reloads
     }
     // Always fetch live team from rally_team
     await loadTeam();
@@ -882,6 +884,7 @@ setInterval(async()=>{
       const d=restoreDates(rows[0].data);
       tasks=d.tasks||tasks;compLog=d.compLog||compLog;
       nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
+      if(d.userPts) window._savedUserPts=d.userPts;
     }
     // Refresh team roster every poll cycle too
     await loadTeam();
