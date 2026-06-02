@@ -2524,12 +2524,25 @@ function addTask(){
 function mgrCompleteTask(id) {
   const t = tasks.find(x => x.id === id);
   if(!t) return;
+  const ePts = EP[t.effort]||25;
+  const dPts = getDBonus(t.deadline);
+  // Award points to whoever had the task (claimed or assigned)
+  const recipientId = t.claimedBy || t.assignedTo;
+  const recipient = recipientId ? users.find(u => u.id === recipientId) : null;
+  if(recipient) {
+    recipient.effortPts   = (recipient.effortPts||0)   + ePts;
+    recipient.deadlinePts = (recipient.deadlinePts||0) + dPts;
+    recipient.weeklyEffort   = (recipient.weeklyEffort||0)   + ePts;
+    recipient.weeklyDeadline = (recipient.weeklyDeadline||0) + dPts;
+    compLog.unshift({text:t.text, who:recipient.name, ePts, dPts, time:new Date()});
+  }
   t.done = true;
   t.doneBy = currentUser;
   t.doneAt = new Date();
+  t.earnedDPts = dPts;
   t.claimedBy = null;
   saveData();
-  showToast('Task marked complete ✅');
+  showToast(recipient ? `✅ Complete · +${ePts+dPts}pts for ${recipient.name.split(' ')[0]}` : 'Task marked complete ✅');
   renderMgr();
 }
 
