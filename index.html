@@ -2531,7 +2531,6 @@ function mgrCompleteTask(id) {
 }
 
 function mgrRemoveTask(id) {
-  if(!confirm('Remove this task from the pool?')) return;
   tasks = tasks.filter(x => x.id !== id);
   saveData();
   showToast('Task removed');
