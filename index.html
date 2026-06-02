@@ -1321,6 +1321,8 @@ function renderCompleted(){
 function renderLeaderboard(){
   // Show ALL associates — including those with 0 points
   const allHosts=users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
+  console.log('LB users:', allHosts.map(u=>u.name+' pts:'+(u.effortPts||0)+(u.deadlinePts||0)));
+  console.log('_savedUserPts:', window._savedUserPts);
   const maxE=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const rankMedals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
