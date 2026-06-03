@@ -596,14 +596,33 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 <!-- TASK EDIT MODAL (manager) -->
 <div id="edit-modal" class="modal-ov" style="display:none;" onclick="closeEditModal(event)">
-  <div class="modal-box" onclick="event.stopPropagation()">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:480px;width:92vw;">
     <div class="modal-hdr">
       <div class="modal-title">Edit Task</div>
       <button class="modal-close" onclick="closeEditModal()">×</button>
     </div>
-    <div class="fg full"><label>Task Name</label><input id="e-text" type="text"/></div>
-    <div class="fg full"><label>Instructions</label><textarea id="e-inst"></textarea></div>
+    <div class="fg full"><label>Task Description</label><input id="e-text" type="text"/></div>
+    <div class="fg full"><label>Instructions</label><textarea id="e-inst" rows="3"></textarea></div>
     <div class="fg full"><label>Resource Link</label><input id="e-link" type="url" placeholder="https://..."/></div>
+    <div class="fg full"><label>Job Code</label>
+      <select id="e-jobcode">
+        <option value="">Everyone</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>
+      </select>
+    </div>
+    <div class="fg full"><label>Assigned To <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label>
+      <select id="e-assign"><option value="">Unassigned — open pool</option></select>
+    </div>
+    <div style="border-top:1px solid rgba(23,72,84,.08);margin:12px 0;padding-top:12px;">
+      <label style="font-size:12px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Mark Complete &amp; Award Points To</label>
+      <select id="e-complete-assign"><option value="">— Don't complete yet —</option></select>
+    </div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveEdit()">Save Changes</button>
       <button class="modal-btn secondary" onclick="closeEditModal()">Cancel</button>
@@ -2600,6 +2619,15 @@ function openEditModal(id){
   document.getElementById('e-text').value=t.text;
   document.getElementById('e-inst').value=t.instructions||'';
   document.getElementById('e-link').value=t.instLink||'';
+  document.getElementById('e-jobcode').value=t.jobCode||'';
+  // Populate assign dropdowns
+  const associates=users.filter(u=>u.role!=='manager');
+  const opts='<option value="">Unassigned — open pool</option>'+associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const completeOpts='<option value="">— Don\'t complete yet —</option>'+associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  document.getElementById('e-assign').innerHTML=opts;
+  document.getElementById('e-assign').value=t.assignedTo||'';
+  document.getElementById('e-complete-assign').innerHTML=completeOpts;
+  document.getElementById('e-complete-assign').value='';
   document.getElementById('edit-modal').style.display='flex';
 }
 function closeEditModal(e){if(!e||e.target===document.getElementById('edit-modal'))document.getElementById('edit-modal').style.display='none';}
@@ -2609,7 +2637,24 @@ function saveEdit(){
   if(txt)t.text=txt;
   t.instructions=document.getElementById('e-inst')?.value.trim()||'';
   t.instLink=document.getElementById('e-link')?.value.trim()||'';
-  closeEditModal();showToast('Task updated ✅');saveData();
+  t.jobCode=document.getElementById('e-jobcode')?.value||'';
+  const newAssign=document.getElementById('e-assign')?.value;
+  t.assignedTo=newAssign?parseInt(newAssign):null;
+  // Complete and award to a specific person
+  const completeFor=document.getElementById('e-complete-assign')?.value;
+  if(completeFor){
+    const u=users.find(x=>String(x.id)===String(completeFor));
+    if(u){
+      const ePts=EP[t.effort]||25;
+      const dPts=getDBonus(t.deadline);
+      t.done=true;t.doneBy=u.id;t.doneAt=new Date();t.earnedDPts=dPts;t.claimedBy=null;t.assignedTo=null;
+      compLog.unshift({text:t.text,who:u.name,ePts,dPts,time:new Date()});
+      showToast(`✅ Complete · Points awarded to ${u.name.split(' ')[0]}`);
+    }
+  } else {
+    showToast('Task updated ✅');
+  }
+  closeEditModal();saveData();
   renderPool();renderMyTasks();renderMgr();
 }
 // ─── MISC ────────────────────────────────────────────────────────────────────
