@@ -568,8 +568,21 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="toggle-track" id="assign-toggle"></div>
       <span class="toggle-lbl">📌 Assign to specific person (optional)</span>
     </div>
-    <div id="assign-wrap" style="display:none;" class="fg"><label>Assign To</label>
-      <select id="f-assign"><option value="">Select associate...</option></select>
+    <div id="assign-wrap" style="display:none;" class="fg">
+      <label>Position</label>
+      <select id="f-assign-pos" onchange="updateAssignNames()">
+        <option value="">All positions</option>
+        <option value="manager">👔 Manager</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>
+      </select>
+      <label style="margin-top:8px;">Assign To</label>
+      <select id="f-assign"><option value="">Select person...</option></select>
     </div>
     <button class="add-task-btn" onclick="addTask()">Add Task 🎯</button>
   </div>
@@ -607,6 +620,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="fg full"><label>Job Code</label>
       <select id="e-jobcode">
         <option value="">Everyone</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>
+      </select>
+    </div>
+    <div class="fg full"><label>Filter by Position</label>
+      <select id="e-assign-pos" onchange="updateEditAssignNames()">
+        <option value="">All positions</option>
+        <option value="manager">👔 Manager</option>
         <option value="Bartender">🍺 Bartender</option>
         <option value="Captain">⚡ Captain</option>
         <option value="Swarmer">🌀 Swarmer</option>
@@ -762,10 +788,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
-      <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Active</button>
+      <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Associate Tasks</button>
+      <button id="task-view-mgr-btn" class="task-view-btn" onclick="switchTaskView('manager')">Manager Tasks</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
     </div>
     <div class="mgr-body" id="mgr-body"></div>
+    <div class="mgr-body" id="mgr-manager-body" style="display:none;"></div>
     <div class="mgr-body" id="mgr-completed-body" style="display:none;"></div>
   </div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;">
@@ -1491,11 +1519,15 @@ function showMgrTab(tab, el) {
     // Reset to Active view
     const activeBtn = document.getElementById('task-view-active-btn');
     const doneBtn   = document.getElementById('task-view-done-btn');
+    const mgrBtn    = document.getElementById('task-view-mgr-btn');
     const mgrBody   = document.getElementById('mgr-body');
+    const mgrMgrBody= document.getElementById('mgr-manager-body');
     const doneBody  = document.getElementById('mgr-completed-body');
     if(activeBtn) activeBtn.classList.add('active');
     if(doneBtn)   doneBtn.classList.remove('active');
+    if(mgrBtn)    mgrBtn.classList.remove('active');
     if(mgrBody)   mgrBody.style.display = 'block';
+    if(mgrMgrBody)mgrMgrBody.style.display = 'none';
     if(doneBody)  doneBody.style.display = 'none';
     renderMgr();
   }
@@ -2435,10 +2467,13 @@ function switchClScoreTab(view) {
 
 function switchTaskView(view) {
   document.getElementById('task-view-active-btn').classList.toggle('active', view === 'active');
+  document.getElementById('task-view-mgr-btn').classList.toggle('active', view === 'manager');
   document.getElementById('task-view-done-btn').classList.toggle('active', view === 'done');
-  document.getElementById('mgr-body').style.display          = view === 'active' ? 'block' : 'none';
-  document.getElementById('mgr-completed-body').style.display = view === 'done'   ? 'block' : 'none';
-  if(view === 'active') renderMgr();
+  document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
+  document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
+  document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
+  if(view === 'active')  renderMgr();
+  else if(view === 'manager') renderMgrManagerTasks();
   else renderMgrCompleted();
 }
 
@@ -2557,8 +2592,25 @@ function toggleAssign(){
   isAssigning=!isAssigning;
   const t=document.getElementById('assign-toggle');if(t)t.classList.toggle('on',isAssigning);
   const w=document.getElementById('assign-wrap');if(w)w.style.display=isAssigning?'block':'none';
+  if(isAssigning) updateAssignNames();
 }
-function addTask(){
+
+function updateAssignNames(){
+  const pos = document.getElementById('f-assign-pos')?.value || '';
+  const sel = document.getElementById('f-assign');
+  if(!sel) return;
+  let filtered = users;
+  if(pos === 'manager') {
+    filtered = users.filter(u => u.role === 'manager');
+  } else if(pos) {
+    filtered = users.filter(u => u.positions && u.positions.includes(pos));
+    // fallback: if no one has that position tag, show all non-managers
+    if(!filtered.length) filtered = users.filter(u => u.role !== 'manager');
+  }
+  sel.innerHTML = '<option value="">Select person...</option>' +
+    filtered.map(u => `<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('');
+}
+function addTask(isManagerTask=false){
   const text=document.getElementById('f-text')?.value.trim();
   if(!text){showToast('Enter a task description!');return;}
   const effort=document.getElementById('f-effort')?.value||'med';
@@ -2571,7 +2623,7 @@ function addTask(){
   const instLink=document.getElementById('f-link')?.value.trim()||'';
   const assignTo=isAssigning?(parseInt(document.getElementById('f-assign')?.value)||null):null;
   const jobCode=document.getElementById('f-jobcode')?.value||'';
-  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,jobCode,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null});
+  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,jobCode,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null,isManagerTask:isManagerTask});
   document.getElementById('f-text').value='';document.getElementById('f-dl').value='';document.getElementById('f-inst').value='';document.getElementById('f-link').value='';
   const jc=document.getElementById('f-jobcode');if(jc)jc.value='';
   isAssigning=false;
@@ -2581,7 +2633,127 @@ function addTask(){
   const assignee=assignTo?users.find(u=>u.id===assignTo):null;
   showToast(assignee?`Assigned to ${assignee.name}!`:'Task added! 🎯');
   closeAddTask();
-  saveData();renderMgr();
+  saveData();
+  if(isManagerTask) renderMgrManagerTasks(); else renderMgr();
+}
+
+function createTaskFromChecklist(itemId) {
+  // Look up the item text from the current checklist
+  const items = ALL_CHECKLISTS[currentChecklistKey] || [];
+  const item = items.find(i => i.id === itemId);
+  const itemText = item ? item.text : itemId;
+  const mgrUsers = users;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#174854;margin-bottom:14px;">Create Task</div>
+    <div style="font-size:13px;font-weight:600;color:rgba(23,72,84,.6);margin-bottom:12px;padding:10px 12px;background:rgba(23,72,84,.04);border-radius:8px;">${itemText}</div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Add note (optional)</label>
+      <input id="ctask-note" placeholder="e.g. Light out in Court 1" style="width:100%;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fbf6ed;"/>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Position</label>
+      <select id="ctask-pos" onchange="updateCtaskNames()" style="width:100%;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fbf6ed;">
+        <option value="">All positions</option>
+        <option value="manager">👔 Manager</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:11px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Assign to</label>
+      <select id="ctask-assign" style="width:100%;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fbf6ed;">
+        <option value="">Unassigned</option>
+        ${mgrUsers.map(u=>`<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:11px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Effort</label>
+      <select id="ctask-effort" style="width:100%;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fbf6ed;">
+        <option value="low">Low — 10pts</option>
+        <option value="med" selected>Medium — 25pts</option>
+        <option value="high">High — 50pts</option>
+        <option value="xl">XL — 80pts</option>
+      </select>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(23,72,84,.7);">
+        <input type="checkbox" id="ctask-ismgr" checked style="width:16px;height:16px;"/>
+        Manager task only (not visible to associates)
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="ctask-confirm" style="flex:1;padding:11px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Create Task</button>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="padding:11px 14px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.getElementById('ctask-confirm').onclick = () => {
+    const note = document.getElementById('ctask-note').value.trim();
+    const assignId = parseInt(document.getElementById('ctask-assign').value)||null;
+    const effort = document.getElementById('ctask-effort').value;
+    const isMgr = document.getElementById('ctask-ismgr').checked;
+    const text = note ? `${itemText} — ${note}` : itemText;
+    const by = users.find(x=>x.id===currentUser)?.name || 'Manager';
+    const assignee = assignId ? users.find(u=>u.id===assignId) : null;
+    tasks.unshift({
+      id:nextTid++, text, effort, priority:'normal', by,
+      instructions:'', instLink:'', deadline:null,
+      claimedBy:null, assignedTo:assignId, assignedBy:assignId?by:null,
+      jobCode:'', progress:0, workers:[], done:false,
+      doneBy:null, doneAt:null, earnedDPts:0, startedAt:null,
+      isManagerTask:isMgr
+    });
+    saveData();
+    overlay.remove();
+    showToast(assignee ? `Task assigned to ${assignee.name} ✅` : 'Manager task created ✅');
+  };
+}
+
+function addManagerTask(){addTask(true);}
+
+function renderMgrManagerTasks(){
+  const body=document.getElementById('mgr-manager-body');
+  if(!body) return;
+  const mgrTasks = tasks.filter(t=>t.isManagerTask && !t.done);
+  if(!mgrTasks.length){
+    body.innerHTML=`<div style="text-align:center;padding:60px 20px;color:rgba(23,72,84,.4);">
+      <div style="font-size:32px;margin-bottom:8px;">📋</div>
+      <div style="font-size:16px;font-weight:500;margin-bottom:4px;">No manager tasks</div>
+      <div style="font-size:13px;">Use + Add Task and assign to a manager</div>
+    </div>`;
+    return;
+  }
+  const hosts=users.filter(u=>u.role==='manager');
+  body.innerHTML=`<div id="mgr-task-list">`+mgrTasks.map(t=>{
+    const assigned=t.assignedTo?users.find(u=>u.id===t.assignedTo):null;
+    const pts=EP[t.effort]||25;
+    return`<div class="ov-task">
+      <div class="ov-dot ${t.assignedTo?'dot-assigned':'dot-pending'}"></div>
+      <div class="ov-info">
+        <div class="ov-title" style="cursor:pointer;" onclick="openTaskModal(${t.id})">${t.text} <span style="font-size:10px;color:var(--olive);font-weight:600;">↗ details</span></div>
+        <div class="ov-meta">${EL[t.effort]} · by ${t.by}</div>
+        ${assigned?`<div class="ov-status dot-assigned">👔 Assigned to ${assigned.name}</div>`:'<div class="ov-status dot-pending">Unassigned</div>'}
+        <div class="ov-assign-row">
+          <select class="ov-asel" id="ov-sel-${t.id}">
+            <option value="">Assign to manager...</option>
+            <option value="0">🔓 Unassign</option>
+            ${users.map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name} ${u.role==='manager'?'👔':''}</option>`).join('')}
+          </select>
+          <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
+          <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
+        </div>
+        <div class="ov-pts">${pts}pts</div>
+      </div>
+    </div>`;
+  }).join('')+`</div>`;
 }
 function mgrCompleteTask(id) {
   const t = tasks.find(x => x.id === id);
@@ -2634,6 +2806,34 @@ function reassign(id){
   else{const uid=parseInt(val,10);const h=users.find(u=>u.id===uid||String(u.id)===val);t.assignedTo=uid;t.assignedBy=currentRole;showToast(`Assigned to ${h?.name||'host'}!`);}
   saveData();renderMgr();
 }
+function updateCtaskNames(){
+  const pos = document.getElementById('ctask-pos')?.value || '';
+  const sel = document.getElementById('ctask-assign');
+  if(!sel) return;
+  let filtered = users;
+  if(pos === 'manager') filtered = users.filter(u => u.role === 'manager');
+  else if(pos) { filtered = users.filter(u => u.positions && u.positions.includes(pos)); if(!filtered.length) filtered = users; }
+  sel.innerHTML = '<option value="">Unassigned</option>' +
+    filtered.map(u=>`<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('');
+}
+
+function updateEditAssignNames(){
+  const pos = document.getElementById('e-assign-pos')?.value || '';
+  const sel = document.getElementById('e-assign');
+  if(!sel) return;
+  let filtered = users;
+  if(pos === 'manager') {
+    filtered = users.filter(u => u.role === 'manager');
+  } else if(pos) {
+    filtered = users.filter(u => u.positions && u.positions.includes(pos));
+    if(!filtered.length) filtered = users;
+  }
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Unassigned — open pool</option>' +
+    filtered.map(u => `<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('');
+  if(cur) sel.value = cur;
+}
+
 function openEditModal(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   pinEditId=id;
@@ -2642,9 +2842,10 @@ function openEditModal(id){
   document.getElementById('e-link').value=t.instLink||'';
   document.getElementById('e-jobcode').value=t.jobCode||'';
   // Populate assign dropdowns
-  const associates=users.filter(u=>u.role!=='manager');
-  const opts='<option value="">Unassigned — open pool</option>'+associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
-  const completeOpts='<option value="">— Don\'t complete yet —</option>'+associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
+  const associates=users;
+  const opts='<option value="">Unassigned — open pool</option>'+associates.map(u=>`<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('');
+  const completeOpts='<option value="">— No points / not completed —</option>'+associates.map(u=>`<option value="${u.id}">${u.name}${u.role==='manager'?' 👔':''}</option>`).join('');
+  const posEl=document.getElementById('e-assign-pos'); if(posEl) posEl.value='';
   document.getElementById('e-assign').innerHTML=opts;
   document.getElementById('e-assign').value=t.assignedTo||'';
   // Build award checkboxes
@@ -3738,12 +3939,14 @@ function renderClItem(item) {
   const showDetail = s.rating === 'needs' || s.rating === 'poor';
 
   if(item.type === 'check') {
+    const isWeekly = currentChecklistKey && currentChecklistKey.includes('weekly');
     return `<div class="cl-item ${cls}" id="clitem-${item.id}">
       <button class="cl-item-row" onclick="toggleClItem('${item.id}')" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:0;font:inherit;display:flex;align-items:flex-start;gap:10px;">
         <div class="cl-item-check"><span class="cl-item-tick">✓</span></div>
         <div class="cl-item-text">${item.text}</div>
         ${item.link ? `<a href="${item.link}" target="_blank" class="cl-ref-link" onclick="event.stopPropagation()">Ref ↗</a>` : ''}
       </button>
+      ${isWeekly ? `<button onclick="createTaskFromChecklist('${item.id}')" style="margin-top:6px;margin-left:36px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(23,72,84,.2);background:#fff;font-size:12px;font-weight:600;color:rgba(23,72,84,.5);cursor:pointer;font-family:inherit;">+ Create Task</button>` : ''}
     </div>`;
   }
 
@@ -3754,12 +3957,12 @@ function renderClItem(item) {
   return `<div class="cl-item ${cls}" id="clitem-${item.id}">
     <div style="display:flex;align-items:center;gap:10px;">
       <button onclick="setClRating('${item.id}','${goodToggle}')"
-        style="flex-shrink:0;width:36px;height:36px;border-radius:50%;border:2px solid ${goodActive?'var(--olive)':'rgba(23,72,84,.2)'};background:${goodActive?'var(--olive)':'#fff'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;transition:all .15s;">
+        style="flex-shrink:0;width:28px;height:28px;border-radius:50%;border:2px solid ${goodActive?'var(--olive)':'rgba(23,72,84,.25)'};background:${goodActive?'var(--olive)':'transparent'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;transition:all .15s;">
         ${goodActive?'✓':''}
       </button>
-      <div style="flex:1;font-size:15px;font-weight:500;color:${goodActive?'rgba(23,72,84,.4)':'var(--teal)'};${goodActive?'text-decoration:line-through;':''}">${item.text}</div>
+      <div style="flex:1;font-size:14px;font-weight:500;color:${goodActive?'rgba(23,72,84,.35)':'var(--teal)'};${goodActive?'text-decoration:line-through;':''}">${item.text}</div>
       <button onclick="setClRating('${item.id}','${needsToggle}')"
-        style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1.5px solid ${needsActive?'#c87a00':'rgba(23,72,84,.15)'};background:${needsActive?'rgba(248,154,28,.15)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${needsActive?'#c87a00':'rgba(23,72,84,.35)'};white-space:nowrap;transition:all .15s;">
+        style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid ${needsActive?'#c87a00':'rgba(23,72,84,.2)'};background:${needsActive?'rgba(248,154,28,.15)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${needsActive?'#c87a00':'rgba(23,72,84,.45)'};transition:all .15s;white-space:nowrap;">
         ${needsActive?'⚠️ Flagged':'⚠️'}
       </button>
     </div>
