@@ -913,6 +913,27 @@ function getDBonus(dl){if(!dl)return 0;const ms=dl-now();if(ms<=0)return 50;cons
 function dlStatus(dl){if(!dl)return null;const m=(dl-now())/60000;if(m<=0)return'overdue';if(m<=30)return'urgent';if(m<=90)return'warning';return'ok';}
 function fmtCd(dl){if(!dl)return null;const ms=dl-now();if(ms<=0)return'Overdue!';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);const t=dl.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),today=new Date(),tom=new Date();tom.setDate(today.getDate()+1);const day=dl.toDateString()===today.toDateString()?'today':dl.toDateString()===tom.toDateString()?'tomorrow':dl.toLocaleDateString([],{weekday:'short'});if(ms<3600000)return`Due in ${m}m`;if(ms<7200000)return`Due ~${h}h${m>0?' '+m+'m':''}`;return`Due ${day} at ${t}`;}
 function hostTotal(u,mode){return mode==='weekly'?(u.weeklyEffort+u.weeklyDeadline):(u.effortPts+u.deadlinePts);}
+
+function computeLeaderboardPts() {
+  // Recalculate all points from completed tasks — source of truth
+  const monday = getMonday();
+  users.forEach(u => { u.effortPts=0; u.deadlinePts=0; u.weeklyEffort=0; u.weeklyDeadline=0; });
+  tasks.filter(t=>t.done).forEach(t=>{
+    const uid = t.claimedBy || t.doneBy;
+    const u = users.find(x=>String(x.id)===String(uid));
+    if(!u) return;
+    const ePts = EP[t.effort]||25;
+    const dPts = t.earnedDPts||0;
+    u.effortPts   += ePts;
+    u.deadlinePts += dPts;
+    const doneAt = t.doneAt ? new Date(t.doneAt).getTime() : 0;
+    if(doneAt >= monday) {
+      u.weeklyEffort   += ePts;
+      u.weeklyDeadline += dPts;
+    }
+  });
+  // Also check compLog for any extra entries
+}
 function avatarStyle(u,i){const idx=(u.name.charCodeAt(0)||i)%AVATAR_COLORS.length;return`background:${AVATAR_COLORS[idx]};color:${AVATAR_TEXT[idx]};`;}
 function initials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();}
 function daysToMonday(){const nxt=new Date();const days=(8-nxt.getDay())%7||7;nxt.setDate(nxt.getDate()+days);nxt.setHours(0,0,0,0);return Math.ceil((nxt-now())/86400000);}
@@ -1257,6 +1278,7 @@ function getBadges(u) {
 }
 
 function renderPublicLb() {
+  computeLeaderboardPts();
   const hosts  = users.filter(u=>u.name && u.role!=='manager').sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
   const maxE   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
@@ -1330,7 +1352,7 @@ function renderCompleted(){
 
 
 function renderLeaderboard(){
-  // Show ALL team members (not just associates)
+  computeLeaderboardPts();
   const allHosts=users.filter(u=>u.name && u.role!=='manager').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
   const maxE=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
