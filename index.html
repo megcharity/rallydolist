@@ -449,8 +449,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-ref-link:hover{opacity:1;}
 
 /* ── RATE BUTTONS ── */
-.cl-rate-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
-.cl-rate-btn{padding:4px 10px;border-radius:6px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;color:rgba(23,72,84,.6);}
+.cl-rate-row{display:flex;gap:8px;margin-top:4px;}
+.cl-rate-btn{flex:1;padding:12px 8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;color:rgba(23,72,84,.6);}
 .cl-rate-btn:hover{border-color:var(--teal);color:var(--teal);}
 .cl-rate-btn.good.sel{background:rgba(78,98,44,.12);border-color:var(--olive);color:var(--olive);}
 .cl-rate-btn.needs.sel{background:rgba(248,154,28,.15);border-color:#c87a00;color:#c87a00;}
@@ -2900,6 +2900,7 @@ const ALL_CHECKLISTS = {
   {"id":"mc_arr_04","section":"When You Arrive","text":"Touch base with opening manager — get briefed on the day","type":"check"},
   {"id":"mc_arr_05","section":"When You Arrive","text":"Review upcoming events for tonight","type":"check"},
   {"id":"mc_arr_06","section":"When You Arrive","text":"Review lineup sheet and create floor plan for your shift","type":"check"},
+  {"id":"mc_arr_07","section":"When You Arrive","text":"Check host desk is organized and PC is on","type":"check"},
 
   {"id":"mc_wt_hdr","section":"Closing Walkthrough","text":"Walk through every area below and check each item","type":"check"},
 
@@ -3746,24 +3747,25 @@ function renderClItem(item) {
     </div>`;
   }
 
+  const goodToggle = s.rating==='good' ? '' : 'good';
+  const needsToggle = s.rating==='needs' ? '' : 'needs';
+  const goodActive = s.rating==='good';
+  const needsActive = s.rating==='needs';
   return `<div class="cl-item ${cls}" id="clitem-${item.id}">
-    <div class="cl-item-row">
-      <div class="cl-item-check" style="cursor:default;">${isDone ? '<span class="cl-item-tick" style="display:block">✓</span>' : ''}</div>
-      <div class="cl-item-text">${item.text}</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="setClRating('${item.id}','${goodToggle}')"
+        style="flex-shrink:0;width:36px;height:36px;border-radius:50%;border:2px solid ${goodActive?'var(--olive)':'rgba(23,72,84,.2)'};background:${goodActive?'var(--olive)':'#fff'};cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;transition:all .15s;">
+        ${goodActive?'✓':''}
+      </button>
+      <div style="flex:1;font-size:15px;font-weight:500;color:${goodActive?'rgba(23,72,84,.4)':'var(--teal)'};${goodActive?'text-decoration:line-through;':''}">${item.text}</div>
+      <button onclick="setClRating('${item.id}','${needsToggle}')"
+        style="flex-shrink:0;padding:6px 10px;border-radius:8px;border:1.5px solid ${needsActive?'#c87a00':'rgba(23,72,84,.15)'};background:${needsActive?'rgba(248,154,28,.15)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${needsActive?'#c87a00':'rgba(23,72,84,.35)'};white-space:nowrap;transition:all .15s;">
+        ${needsActive?'⚠️ Flagged':'⚠️'}
+      </button>
     </div>
-    <div class="cl-rate-row">
-      <button class="cl-rate-btn good ${s.rating==='good'?'sel':''}" onclick="setClRating('${item.id}','good')">✅ Good</button>
-      <button class="cl-rate-btn needs ${s.rating==='needs'?'sel':''}" onclick="setClRating('${item.id}','needs')">⚠️ Needs Work</button>
-    </div>
-    <div class="cl-detail ${showDetail?'open':''}" id="cldetail-${item.id}">
+    <div class="cl-detail ${needsActive?'open':''}" id="cldetail-${item.id}">
       <label>What is the issue?</label>
       <textarea placeholder="Describe what you found..." onchange="saveClNote('${item.id}','issue',this.value)">${s.issue||''}</textarea>
-      <label>Did you fix it?</label>
-      <div class="cl-fixed-row">
-        <button class="cl-fixed-btn yes ${s.fixed==='yes'?'sel':''}" onclick="setClFixed('${item.id}','yes')">✅ Fixed</button>
-        <button class="cl-fixed-btn no ${s.fixed==='no'?'sel':''}" onclick="setClFixed('${item.id}','no')">❌ Could not fix</button>
-      </div>
-      ${s.fixed==='no' ? `<label>Why not?</label><textarea placeholder="Reason..." onchange="saveClNote('${item.id}','fixNote',this.value)">${s.fixNote||''}</textarea>` : ''}
     </div>
   </div>`;
 }
