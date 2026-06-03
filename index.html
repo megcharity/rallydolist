@@ -1257,7 +1257,7 @@ function getBadges(u) {
 }
 
 function renderPublicLb() {
-  const hosts  = users.filter(u=>u.name).sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
+  const hosts  = users.filter(u=>u.name && u.role!=='manager').sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
   const maxE   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const ranks  = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
@@ -1331,7 +1331,7 @@ function renderCompleted(){
 
 function renderLeaderboard(){
   // Show ALL team members (not just associates)
-  const allHosts=users.filter(u=>u.name).sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
+  const allHosts=users.filter(u=>u.name && u.role!=='manager').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
   const maxE=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const rankMedals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
