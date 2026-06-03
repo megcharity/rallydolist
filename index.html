@@ -395,9 +395,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-items-body{flex:1;overflow-y:auto;padding:12px 16px 20px;}
 .cl-section-head{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--olive);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
 .cl-section-head::after{content:'';flex:1;height:1px;background:rgba(23,72,84,.1);}
-.cl-section-header{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--olive);margin:18px 0 8px;display:flex;align-items:center;gap:8px;}
-.cl-section-header::after{content:'';flex:1;height:1px;background:rgba(23,72,84,.1);}
-.cl-section-badge{background:var(--teal);color:var(--sage);border-radius:5px;padding:1px 7px;font-size:9px;font-weight:700;}
+.cl-section-header{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--teal);margin:28px 0 10px;display:flex;align-items:center;gap:10px;border-bottom:2px solid rgba(23,72,84,.12);padding-bottom:8px;}
+.cl-section-header::after{content:'';flex:0;}
+.cl-section-badge{background:var(--teal);color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif;}
 
 /* ── CHECK-TYPE ITEM ── */
 .cl-item{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:flex-start;gap:12px;cursor:pointer;transition:all .2s;}
@@ -2751,106 +2751,290 @@ const ALL_CHECKLISTS = {
 // ── MANAGER OPENING (expanded from SOPs) ─────────────────────
 "manager_opening": [
   {"id":"mo_23","section":"Opening Duties","text":"Unlock the venue","type":"check"},
-  {"id":"mo_24","section":"Opening Duties","text":"Turn on all lights (including court number lights) and TVs","type":"check"},
-  {"id":"mo_25","section":"Opening Duties","text":"Turn on music — adjust volume at opening","type":"check"},
+  {"id":"mo_24","section":"Opening Duties","text":"Turn on all lights (including court number lights), TVs, and music — adjust volume at opening","type":"check"},
   {"id":"mo_26","section":"Opening Duties","text":"If cleaners were in: take stools off bar tops and put chairs back under tables","type":"check"},
   {"id":"mo_27","section":"Opening Duties","text":"Fill lounges with water — fill jugs with ice and place on cart","type":"check"},
-  {"id":"mo_28","section":"Opening Duties","text":"Set up outdoor area: put out cushions, wipe tables, remove TV covers, bring water out","type":"check"},
-  {"id":"mo_29","section":"Opening Duties","text":"Check bathroom cleanliness and paper stock","type":"check"},
-  {"id":"mo_30","section":"Opening Duties","text":"Unlock all doors (around 6:50am)","type":"check"},
-  {"id":"mo_31","section":"Opening Duties","text":"Open garage doors if outside temperature is 65°F or below","type":"check"},
-  {"id":"mo_32","section":"Opening Duties","text":"Check bar cleanliness. Turn on dishwashers (bar and Captain's Quarters). Test sanitization and chemical levels with sani strips.","type":"check","link":"https://rallypickleball.sharepoint.com/:w:/s/Operations/IQDH7lRBJROTTInb1J6th3prAXPXqRfkx0Q4L2LpFhZVAXs?e=V91ELs"},
-  {"id":"mo_33","section":"Opening Duties","text":"If you are the bartender for the day, complete bar setup — reference Bar Setup SOP","type":"check","link":"https://rallypickleball.sharepoint.com/:w:/s/Operations/IQANM1Yey3ULTY7dDJ4KCLOSAa9JEmitQKBmMAwHC96s_Cs?e=z1Bzwe"},
-  {"id":"mo_34","section":"Opening Duties","text":"Set up host station: computer on, host TV on, take host phone","type":"check"},
-  {"id":"mo_35","section":"Opening Duties","text":"Check Triple Seat and Event Office for BEO. If event, check with Kitchen, review BEO and ring into Toast.","type":"check"},
-  {"id":"mo_36","section":"Opening Duties","text":"Check Reservation List and Member List","type":"check"},
-  {"id":"mo_37","section":"Opening Duties","text":"Check Rally Track Dashboard and complete Rally Track Daily Checklist","type":"check"},
-  {"id":"mo_38","section":"Opening Duties","text":"Count safe and put out cash drawers — $300 each (bar + café). Complete daily safe count spreadsheet.","type":"check"},
-  {"id":"mo_39","section":"Opening Duties","text":"Check and adjust temperature. Heat max 63°F if ≤50°F outside. A/C no lower than 65°F.","type":"check"},
-  {"id":"mo_40","section":"Opening Duties","text":"Walk bar and café — assess prep and product levels, check labels and expiration dates, assign prep","type":"check"},
-  {"id":"mo_41","section":"Opening Duties","text":"Print shift sheet / floor plan. Add all staff working. Make cuts if needed.","type":"check"},
-  {"id":"mo_42","section":"Opening Duties","text":"Fill out and print lineup sheet — cover events, activations, sales targets, 86'd items","type":"check"},
-  {"id":"mo_43","section":"Opening Duties","text":"Review lineup with every associate as they arrive — one-on-one at the bar, every shift, no exceptions","type":"check"},
-  {"id":"mo_44","section":"Opening Duties","text":"Create a game plan for the day","type":"check"},
-  {"id":"mo_01","section":"Arrival Walkthrough — Outdoor","text":"Tables wiped down, no trash on floors","type":"rate"},
-  {"id":"mo_02","section":"Arrival Walkthrough — Outdoor","text":"Cushions out, TV covers removed, TVs on displaying Rally logo or marketing slides","type":"rate"},
-  {"id":"mo_03","section":"Arrival Walkthrough — Outdoor","text":"Menus and QR codes on every table, marketing frames out","type":"rate"},
-  {"id":"mo_04","section":"Arrival Walkthrough — Outdoor","text":"Courts clear of debris, water available for guests, cold towels out","type":"rate"},
-  {"id":"mo_05","section":"Arrival Walkthrough — Outdoor","text":"Umbrella tables wiped, umbrellas out (close if windy, skip if raining), cornhole out, tables aligned","type":"rate"},
-  // Arrival Walkthrough — Bar,
-  {"id":"mo_06","section":"Arrival Walkthrough — Bar","text":"Floor drains checked — pour hot water in if needed. Floor clean, no water or sticky spots, stools aligned","type":"rate"},
-  {"id":"mo_07","section":"Arrival Walkthrough — Bar","text":"Bar counter wiped, fridge lights on, fridge stocked (restock if cans pushed to back)","type":"rate"},
-  {"id":"mo_08","section":"Arrival Walkthrough — Bar","text":"Ice bins clean and mold-free, ice scoop holder mold-free, sinks clear of food and debris","type":"rate"},
-  {"id":"mo_09","section":"Arrival Walkthrough — Bar","text":"Glasses clean and streak-free, menus clean and not sticky","type":"rate"},
-  {"id":"mo_10","section":"Arrival Walkthrough — Bar","text":"Red sanitizing buckets on floor behind bar, garbage checked, broken glass container checked","type":"rate"},
-  {"id":"mo_11","section":"Arrival Walkthrough — Bar","text":"Back fridge checked — ask team to reorganize if messy","type":"rate"},
-  // Arrival Walkthrough — Main House,
-  {"id":"mo_12","section":"Arrival Walkthrough — Main House","text":"Walk full perimeter — no food on floor","type":"rate"},
-  {"id":"mo_13","section":"Arrival Walkthrough — Main House","text":"Merch wall organized, straight, and stocked","type":"rate"},
-  {"id":"mo_14","section":"Arrival Walkthrough — Main House","text":"Ping pong tables clean and ring-free, ping pong wing tidy","type":"rate"},
-  {"id":"mo_15","section":"Arrival Walkthrough — Main House","text":"Each lounge checked — no food or drink rings, couches and carpets straight, tablets clear","type":"rate"},
-  // Arrival Walkthrough — Bathrooms,
-  {"id":"mo_16","section":"Arrival Walkthrough — Bathrooms","text":"Sinks clean, no soap residue","type":"rate"},
-  {"id":"mo_17","section":"Arrival Walkthrough — Bathrooms","text":"Toilet paper and hand towels stocked","type":"rate"},
-  {"id":"mo_18","section":"Arrival Walkthrough — Bathrooms","text":"Toilets clean","type":"rate"},
-  // Arrival Walkthrough — Captain's & Garden,
-  {"id":"mo_19","section":"Arrival Walkthrough — Captain's & Garden","text":"Captain's Quarters clean — no personal items out of place","type":"rate"},
-  {"id":"mo_20","section":"Arrival Walkthrough — Captain's & Garden","text":"Garden pods clean — no drink rings, no food debris on tables or carpets, no food under tables","type":"rate"},
-  // Arrival Walkthrough — Café & Kitchen,
-  {"id":"mo_21","section":"Arrival Walkthrough — Café & Kitchen","text":"Replen station clean and stocked, TV menu on, light bulbs checked","type":"rate"},
-  {"id":"mo_22","section":"Arrival Walkthrough — Café & Kitchen","text":"Smoothie station clean, floors wiped, floor by bar entrance mopped, BOH area clear of employee items","type":"rate"},
-  // Opening Duties
+
+  {"id":"mo_c1_01","section":"Court 1","text":"Turn on court light","type":"rate"},
+  {"id":"mo_c1_02","section":"Court 1","text":"No food below drink rail","type":"rate"},
+  {"id":"mo_c1_03","section":"Court 1","text":"No food on carpet","type":"rate"},
+  {"id":"mo_c1_04","section":"Court 1","text":"Pillows straight","type":"rate"},
+  {"id":"mo_c1_05","section":"Court 1","text":"No spills or stains on cushions","type":"rate"},
+  {"id":"mo_c1_06","section":"Court 1","text":"QR codes out","type":"rate"},
+  {"id":"mo_c1_07","section":"Court 1","text":"Marketing frames out on table and up to date","type":"rate"},
+  {"id":"mo_c1_08","section":"Court 1","text":"Plastic Rally cups out","type":"rate"},
+  {"id":"mo_c1_09","section":"Court 1","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_c1_10","section":"Court 1","text":"Hand sanitizer out","type":"rate"},
+  {"id":"mo_c1_11","section":"Court 1","text":"Tablet plugged in","type":"rate"},
+  {"id":"mo_c1_12","section":"Court 1","text":"Drink and food menu on drink rail","type":"rate"},
+
+  {"id":"mo_ppw_01","section":"Ping Pong Wing","text":"Tables wiped down","type":"rate"},
+  {"id":"mo_ppw_02","section":"Ping Pong Wing","text":"No drink rings","type":"rate"},
+  {"id":"mo_ppw_03","section":"Ping Pong Wing","text":"No food on floor","type":"rate"},
+  {"id":"mo_ppw_04","section":"Ping Pong Wing","text":"No stains on carpet or furniture","type":"rate"},
+  {"id":"mo_ppw_05","section":"Ping Pong Wing","text":"Marketing frame out and up to date","type":"rate"},
+  {"id":"mo_ppw_06","section":"Ping Pong Wing","text":"QR code out","type":"rate"},
+
+  {"id":"mo_c4_01","section":"Court 4","text":"Turn on court light","type":"rate"},
+  {"id":"mo_c4_02","section":"Court 4","text":"No food below drink rail","type":"rate"},
+  {"id":"mo_c4_03","section":"Court 4","text":"No food on carpet","type":"rate"},
+  {"id":"mo_c4_04","section":"Court 4","text":"Pillows straight","type":"rate"},
+  {"id":"mo_c4_05","section":"Court 4","text":"No spills or stains on cushions","type":"rate"},
+  {"id":"mo_c4_06","section":"Court 4","text":"QR codes out","type":"rate"},
+  {"id":"mo_c4_07","section":"Court 4","text":"Marketing frames out on table and up to date","type":"rate"},
+  {"id":"mo_c4_08","section":"Court 4","text":"Plastic Rally cups out","type":"rate"},
+  {"id":"mo_c4_09","section":"Court 4","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_c4_10","section":"Court 4","text":"Hand sanitizer out","type":"rate"},
+  {"id":"mo_c4_11","section":"Court 4","text":"Tablet plugged in","type":"rate"},
+  {"id":"mo_c4_12","section":"Court 4","text":"Drink and food menu on drink rail","type":"rate"},
+
+  {"id":"mo_c34_01","section":"Area Behind C3 & C4","text":"No food on floor","type":"rate"},
+  {"id":"mo_c34_02","section":"Area Behind C3 & C4","text":"No food under tables","type":"rate"},
+  {"id":"mo_c34_03","section":"Area Behind C3 & C4","text":"No drink marks on tables","type":"rate"},
+  {"id":"mo_c34_04","section":"Area Behind C3 & C4","text":"Trash can empty","type":"rate"},
+  {"id":"mo_c34_05","section":"Area Behind C3 & C4","text":"QR codes out","type":"rate"},
+  {"id":"mo_c34_06","section":"Area Behind C3 & C4","text":"Marketing frame out and up to date","type":"rate"},
+
+  {"id":"mo_c3_01","section":"Court 3","text":"No food below drink rail","type":"rate"},
+  {"id":"mo_c3_02","section":"Court 3","text":"No food on carpet","type":"rate"},
+  {"id":"mo_c3_03","section":"Court 3","text":"Pillows straight","type":"rate"},
+  {"id":"mo_c3_04","section":"Court 3","text":"No spills or stains on cushions","type":"rate"},
+  {"id":"mo_c3_05","section":"Court 3","text":"QR codes out","type":"rate"},
+  {"id":"mo_c3_06","section":"Court 3","text":"Marketing frames out on table and up to date","type":"rate"},
+  {"id":"mo_c3_07","section":"Court 3","text":"Plastic Rally cups out","type":"rate"},
+  {"id":"mo_c3_08","section":"Court 3","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_c3_09","section":"Court 3","text":"Hand sanitizer out","type":"rate"},
+  {"id":"mo_c3_10","section":"Court 3","text":"Tablet plugged in","type":"rate"},
+  {"id":"mo_c3_11","section":"Court 3","text":"Drink and food menu on drink rail","type":"rate"},
+
+  {"id":"mo_bm_01","section":"Bathrooms — Men's","text":"Clean counter (wipe soap off if no cleaners)","type":"rate"},
+  {"id":"mo_bm_02","section":"Bathrooms — Men's","text":"Toilet paper stocked","type":"rate"},
+  {"id":"mo_bm_03","section":"Bathrooms — Men's","text":"Hand towels stocked","type":"rate"},
+  {"id":"mo_bm_04","section":"Bathrooms — Men's","text":"No trash on floor","type":"rate"},
+  {"id":"mo_bm_05","section":"Bathrooms — Men's","text":"Toilets flushed and clean","type":"rate"},
+  {"id":"mo_bm_06","section":"Bathrooms — Men's","text":"Trash emptied","type":"rate"},
+  {"id":"mo_bm_07","section":"Bathrooms — Men's","text":"No streaks on mirror","type":"rate"},
+
+  {"id":"mo_bw_01","section":"Bathrooms — Women's","text":"Clean counter (wipe soap off if no cleaners)","type":"rate"},
+  {"id":"mo_bw_02","section":"Bathrooms — Women's","text":"Toilet paper stocked","type":"rate"},
+  {"id":"mo_bw_03","section":"Bathrooms — Women's","text":"Hand towels stocked","type":"rate"},
+  {"id":"mo_bw_04","section":"Bathrooms — Women's","text":"No trash on floor","type":"rate"},
+  {"id":"mo_bw_05","section":"Bathrooms — Women's","text":"Toilets flushed and clean","type":"rate"},
+  {"id":"mo_bw_06","section":"Bathrooms — Women's","text":"Trash emptied","type":"rate"},
+  {"id":"mo_bw_07","section":"Bathrooms — Women's","text":"No streaks on mirror","type":"rate"},
+
+  {"id":"mo_bs_01","section":"Bathrooms — Single Stall","text":"Clean counter (wipe soap off if no cleaners)","type":"rate"},
+  {"id":"mo_bs_02","section":"Bathrooms — Single Stall","text":"Toilet paper stocked","type":"rate"},
+  {"id":"mo_bs_03","section":"Bathrooms — Single Stall","text":"Hand towels stocked","type":"rate"},
+  {"id":"mo_bs_04","section":"Bathrooms — Single Stall","text":"No trash on floor","type":"rate"},
+  {"id":"mo_bs_05","section":"Bathrooms — Single Stall","text":"Toilet flushed and clean","type":"rate"},
+  {"id":"mo_bs_06","section":"Bathrooms — Single Stall","text":"Trash emptied","type":"rate"},
+  {"id":"mo_bs_07","section":"Bathrooms — Single Stall","text":"No streaks on mirror","type":"rate"},
+
+  {"id":"mo_dr_01","section":"Drink Rail — Garden Pods","text":"No food under rail (use iPhone flashlight if needed)","type":"rate"},
+  {"id":"mo_dr_02","section":"Drink Rail — Garden Pods","text":"No drink rings on rail","type":"rate"},
+
+  {"id":"mo_gp_01","section":"Garden Pods","text":"Pillows straight","type":"rate"},
+  {"id":"mo_gp_02","section":"Garden Pods","text":"Carpets straight","type":"rate"},
+  {"id":"mo_gp_03","section":"Garden Pods","text":"No new stains or marks","type":"rate"},
+  {"id":"mo_gp_04","section":"Garden Pods","text":"No drink rings on tables","type":"rate"},
+  {"id":"mo_gp_05","section":"Garden Pods","text":"Marketing frames out and up to date","type":"rate"},
+  {"id":"mo_gp_06","section":"Garden Pods","text":"QR code on all tables","type":"rate"},
+  {"id":"mo_gp_07","section":"Garden Pods","text":"No food or trash","type":"rate"},
+  {"id":"mo_gp_08","section":"Garden Pods","text":"Plates and roll outs on each set","type":"rate"},
+
+  {"id":"mo_70_01","section":"70s Area","text":"QR codes out","type":"rate"},
+  {"id":"mo_70_02","section":"70s Area","text":"Marketing frames on all tables and up to date","type":"rate"},
+  {"id":"mo_70_03","section":"70s Area","text":"No drink rings","type":"rate"},
+  {"id":"mo_70_04","section":"70s Area","text":"Plates and roll outs out","type":"rate"},
+  {"id":"mo_70_05","section":"70s Area","text":"No food under tables or chairs","type":"rate"},
+
+  {"id":"mo_bar_01","section":"Bar","text":"Bar wiped, no streaks","type":"rate"},
+  {"id":"mo_bar_02","section":"Bar","text":"No food under bar","type":"rate"},
+  {"id":"mo_bar_03","section":"Bar","text":"Chairs straightened","type":"rate"},
+  {"id":"mo_bar_04","section":"Bar","text":"Bar napkins stocked","type":"rate"},
+  {"id":"mo_bar_05","section":"Bar","text":"Straws stocked","type":"rate"},
+
+  {"id":"mo_tr_01","section":"Trash","text":"All trash cans empty","type":"rate"},
+
+  {"id":"mo_caf_01","section":"Café","text":"Café clean","type":"rate"},
+  {"id":"mo_caf_02","section":"Café","text":"No food","type":"rate"},
+  {"id":"mo_caf_03","section":"Café","text":"No drink marks","type":"rate"},
+
+  {"id":"mo_28","section":"Outdoor Setup","text":"Set up outdoor area — put out cushions, wipe tables, remove TV covers, bring water out","type":"rate"},
+  {"id":"mo_out_01","section":"Outdoor Setup","text":"Tables wiped down, no drink rings","type":"rate"},
+  {"id":"mo_out_02","section":"Outdoor Setup","text":"No food on floor or carpet","type":"rate"},
+  {"id":"mo_out_03","section":"Outdoor Setup","text":"Pillows straight, no spills or stains on cushions","type":"rate"},
+  {"id":"mo_out_04","section":"Outdoor Setup","text":"QR codes out on all tables","type":"rate"},
+  {"id":"mo_out_05","section":"Outdoor Setup","text":"Marketing frames out and up to date","type":"rate"},
+  {"id":"mo_out_06","section":"Outdoor Setup","text":"Plastic Rally cups out","type":"rate"},
+  {"id":"mo_out_07","section":"Outdoor Setup","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_out_08","section":"Outdoor Setup","text":"TV covers removed, TVs on displaying Rally content","type":"rate"},
+  {"id":"mo_out_09","section":"Outdoor Setup","text":"☀️ Summer: Water and ice out for guests, cold towels rolled and ready","type":"rate"},
+  {"id":"mo_out_10","section":"Outdoor Setup","text":"❄️ Winter: Heaters out and positioned, confirm they are working","type":"rate"},
+
+  {"id":"mo_29","section":"Remaining Opening Duties","text":"Unlock all doors (around 6:50am)","type":"check"},
+  {"id":"mo_31","section":"Remaining Opening Duties","text":"Open garage doors if outside temperature is 65°F or below","type":"check"},
+  {"id":"mo_32","section":"Remaining Opening Duties","text":"Check bar cleanliness. Turn on dishwashers (bar and Captain's Quarters). Test sanitization and chemical levels with sani strips.","type":"check","link":"https://rallypickleball.sharepoint.com/:w:/s/Operations/IQDH7lRBJROTTInb1J6th3prAXPXqRfkx0Q4L2LpFhZVAXs?e=V91ELs"},
+  {"id":"mo_33","section":"Remaining Opening Duties","text":"If you are the bartender for the day, complete bar setup — reference Bar Setup SOP","type":"check","link":"https://rallypickleball.sharepoint.com/:w:/s/Operations/IQANM1Yey3ULTY7dDJ4KCLOSAa9JEmitQKBmMAwHC96s_Cs?e=z1Bzwe"},
+  {"id":"mo_34","section":"Remaining Opening Duties","text":"Set up host station: computer on, host TV on, take host phone","type":"check"},
+  {"id":"mo_35","section":"Remaining Opening Duties","text":"Check Triple Seat and Event Office for BEO. If event, check with Kitchen, review BEO and ring into Toast.","type":"check"},
+  {"id":"mo_36","section":"Remaining Opening Duties","text":"Check Reservation List and Member List","type":"check"},
+  {"id":"mo_38","section":"Remaining Opening Duties","text":"Count safe and put out cash drawers — $300 each (bar + café). Complete daily safe count spreadsheet.","type":"check"},
+  {"id":"mo_38b","section":"Remaining Opening Duties","text":"Count café drawer and collect barista shift review from previous day","type":"check"},
+  {"id":"mo_39","section":"Remaining Opening Duties","text":"Check and adjust temperature. Heat max 63°F if ≤50°F outside. A/C no lower than 65°F.","type":"check"},
+  {"id":"mo_40","section":"Remaining Opening Duties","text":"Walk bar and café — assess prep and product levels, check labels and expiration dates, assign prep","type":"check"},
+  {"id":"mo_41","section":"Remaining Opening Duties","text":"Print shift sheet / floor plan. Add all staff working. Make cuts if needed.","type":"check"},
+  {"id":"mo_42","section":"Remaining Opening Duties","text":"Fill out and print lineup sheet — cover events, activations, sales targets, 86'd items","type":"check"},
+  {"id":"mo_43","section":"Remaining Opening Duties","text":"Review lineup with every associate as they arrive — one-on-one at the bar, every shift, no exceptions","type":"check"},
+  {"id":"mo_44","section":"Remaining Opening Duties","text":"Create a game plan for the day","type":"check"},
+
 ],
 
 // ── MANAGER CLOSING (expanded from SOPs) ─────────────────────
 "manager_closing": [
-  // Arrival Walkthrough — PM (same venue readiness check on arrival)
-  {"id":"mc_01","section":"Arrival Walkthrough — Outdoor","text":"Tables wiped, no trash, cushions out, TVs on, menus and QR codes out","type":"rate"},
-  {"id":"mc_02","section":"Arrival Walkthrough — Outdoor","text":"Courts clear of debris, water available","type":"rate"},
-  {"id":"mc_03","section":"Arrival Walkthrough — Bar","text":"Floor clean, stools aligned, bar counter wiped, fridge stocked","type":"rate"},
-  {"id":"mc_04","section":"Arrival Walkthrough — Bar","text":"Glasses clean and streak-free, menus clean","type":"rate"},
-  {"id":"mc_05","section":"Arrival Walkthrough — Main House","text":"No food on floor, perimeter checked, lounges clean and straight","type":"rate"},
-  {"id":"mc_06","section":"Arrival Walkthrough — Bathrooms","text":"Toilet paper and hand towels stocked, sinks clean, toilets clean","type":"rate"},
-  {"id":"mc_07","section":"Arrival Walkthrough — Captain's & Garden","text":"Garden pods and Captain's Quarters clean","type":"rate"},
-  {"id":"mc_08","section":"Arrival Walkthrough — Café & Kitchen","text":"Café stocked and clean, kitchen clear, BOH clear","type":"rate"},
-  // Closing Duties
-  {"id":"mc_09","section":"Closing Duties","text":"Review lineup with every PM associate as they arrive — walk through game plan, events, sales targets","type":"check"},
-  {"id":"mc_10","section":"Closing Duties","text":"Walk through with each captain — confirm areas are detailed and clean before releasing them","type":"check"},
-  {"id":"mc_11","section":"Closing Duties","text":"Conduct full bar walkthrough — reference Bar Closing Duties SOP","type":"check"},
-  {"id":"mc_12","section":"Closing Duties","text":"Walk off host — confirm closing procedures done and all PBP guests checked in","type":"check"},
-  {"id":"mc_13","section":"Closing Duties","text":"Touch base with every event POC before they leave — get feedback, fill Events section of shift report","type":"check"},
-  {"id":"mc_14","section":"Closing Duties","text":"Ensure courts are clean and have no debris","type":"check"},
-  {"id":"mc_15","section":"Closing Duties","text":"Check lounges, tables, PPW, and Garden pods — all tables cleaned, wiped, and reset","type":"check"},
-  {"id":"mc_16","section":"Closing Duties","text":"Chairs pulled from tables, stools on top of bar tops","type":"check"},
-  {"id":"mc_17","section":"Closing Duties","text":"Ensure water towers were emptied","type":"check"},
-  {"id":"mc_18","section":"Closing Duties","text":"Break down outdoor courts — bring furniture inside and cover TVs","type":"check"},
-  {"id":"mc_19","section":"Closing Duties","text":"Confirm outdoor heaters are off","type":"check"},
-  {"id":"mc_20","section":"Closing Duties","text":"Ensure dishwashers are drained and turned off along with all other equipment","type":"check"},
-  {"id":"mc_21","section":"Closing Duties","text":"Verify trash taken out and no associate beverages left behind","type":"check"},
-  {"id":"mc_22","section":"Closing Duties","text":"Check janitor's closet — confirm paper towels and tissue are stocked, note anything running low","type":"check"},
-  {"id":"mc_23","section":"Closing Duties","text":"Check KDS — confirm no outstanding food tickets","type":"check"},
-  {"id":"mc_24","section":"Closing Duties","text":"Ensure all employees pay for meals before leaving","type":"check"},
-  {"id":"mc_25","section":"Closing Duties","text":"Close out all open tabs in Toast","type":"check"},
-  {"id":"mc_26","section":"Closing Duties","text":"Collect shift reviews from all associates (printed from Toast)","type":"check"},
-  {"id":"mc_27","section":"Closing Duties","text":"Ensure all employees are clocked out","type":"check"},
-  {"id":"mc_28","section":"Closing Duties","text":"Collect bar and café cash drawers, add cash tips, input all shift reviews into daily cash log","type":"check"},
-  {"id":"mc_29","section":"Closing Duties","text":"Count safe and fill out safe count template","type":"check"},
-  {"id":"mc_30","section":"Closing Duties","text":"Ensure all doors are locked","type":"check"},
-  {"id":"mc_31","section":"Closing Duties","text":"Turn off all music and lights","type":"check"},
-  {"id":"mc_32","section":"Closing Duties","text":"Complete PM shift report — pull sales and covers from Toast, complete Events section, screenshot Day Summary and email team","type":"check"},
-  {"id":"mc_33","section":"Closing Duties","text":"Set the alarm and ensure door is fully closed behind you","type":"check"},
-  // Closing Walkthrough
-  {"id":"mc_34","section":"Closing Walkthrough","text":"Mop in front of bar and café, clean café counter, mop behind café","type":"check"},
-  {"id":"mc_35","section":"Closing Walkthrough","text":"Smoothie station clean and fully broken down","type":"check"},
-  {"id":"mc_36","section":"Closing Walkthrough","text":"Café oven and pizza oven off","type":"check"},
-  {"id":"mc_37","section":"Closing Walkthrough","text":"Mop and sweep in front of bar, wipe down bar fully","type":"check"},
-  {"id":"mc_38","section":"Closing Walkthrough","text":"Walk bartender through bar closing using Bar Closing Checklist","type":"check"},
-  {"id":"mc_39","section":"Closing Walkthrough","text":"Complete solo lap of full venue to verify independently","type":"check"},
-  {"id":"mc_40","section":"Closing Walkthrough","text":"Sweep food around perimeter, all court lounges, and garden pods","type":"check"},
-  {"id":"mc_41","section":"Closing Walkthrough","text":"Wipe down all counters and drink rails, sweep carpet areas in lounges and garden pods","type":"check"},
-  {"id":"mc_42","section":"Closing Walkthrough","text":"Garden pods: no food, no drink marks","type":"check"},
-  {"id":"mc_43","section":"Closing Walkthrough","text":"Bathrooms checked — cleanliness, paper stock","type":"check"},
-  {"id":"mc_44","section":"Closing Walkthrough","text":"Host desk clean and tidy, paddles wiped down","type":"check"}
+
+  {"id":"mc_arr_01","section":"When You Arrive","text":"Do a full venue cleanliness walkthrough","type":"check"},
+  {"id":"mc_arr_02","section":"When You Arrive","text":"Check paper goods par levels (toilet paper, hand towels, napkins, bar napkins, straws)","type":"check"},
+  {"id":"mc_arr_03","section":"When You Arrive","text":"Review lineup sheet","type":"check"},
+  {"id":"mc_arr_04","section":"When You Arrive","text":"Touch base with opening manager — get briefed on the day","type":"check"},
+  {"id":"mc_arr_05","section":"When You Arrive","text":"Review upcoming events for tonight","type":"check"},
+  {"id":"mc_arr_06","section":"When You Arrive","text":"Review lineup sheet and create floor plan for your shift","type":"check"},
+
+  {"id":"mc_wt_hdr","section":"Closing Walkthrough","text":"Walk through every area below and check each item","type":"check"},
+
+  {"id":"mc_c1_01","section":"Court 1","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c1_02","section":"Court 1","text":"No food on carpet","type":"check"},
+  {"id":"mc_c1_03","section":"Court 1","text":"Pillows straight","type":"check"},
+  {"id":"mc_c1_04","section":"Court 1","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c1_05","section":"Court 1","text":"QR codes out","type":"check"},
+  {"id":"mc_c1_06","section":"Court 1","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c1_07","section":"Court 1","text":"Plastic Rally cups out","type":"check"},
+  {"id":"mc_c1_08","section":"Court 1","text":"Glass water cups out","type":"check"},
+  {"id":"mc_c1_09","section":"Court 1","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c1_10","section":"Court 1","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c1_11","section":"Court 1","text":"Drink and food menu on drink rail","type":"check"},
+
+  {"id":"mc_ppw_01","section":"Ping Pong Wing","text":"Tables wiped down","type":"check"},
+  {"id":"mc_ppw_02","section":"Ping Pong Wing","text":"No drink rings","type":"check"},
+  {"id":"mc_ppw_03","section":"Ping Pong Wing","text":"No food on floor","type":"check"},
+  {"id":"mc_ppw_04","section":"Ping Pong Wing","text":"No stains on carpet or furniture","type":"check"},
+  {"id":"mc_ppw_05","section":"Ping Pong Wing","text":"Marketing frame out and up to date","type":"check"},
+  {"id":"mc_ppw_06","section":"Ping Pong Wing","text":"QR code out","type":"check"},
+
+  {"id":"mc_c4_01","section":"Court 4","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c4_02","section":"Court 4","text":"No food on carpet","type":"check"},
+  {"id":"mc_c4_03","section":"Court 4","text":"Pillows straight","type":"check"},
+  {"id":"mc_c4_04","section":"Court 4","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c4_05","section":"Court 4","text":"QR codes out","type":"check"},
+  {"id":"mc_c4_06","section":"Court 4","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c4_07","section":"Court 4","text":"Plastic Rally cups out","type":"check"},
+  {"id":"mc_c4_08","section":"Court 4","text":"Glass water cups out","type":"check"},
+  {"id":"mc_c4_09","section":"Court 4","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c4_10","section":"Court 4","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c4_11","section":"Court 4","text":"Drink and food menu on drink rail","type":"check"},
+
+  {"id":"mc_c34_01","section":"Area Behind C3 & C4","text":"No food on floor","type":"check"},
+  {"id":"mc_c34_02","section":"Area Behind C3 & C4","text":"No food under tables","type":"check"},
+  {"id":"mc_c34_03","section":"Area Behind C3 & C4","text":"No drink marks on tables","type":"check"},
+  {"id":"mc_c34_04","section":"Area Behind C3 & C4","text":"Trash can empty","type":"check"},
+  {"id":"mc_c34_05","section":"Area Behind C3 & C4","text":"QR codes out","type":"check"},
+  {"id":"mc_c34_06","section":"Area Behind C3 & C4","text":"Marketing frame out and up to date","type":"check"},
+
+  {"id":"mc_c3_01","section":"Court 3","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c3_02","section":"Court 3","text":"No food on carpet","type":"check"},
+  {"id":"mc_c3_03","section":"Court 3","text":"Pillows straight","type":"check"},
+  {"id":"mc_c3_04","section":"Court 3","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c3_05","section":"Court 3","text":"QR codes out","type":"check"},
+  {"id":"mc_c3_06","section":"Court 3","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c3_07","section":"Court 3","text":"Plastic Rally cups out","type":"check"},
+  {"id":"mc_c3_08","section":"Court 3","text":"Glass water cups out","type":"check"},
+  {"id":"mc_c3_09","section":"Court 3","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c3_10","section":"Court 3","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c3_11","section":"Court 3","text":"Drink and food menu on drink rail","type":"check"},
+
+  {"id":"mc_bm_01","section":"Bathrooms — Men's","text":"Clean counter (wipe soap off if no cleaners)","type":"check"},
+  {"id":"mc_bm_02","section":"Bathrooms — Men's","text":"Toilet paper stocked","type":"check"},
+  {"id":"mc_bm_03","section":"Bathrooms — Men's","text":"Hand towels stocked","type":"check"},
+  {"id":"mc_bm_04","section":"Bathrooms — Men's","text":"No trash on floor","type":"check"},
+  {"id":"mc_bm_05","section":"Bathrooms — Men's","text":"Toilets flushed and clean","type":"check"},
+  {"id":"mc_bm_06","section":"Bathrooms — Men's","text":"Trash emptied","type":"check"},
+  {"id":"mc_bm_07","section":"Bathrooms — Men's","text":"No streaks on mirror","type":"check"},
+
+  {"id":"mc_bw_01","section":"Bathrooms — Women's","text":"Clean counter (wipe soap off if no cleaners)","type":"check"},
+  {"id":"mc_bw_02","section":"Bathrooms — Women's","text":"Toilet paper stocked","type":"check"},
+  {"id":"mc_bw_03","section":"Bathrooms — Women's","text":"Hand towels stocked","type":"check"},
+  {"id":"mc_bw_04","section":"Bathrooms — Women's","text":"No trash on floor","type":"check"},
+  {"id":"mc_bw_05","section":"Bathrooms — Women's","text":"Toilets flushed and clean","type":"check"},
+  {"id":"mc_bw_06","section":"Bathrooms — Women's","text":"Trash emptied","type":"check"},
+  {"id":"mc_bw_07","section":"Bathrooms — Women's","text":"No streaks on mirror","type":"check"},
+
+  {"id":"mc_bs_01","section":"Bathrooms — Single Stall","text":"Clean counter (wipe soap off if no cleaners)","type":"check"},
+  {"id":"mc_bs_02","section":"Bathrooms — Single Stall","text":"Toilet paper stocked","type":"check"},
+  {"id":"mc_bs_03","section":"Bathrooms — Single Stall","text":"Hand towels stocked","type":"check"},
+  {"id":"mc_bs_04","section":"Bathrooms — Single Stall","text":"No trash on floor","type":"check"},
+  {"id":"mc_bs_05","section":"Bathrooms — Single Stall","text":"Toilet flushed and clean","type":"check"},
+  {"id":"mc_bs_06","section":"Bathrooms — Single Stall","text":"Trash emptied","type":"check"},
+  {"id":"mc_bs_07","section":"Bathrooms — Single Stall","text":"No streaks on mirror","type":"check"},
+
+  {"id":"mc_dr_01","section":"Drink Rail — Garden Pods","text":"No food under rail (use iPhone flashlight if needed)","type":"check"},
+  {"id":"mc_dr_02","section":"Drink Rail — Garden Pods","text":"No drink rings on rail","type":"check"},
+
+  {"id":"mc_gp_01","section":"Garden Pods","text":"Pillows straight","type":"check"},
+  {"id":"mc_gp_02","section":"Garden Pods","text":"Carpets straight","type":"check"},
+  {"id":"mc_gp_03","section":"Garden Pods","text":"No new stains or marks","type":"check"},
+  {"id":"mc_gp_04","section":"Garden Pods","text":"No drink rings on tables","type":"check"},
+  {"id":"mc_gp_05","section":"Garden Pods","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_gp_06","section":"Garden Pods","text":"QR code on all tables","type":"check"},
+  {"id":"mc_gp_07","section":"Garden Pods","text":"No food or trash","type":"check"},
+  {"id":"mc_gp_08","section":"Garden Pods","text":"Plates and roll outs on each set","type":"check"},
+
+  {"id":"mc_70_01","section":"70s Area","text":"QR codes out","type":"check"},
+  {"id":"mc_70_02","section":"70s Area","text":"Marketing frames on all tables and up to date","type":"check"},
+  {"id":"mc_70_03","section":"70s Area","text":"No drink rings","type":"check"},
+  {"id":"mc_70_04","section":"70s Area","text":"Plates and roll outs out","type":"check"},
+  {"id":"mc_70_05","section":"70s Area","text":"No food under tables or chairs","type":"check"},
+
+  {"id":"mc_bar_01","section":"Bar","text":"Bar wiped, no streaks","type":"check"},
+  {"id":"mc_bar_02","section":"Bar","text":"No food under bar","type":"check"},
+  {"id":"mc_bar_03","section":"Bar","text":"Chairs straightened","type":"check"},
+  {"id":"mc_bar_04","section":"Bar","text":"Bar napkins stocked","type":"check"},
+  {"id":"mc_bar_05","section":"Bar","text":"Straws stocked","type":"check"},
+
+  {"id":"mc_tr_01","section":"Trash","text":"All trash cans empty","type":"check"},
+
+  {"id":"mc_caf_01","section":"Café","text":"Café clean","type":"check"},
+  {"id":"mc_caf_02","section":"Café","text":"No food","type":"check"},
+  {"id":"mc_caf_03","section":"Café","text":"No drink marks","type":"check"},
+
+  {"id":"mc_out_01","section":"Outdoor","text":"Tables wiped down, no drink rings","type":"check"},
+  {"id":"mc_out_02","section":"Outdoor","text":"No food on floor or carpet","type":"check"},
+  {"id":"mc_out_03","section":"Outdoor","text":"Pillows straight, no spills or stains on cushions","type":"check"},
+  {"id":"mc_out_04","section":"Outdoor","text":"QR codes out on all tables","type":"check"},
+  {"id":"mc_out_05","section":"Outdoor","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_out_06","section":"Outdoor","text":"☀️ Summer: water, ice and cold towels out · ❄️ Winter: heaters out and working","type":"check"},
+
+  {"id":"mc_team_01","section":"Team Walkthrough","text":"Do walkthrough with team — confirm all areas are clean and set","type":"check"},
+  {"id":"mc_team_02","section":"Team Walkthrough","text":"Bar walkthrough with bartender — check closing checklist together","type":"check"},
+
+  {"id":"mc_close_01","section":"Closing Duties","text":"Close all open tabs in Toast","type":"check"},
+  {"id":"mc_close_02","section":"Closing Duties","text":"Collect shift reviews from all associates","type":"check"},
+  {"id":"mc_close_03","section":"Closing Duties","text":"Collect cash from associates, if any","type":"check"},
+  {"id":"mc_close_04","section":"Closing Duties","text":"Close out all events — give clipboard to events team","type":"check"},
+  {"id":"mc_close_05","section":"Closing Duties","text":"Count cash drawers (bar + café)","type":"check"},
+  {"id":"mc_close_06","section":"Closing Duties","text":"Fill out cash sheet","type":"check"},
+  {"id":"mc_close_07","section":"Closing Duties","text":"Put receipts into file","type":"check"},
+  {"id":"mc_close_08","section":"Closing Duties","text":"Fill out shift report","type":"check"},
+  {"id":"mc_close_09","section":"Closing Duties","text":"Check all employees are clocked out","type":"check"},
+  {"id":"mc_close_10","section":"Closing Duties","text":"Send shift review email to managers","type":"check"},
+
+  {"id":"mc_lockup_01","section":"Locking Up","text":"Make sure venue is empty","type":"check"},
+  {"id":"mc_lockup_02","section":"Locking Up","text":"Pizza oven off","type":"check"},
+  {"id":"mc_lockup_03","section":"Locking Up","text":"Smoothie station clean and closed","type":"check"},
+  {"id":"mc_lockup_04","section":"Locking Up","text":"Turn off all lights, music, and TVs","type":"check"},
+  {"id":"mc_lockup_05","section":"Locking Up","text":"Lock all doors","type":"check"},
+  {"id":"mc_lockup_06","section":"Locking Up","text":"Set alarm and make sure door is fully closed behind you","type":"check"}
+
 ],
 
 // ── MANAGER WEEKLY (from SOP 6 + existing) ───────────────────
@@ -3549,8 +3733,7 @@ function renderClItem(item) {
   const s = clState[item.id] || {};
   const isDone = item.type === 'check' ? !!s.done : s.rating === 'good';
   const isFlagged = s.rating === 'needs';
-  const isPoor = s.rating === 'poor';
-  const cls = isDone ? 'item-done' : isPoor ? 'item-poor' : isFlagged ? 'item-flagged' : '';
+  const cls = isDone ? 'item-done' : isFlagged ? 'item-flagged' : '';
   const showDetail = s.rating === 'needs' || s.rating === 'poor';
 
   if(item.type === 'check') {
@@ -3571,7 +3754,6 @@ function renderClItem(item) {
     <div class="cl-rate-row">
       <button class="cl-rate-btn good ${s.rating==='good'?'sel':''}" onclick="setClRating('${item.id}','good')">✅ Good</button>
       <button class="cl-rate-btn needs ${s.rating==='needs'?'sel':''}" onclick="setClRating('${item.id}','needs')">⚠️ Needs Work</button>
-      <button class="cl-rate-btn poor-b ${s.rating==='poor'?'sel':''}" onclick="setClRating('${item.id}','poor')">❌ Poor</button>
     </div>
     <div class="cl-detail ${showDetail?'open':''}" id="cldetail-${item.id}">
       <label>What is the issue?</label>
@@ -3701,19 +3883,25 @@ async function saveClProgress(signedOff = false) {
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────
 // Walkthrough item IDs (mo_01–mo_22) grade the closing manager
-const WALKTHROUGH_IDS = ['mo_01','mo_02','mo_03','mo_04','mo_05','mo_06','mo_07','mo_08','mo_09','mo_10','mo_11','mo_12','mo_13','mo_14','mo_15','mo_16','mo_17','mo_18','mo_19','mo_20','mo_21','mo_22'];
+// All rate items in manager_opening (the court/area sections)
+const WALKTHROUGH_IDS = (function(){
+  const ids = [];
+  const opening = ALL_CHECKLISTS['manager_opening'] || [];
+  opening.forEach(item => { if(item.type === 'rate') ids.push(item.id); });
+  return ids;
+})();
 
-function calcWalkthroughScore(items) {
-  // items = clState object, only score walkthrough IDs that were rated
-  const rated = WALKTHROUGH_IDS.filter(id => items[id] && items[id].rating);
+function calcWalkthroughScore(clStateItems) {
+  // Good = 5pts, Needs Work = 0pts
+  const rated = WALKTHROUGH_IDS.filter(id => clStateItems[id] && clStateItems[id].rating);
   if(!rated.length) return null;
   const pts = rated.reduce((sum, id) => {
-    const r = items[id].rating;
-    return sum + (r === 'good' ? 100 : r === 'needs' ? 50 : 0);
+    return sum + (clStateItems[id].rating === 'good' ? 5 : 0);
   }, 0);
-  const pct = Math.round(pts / rated.length);
+  const maxPts = rated.length * 5;
+  const pct = Math.round((pts / maxPts) * 100);
   const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
-  return { pct, grade, rated: rated.length, total: WALKTHROUGH_IDS.length };
+  return { pts, maxPts, pct, grade, rated: rated.length };
 }
 
 function gradeColor(grade) {
@@ -3723,42 +3911,31 @@ function gradeBg(grade) {
   return {A:'rgba(78,98,44,.12)', B:'rgba(23,72,84,.08)', C:'rgba(200,122,0,.12)', D:'rgba(192,64,32,.1)'}[grade] || 'transparent';
 }
 
-async function submitWalkthroughScore(items) {
-  // Called at sign-off of opening checklist — score the previous closing manager
-  const score = calcWalkthroughScore(items);
-  if(!score) return; // no walkthrough items rated
-
+async function submitWalkthroughScore(closingManagerName) {
+  const score = calcWalkthroughScore(clState);
+  if(!score) return;
   const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
   const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
-
-  // Find the most recent closing sign-off from yesterday or today
+  const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const yStr = yesterday.toISOString().slice(0,10);
-  const todayStr = getTodayStr();
-
+  const payload = {
+    shift_date:     yesterday.toISOString().slice(0,10),
+    graded_manager: closingManagerName,
+    grading_manager: u ? u.name : 'Manager',
+    pts:            score.pts,
+    max_pts:        score.maxPts,
+    pct:            score.pct,
+    grade:          score.grade,
+    items_rated:    score.rated,
+    items_raw:      clState,
+    created_at:     new Date().toISOString()
+  };
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&signed_off_at=not.is.null&order=signed_off_at.desc&limit=1&select=manager_name,date`,
-      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
-    const rows = await res.json();
-    const closingManager = Array.isArray(rows) && rows[0] ? rows[0].manager_name : 'Unknown';
-
-    const u = users.find(x => x.id === currentUser);
-    const gradingManager = u ? u.name : 'Manager';
-
-    const payload = {
-      shift_date: yStr,
-      graded_manager: closingManager,
-      grading_manager: gradingManager,
-      score: score.pct,
-      grade: score.grade,
-      items_rated: score.rated,
-      created_at: new Date().toISOString()
-    };
-
-    await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
-    console.log(`Score submitted: ${closingManager} got ${score.grade} (${score.pct}%)`);
-  } catch(e) { console.warn('Score submit failed', e); }
+    await fetch(`${SUPA}/rest/v1/rally_manager_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.pts}/${score.maxPts}pts)`);
+    showToast(`${closingManagerName} scored ${score.grade} — ${score.pts}/${score.maxPts} pts`);
+  } catch(e) { console.warn('Manager score submit failed', e); }
 }
 
 async function signOffChecklist() {
@@ -3770,23 +3947,84 @@ async function signOffChecklist() {
     if(i.type==='rate'&&s.rating) done++;
   });
   const incomplete = items.length - done;
+
+  // For manager opening — show closer picker before signing off
+  if(currentChecklistKey === 'manager_opening') {
+    const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
+    const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
+
+    // Try to auto-detect who closed last night from rally_checklist
+    let autoCloser = '';
+    try {
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+      const yStr = yesterday.toISOString().slice(0,10);
+      const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+      const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+      const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name&order=signed_off_at.desc&limit=1`,
+        {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+      const rows = await res.json();
+      if(Array.isArray(rows) && rows[0]?.manager_name) autoCloser = rows[0].manager_name;
+    } catch(e) {}
+
+    const pickerHtml = `
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#174854;margin-bottom:12px;">Sign Off Opening</div>
+      <p style="font-size:13px;color:rgba(23,72,84,.6);margin-bottom:16px;">Who closed last night? Their score will be calculated from your ratings.</p>
+      ${autoCloser ? `<div style="background:rgba(78,98,44,.1);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#4e622c;font-weight:600;">🔍 Last night's closer: <strong>${autoCloser}</strong></div>` : ''}
+      <select id="closer-picker" style="width:100%;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fbf6ed;margin-bottom:6px;">
+        <option value="">— Select closing manager —</option>
+        ${mgr_opts}
+      </select>
+      <p style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;">Auto-detected from last night's closing checklist.</p>
+      ${incomplete > 0 ? `<p style="font-size:12px;color:rgba(200,100,0,.7);margin-top:8px;">⚠️ ${incomplete} items not yet rated</p>` : '<p style="font-size:12px;color:#4e622c;margin-top:8px;">✅ All items rated — ready to sign off</p>'}`;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      ${pickerHtml}
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button id="signoff-confirm" style="flex:1;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Off ✓</button>
+        <button id="signoff-cancel" style="padding:12px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+      </div>
+    </div>`;
+    document.body.appendChild(overlay);
+
+    // Pre-select auto-detected closer if found
+    if(autoCloser) {
+      const sel = document.getElementById('closer-picker');
+      if(sel) { const opt = Array.from(sel.options).find(o=>o.value===autoCloser); if(opt) sel.value=autoCloser; }
+    }
+
+    await new Promise(resolve => {
+      document.getElementById('signoff-confirm').onclick = async () => {
+        const closer = document.getElementById('closer-picker').value;
+        if(!closer) { showToast('Please select who closed last night'); return; }
+        overlay.remove();
+        await saveClProgress(true);
+        await submitWalkthroughScore(closer);
+        resolve();
+      };
+      document.getElementById('signoff-cancel').onclick = () => { overlay.remove(); resolve('cancel'); };
+    }).then(async result => {
+      if(result === 'cancel') return;
+      showToast('Checklist signed off! ✅');
+      currentChecklistKey = null; clState = {};
+      if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
+        showScreen('s-mgr');
+        showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
+      } else { showScreen('s-cl-hub'); }
+    });
+    return;
+  }
+
   const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
   if(!confirm(msg)) return;
   await saveClProgress(true);
-  // If this is the opening checklist, score the closing manager
-  if(currentChecklistKey === 'manager_opening') {
-    await submitWalkthroughScore(clState);
-  }
   showToast('Checklist signed off! ✅');
-  currentChecklistKey = null;
-  clState = {};
+  currentChecklistKey = null; clState = {};
   if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
     showScreen('s-mgr');
     showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
-  } else {
-    showScreen('s-cl-hub');
-    showHubTab('cl', document.getElementById('hub-tab-cl'));
-  }
+  } else { showScreen('s-cl-hub'); }
 }
 
 function goBackToHub() {
