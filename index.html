@@ -1459,6 +1459,11 @@ function renderMgrCompleted() {
         <div style="font-size:11px;color:var(--olive);margin-bottom:6px;">${EL[t.effort]} · Added by ${t.by}${when?' · '+when:''}</div>
         <div style="font-size:12px;color:var(--teal-mid);font-weight:600;margin-bottom:6px;">✅ Done by ${doer?.name||'unknown'}</div>
         ${contribs?`<div class="workers-row">${contribs}</div>`:''}
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="ov-abtn" onclick="openEditModal(${t.id})">✏ Edit</button>
+          <button class="ov-abtn" onclick="undoComplete(${t.id})" style="color:rgba(23,72,84,.5);">↩ Reopen</button>
+          <button class="ov-abtn" style="color:rgba(220,80,60,.6);" onclick="mgrRemoveTask(${t.id})">✕ Remove</button>
+        </div>
       </div>`;
     }).join('')}
   </div>`;
@@ -2594,6 +2599,16 @@ function mgrCompleteTask(id) {
   t.claimedBy = null;
   saveData();
   showToast(recipient ? `✅ Complete · +${ePts+dPts}pts for ${recipient.name.split(' ')[0]}` : 'Task marked complete ✅');
+  renderMgr();
+}
+
+function undoComplete(id) {
+  const t = tasks.find(x => x.id === id);
+  if(!t) return;
+  t.done = false; t.doneBy = null; t.doneAt = null; t.earnedDPts = 0; t.progress = 0;
+  saveData();
+  showToast('Task reopened');
+  renderMgrCompleted();
   renderMgr();
 }
 
