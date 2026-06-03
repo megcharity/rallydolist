@@ -620,8 +620,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <select id="e-assign"><option value="">Unassigned — open pool</option></select>
     </div>
     <div style="border-top:1px solid rgba(23,72,84,.08);margin:12px 0;padding-top:12px;">
-      <label style="font-size:12px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Mark Complete &amp; Award Points To</label>
-      <select id="e-complete-assign"><option value="">— Don't complete yet —</option></select>
+      <label style="font-size:12px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Award Points To</label>
+      <select id="e-complete-assign"><option value="">— No points / not completed —</option></select>
     </div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveEdit()">Save Changes</button>
@@ -938,7 +938,8 @@ function computeLeaderboardPts() {
   const monday = getMonday();
   users.forEach(u => { u.effortPts=0; u.deadlinePts=0; u.weeklyEffort=0; u.weeklyDeadline=0; });
   tasks.filter(t=>t.done).forEach(t=>{
-    const uid = t.claimedBy || t.doneBy;
+    // awardedTo takes priority (set by manager), then claimedBy, then doneBy
+    const uid = t.awardedTo || t.claimedBy || t.doneBy;
     const u = users.find(x=>String(x.id)===String(uid));
     if(!u) return;
     const ePts = EP[t.effort]||25;
@@ -2642,7 +2643,11 @@ function openEditModal(id){
   document.getElementById('e-assign').innerHTML=opts;
   document.getElementById('e-assign').value=t.assignedTo||'';
   document.getElementById('e-complete-assign').innerHTML=completeOpts;
-  document.getElementById('e-complete-assign').value='';
+  // If task is already complete, pre-select who got the points
+  const currentAwardee = t.awardedTo || t.claimedBy || (t.done ? t.doneBy : null);
+  document.getElementById('e-complete-assign').value = currentAwardee ? String(currentAwardee) : '';
+  // Change label if already complete
+  const completeLabel = document.querySelector('#edit-modal label[for="e-complete-assign"], #edit-modal label:last-of-type');
   document.getElementById('edit-modal').style.display='flex';
 }
 function closeEditModal(e){if(!e||e.target===document.getElementById('edit-modal'))document.getElementById('edit-modal').style.display='none';}
@@ -2654,23 +2659,28 @@ function saveEdit(){
   t.instLink=document.getElementById('e-link')?.value.trim()||'';
   t.jobCode=document.getElementById('e-jobcode')?.value||'';
   const newAssign=document.getElementById('e-assign')?.value;
-  t.assignedTo=newAssign?parseInt(newAssign):null;
-  // Complete and award to a specific person
+  if(!t.done) t.assignedTo=newAssign?parseInt(newAssign):null;
+  // Award points to a specific person — always update awardedTo when set
   const completeFor=document.getElementById('e-complete-assign')?.value;
   if(completeFor){
     const u=users.find(x=>String(x.id)===String(completeFor));
     if(u){
       const ePts=EP[t.effort]||25;
-      const dPts=getDBonus(t.deadline);
-      t.done=true;t.doneBy=u.id;t.doneAt=new Date();t.earnedDPts=dPts;t.claimedBy=null;t.assignedTo=null;
+      const dPts=t.earnedDPts||getDBonus(t.deadline);
+      t.done=true;
+      t.awardedTo=parseInt(completeFor); // dedicated award field
+      t.doneBy=parseInt(completeFor);
+      t.doneAt=t.doneAt||new Date();
+      t.earnedDPts=dPts;
+      t.claimedBy=null;t.assignedTo=null;
       compLog.unshift({text:t.text,who:u.name,ePts,dPts,time:new Date()});
-      showToast(`✅ Complete · Points awarded to ${u.name.split(' ')[0]}`);
+      showToast(`✅ Points awarded to ${u.name.split(' ')[0]}`);
     }
   } else {
     showToast('Task updated ✅');
   }
   closeEditModal();saveData();
-  renderPool();renderMyTasks();renderMgr();
+  renderPool();renderMyTasks();renderMgr();renderMgrCompleted();
 }
 // ─── MISC ────────────────────────────────────────────────────────────────────
 function switchUser(){
