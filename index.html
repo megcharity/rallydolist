@@ -620,8 +620,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <select id="e-assign"><option value="">Unassigned — open pool</option></select>
     </div>
     <div style="border-top:1px solid rgba(23,72,84,.08);margin:12px 0;padding-top:12px;">
-      <label style="font-size:12px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Award Points To</label>
-      <select id="e-complete-assign"><option value="">— No points / not completed —</option></select>
+      <label style="font-size:12px;font-weight:700;color:rgba(23,72,84,.5);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Award Points To <span style="font-weight:400;color:rgba(23,72,84,.4);text-transform:none;letter-spacing:0;">(select all who worked on it)</span></label>
+      <div id="e-award-list" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding:4px 0;"></div>
     </div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveEdit()">Save Changes</button>
@@ -938,19 +938,24 @@ function computeLeaderboardPts() {
   const monday = getMonday();
   users.forEach(u => { u.effortPts=0; u.deadlinePts=0; u.weeklyEffort=0; u.weeklyDeadline=0; });
   tasks.filter(t=>t.done).forEach(t=>{
-    // awardedTo takes priority (set by manager), then claimedBy, then doneBy
-    const uid = t.awardedTo || t.claimedBy || t.doneBy;
-    const u = users.find(x=>String(x.id)===String(uid));
-    if(!u) return;
+    // awardedTo can be array (multiple) or single ID, then claimedBy, then doneBy
+    const rawAward = t.awardedTo;
+    const uids = rawAward
+      ? (Array.isArray(rawAward) ? rawAward : [rawAward])
+      : (t.claimedBy ? [t.claimedBy] : t.doneBy ? [t.doneBy] : []);
     const ePts = EP[t.effort]||25;
     const dPts = t.earnedDPts||0;
-    u.effortPts   += ePts;
-    u.deadlinePts += dPts;
     const doneAt = t.doneAt ? new Date(t.doneAt).getTime() : 0;
-    if(doneAt >= monday) {
-      u.weeklyEffort   += ePts;
-      u.weeklyDeadline += dPts;
-    }
+    uids.forEach(uid=>{
+      const u = users.find(x=>String(x.id)===String(uid));
+      if(!u) return;
+      u.effortPts   += ePts;
+      u.deadlinePts += dPts;
+      if(doneAt >= monday){
+        u.weeklyEffort   += ePts;
+        u.weeklyDeadline += dPts;
+      }
+    });
   });
   // Also check compLog for any extra entries
 }
@@ -2642,12 +2647,16 @@ function openEditModal(id){
   const completeOpts='<option value="">— Don\'t complete yet —</option>'+associates.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
   document.getElementById('e-assign').innerHTML=opts;
   document.getElementById('e-assign').value=t.assignedTo||'';
-  document.getElementById('e-complete-assign').innerHTML=completeOpts;
-  // If task is already complete, pre-select who got the points
-  const currentAwardee = t.awardedTo || t.claimedBy || (t.done ? t.doneBy : null);
-  document.getElementById('e-complete-assign').value = currentAwardee ? String(currentAwardee) : '';
-  // Change label if already complete
-  const completeLabel = document.querySelector('#edit-modal label[for="e-complete-assign"], #edit-modal label:last-of-type');
+  // Build award checkboxes
+  const currentAwardees = t.awardedTo
+    ? (Array.isArray(t.awardedTo) ? t.awardedTo.map(String) : [String(t.awardedTo)])
+    : (t.claimedBy ? [String(t.claimedBy)] : (t.done && t.doneBy ? [String(t.doneBy)] : []));
+  const awardList = document.getElementById('e-award-list');
+  awardList.innerHTML = associates.map(u=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1.5px solid rgba(23,72,84,.1);border-radius:7px;cursor:pointer;background:#fff;">
+      <input type="checkbox" value="${u.id}" ${currentAwardees.includes(String(u.id))?'checked':''} style="width:15px;height:15px;accent-color:#174854;"/>
+      <span style="font-size:13px;color:#174854;font-weight:600;">${u.name}</span>
+    </label>`).join('');
   document.getElementById('edit-modal').style.display='flex';
 }
 function closeEditModal(e){if(!e||e.target===document.getElementById('edit-modal'))document.getElementById('edit-modal').style.display='none';}
@@ -2660,22 +2669,22 @@ function saveEdit(){
   t.jobCode=document.getElementById('e-jobcode')?.value||'';
   const newAssign=document.getElementById('e-assign')?.value;
   if(!t.done) t.assignedTo=newAssign?parseInt(newAssign):null;
-  // Award points to a specific person — always update awardedTo when set
-  const completeFor=document.getElementById('e-complete-assign')?.value;
-  if(completeFor){
-    const u=users.find(x=>String(x.id)===String(completeFor));
-    if(u){
-      const ePts=EP[t.effort]||25;
-      const dPts=t.earnedDPts||getDBonus(t.deadline);
-      t.done=true;
-      t.awardedTo=parseInt(completeFor); // dedicated award field
-      t.doneBy=parseInt(completeFor);
-      t.doneAt=t.doneAt||new Date();
-      t.earnedDPts=dPts;
-      t.claimedBy=null;t.assignedTo=null;
-      compLog.unshift({text:t.text,who:u.name,ePts,dPts,time:new Date()});
-      showToast(`✅ Points awarded to ${u.name.split(' ')[0]}`);
-    }
+  // Collect all checked award recipients
+  const checked=[...document.querySelectorAll('#e-award-list input[type=checkbox]:checked')].map(cb=>cb.value);
+  if(checked.length){
+    const ePts=EP[t.effort]||25;
+    const dPts=t.earnedDPts||getDBonus(t.deadline);
+    t.done=true;
+    t.awardedTo=checked.map(Number); // array of recipient IDs
+    t.doneBy=checked[0]?Number(checked[0]):t.doneBy;
+    t.doneAt=t.doneAt||new Date();
+    t.earnedDPts=dPts;
+    t.claimedBy=null;t.assignedTo=null;
+    const names=checked.map(id=>users.find(u=>String(u.id)===id)?.name.split(' ')[0]).filter(Boolean).join(', ');
+    checked.forEach(id=>{
+      compLog.unshift({text:t.text,who:users.find(u=>String(u.id)===id)?.name||'?',ePts,dPts,time:new Date()});
+    });
+    showToast(`✅ Points awarded to ${names}`);
   } else {
     showToast('Task updated ✅');
   }
