@@ -1257,7 +1257,7 @@ function getBadges(u) {
 }
 
 function renderPublicLb() {
-  const hosts  = users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
+  const hosts  = users.filter(u=>u.name).sort((a,b)=>hostTotal(b,publicLbMode)-hostTotal(a,publicLbMode));
   const maxE   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD   = Math.max(...hosts.map(h=>publicLbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const ranks  = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
@@ -1330,10 +1330,8 @@ function renderCompleted(){
 
 
 function renderLeaderboard(){
-  // Show ALL associates — including those with 0 points
-  const allHosts=users.filter(u=>u.role==='associate').sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
-  console.log('LB users:', allHosts.map(u=>u.name+' pts:'+(u.effortPts||0)+(u.deadlinePts||0)));
-  console.log('_savedUserPts:', window._savedUserPts);
+  // Show ALL team members (not just associates)
+  const allHosts=users.filter(u=>u.name).sort((a,b)=>hostTotal(b,lbMode)-hostTotal(a,lbMode));
   const maxE=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyEffort:h.effortPts),1);
   const maxD=Math.max(...allHosts.map(h=>lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts),1);
   const rankMedals=['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟'];
@@ -1348,11 +1346,10 @@ function renderLeaderboard(){
         ${lbMode==='weekly'?'Weekly Board':'All-Time Board'}
         ${lbMode==='weekly'?`<span class="lb-reset-note">Resets in ${d}d</span>`:''}
       </div>
-      ${!allHosts.length?'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:12px 0;">No associates added yet.</div>':allHosts.map((h,i)=>{
+      ${!allHosts.length?'<div style="color:rgba(23,72,84,.4);font-size:13px;padding:12px 0;">No team members yet.</div>':allHosts.map((h,i)=>{
         const e=lbMode==='weekly'?h.weeklyEffort:h.effortPts;
         const dp=lbMode==='weekly'?h.weeklyDeadline:h.deadlinePts;
         const total=e+dp;
-        // Achievement badges — points milestones only, NOT rank medals
         const achieveBadges=lbMode==='all'?getBadges(h):[];
         return`<div class="lb-row" style="flex-wrap:wrap;">
           <div class="lb-rank">${rankMedals[i]||'·'}</div>
@@ -1362,7 +1359,7 @@ function renderLeaderboard(){
             <div class="lb-br"><span class="lb-bl">Effort</span><div class="lb-bb"><div class="lb-bf lb-ef" style="width:${maxE>1?(e/maxE)*100:0}%"></div></div></div>
             <div class="lb-br"><span class="lb-bl">Deadline</span><div class="lb-bb"><div class="lb-bf lb-df" style="width:${maxD>1?(dp/maxD)*100:0}%"></div></div></div>
           </div>
-          <div class="lb-tot">${total}</div>
+          <div class="lb-tot">${total}pts</div>
           ${achieveBadges.length?`<div style="width:100%;padding-left:38px;display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;">${achieveBadges.map(b=>`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;background:rgba(23,72,84,.07);color:var(--teal);">${b.icon} ${b.label}</span>`).join('')}</div>`:''}
         </div>`;
       }).join('')}
