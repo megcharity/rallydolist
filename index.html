@@ -612,6 +612,38 @@ function restoreDates(d){
   (d.compLog||[]).forEach(l=>{if(l.time)l.time=new Date(l.time);});
   return d;
 }
+async function loadTeamFromPortal(){
+  // Reads the authoritative team list from rally_team (managed by the portal)
+  // and merges it into the users array, preserving existing points/stats
+  try{
+    const res=await fetch(`${SUPA_URL}/rest/v1/rally_team?active=eq.true&select=*&order=name`,{
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
+    });
+    const teamRows=await res.json();
+    if(!Array.isArray(teamRows)||!teamRows.length)return;
+    // Build merged users: keep existing stats, add/update from portal
+    const merged=teamRows.map(p=>{
+      const existing=users.find(u=>u.portalId===p.id || (u.name===p.name && !u.portalId));
+      return{
+        id: existing?existing.id:nextUid++,
+        portalId: p.id,
+        name: p.name,
+        role: p.pin_role||'associate',
+        positions: p.positions||[],
+        position: (p.positions||[])[0]||'',
+        phone: existing?.phone||'',
+        effortPts: existing?.effortPts||0,
+        deadlinePts: existing?.deadlinePts||0,
+        weeklyEffort: existing?.weeklyEffort||0,
+        weeklyDeadline: existing?.weeklyDeadline||0,
+      };
+    });
+    users=merged;
+    console.log('Loaded', users.length, 'team members from portal');
+  }catch(e){
+    console.warn('loadTeamFromPortal failed:', e);
+  }
+}
 async function loadData(){
   showScreen('s-role');
   try{
@@ -632,12 +664,15 @@ async function loadData(){
     } else {
       console.log('No data found in Supabase — starting fresh');
     }
+    // Always sync team roster from the portal's rally_team table
+    await loadTeamFromPortal();
   }catch(e){
     console.warn('Load failed:', e);
     showToast('⚠ Could not connect to database');
   }
 }
 let recentSave = false;
+let teamSyncCounter = 0;
 setInterval(async()=>{
   if(isSaving||saveTimer||recentSave)return;
   try{
@@ -645,8 +680,12 @@ setInterval(async()=>{
     const rows=await res.json();
     if(!rows||!rows[0])return;
     const d=restoreDates(rows[0].data);
-    users=d.users||users;tasks=d.tasks||tasks;compLog=d.compLog||compLog;
+    // Only pull tasks/log from state; users come from rally_team
+    tasks=d.tasks||tasks;compLog=d.compLog||compLog;
     nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
+    // Re-sync team roster from portal every ~40s (every 5th tick)
+    teamSyncCounter++;
+    if(teamSyncCounter>=5){teamSyncCounter=0;await loadTeamFromPortal();}
     const active=document.querySelector('.screen.active');
     if(active?.id==='s-host')renderHost();
     if(active?.id==='s-mgr')renderMgr();
@@ -1331,44 +1370,68 @@ function renderPeople() {
     </div>`;
 }
 
-function addPerson() {
+async function addPerson() {
   const name = document.getElementById('np-name')?.value.trim();
   if(!name) { showToast('Enter a name!'); return; }
   const role     = document.getElementById('np-role')?.value     || 'associate';
   const position = document.getElementById('np-position')?.value || '';
   const phone    = document.getElementById('np-phone')?.value.trim() || '';
-  // Managers can only add associates
   if(currentRole === 'manager' && role !== 'associate') { showToast('Managers can only add associates'); return; }
-  users.push({id:nextUid++, name, role, position, phone, effortPts:0, deadlinePts:0, weeklyEffort:0, weeklyDeadline:0});
-  showToast(`${name} added!`); saveData(); renderPeople();
+  try{
+    // Write to rally_team so portal stays in sync
+    const res=await fetch(`${SUPA_URL}/rest/v1/rally_team`,{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({name, pin_role:role, positions:position?[position]:[], active:true})
+    });
+    const created=await res.json();
+    const portalId=created?.[0]?.id||null;
+    users.push({id:nextUid++, portalId, name, role, positions:position?[position]:[], position, phone, effortPts:0, deadlinePts:0, weeklyEffort:0, weeklyDeadline:0});
+    showToast(`${name} added!`); saveData(); renderPeople();
+  }catch(e){ showToast('⚠ Could not save — check connection'); }
 }
 
 function editPerson(id)        { peopleEditId = id; renderPeople(); }
 function cancelEditPerson()    { peopleEditId = null; renderPeople(); }
 
-function savePerson(id) {
+async function savePerson(id) {
   const u = users.find(x => x.id === id); if(!u) return;
   const name = document.getElementById('ep-name')?.value.trim();
   if(!name) { showToast('Name cannot be empty'); return; }
-  // Managers can't change roles
-  if(currentRole === 'manager') { u.name = name; }
-  else {
-    u.name     = name;
-    u.role     = document.getElementById('ep-role')?.value     || u.role;
+  const newRole = currentRole === 'manager' ? u.role : (document.getElementById('ep-role')?.value || u.role);
+  const position = document.getElementById('ep-position')?.value || '';
+  const phone    = document.getElementById('ep-phone')?.value.trim() || '';
+  // Sync name/role/position back to rally_team if we have a portalId
+  if(u.portalId){
+    try{
+      await fetch(`${SUPA_URL}/rest/v1/rally_team?id=eq.${u.portalId}`,{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({name, pin_role:newRole, positions:position?[position]:[]})
+      });
+    }catch(e){ showToast('⚠ Could not sync to portal'); }
   }
-  u.position = document.getElementById('ep-position')?.value || '';
-  u.phone    = document.getElementById('ep-phone')?.value.trim() || '';
+  u.name=name; u.role=newRole; u.position=position; u.phone=phone;
   peopleEditId = null;
   showToast('Saved!'); saveData(); renderPeople();
 }
 
-function deletePerson(id) {
+async function deletePerson(id) {
   id = parseInt(id);
   const u = users.find(x => x.id === id); if(!u) return;
-  // Managers can only delete associates
   if(currentRole === 'manager' && u.role !== 'associate') { showToast('No permission'); return; }
   const active = tasks.filter(t => t.claimedBy === id && !t.done).length;
   if(!confirm(`Remove ${u.name}?${active ? ` They have ${active} active task(s).` : ''}`)) return;
+  // Deactivate in rally_team so portal stays in sync
+  if(u.portalId){
+    try{
+      await fetch(`${SUPA_URL}/rest/v1/rally_team?id=eq.${u.portalId}`,{
+        method:'PATCH',
+        headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({active:false})
+      });
+    }catch(e){ showToast('⚠ Could not sync removal to portal'); }
+  }
   users = users.filter(x => x.id !== id);
   showToast(`${u.name} removed`); saveData(); renderPeople();
 }
