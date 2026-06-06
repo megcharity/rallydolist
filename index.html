@@ -515,6 +515,30 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .task-view-btn:last-child  { border-radius:0 7px 7px 0; }
     .task-view-btn.active { background:#174854; color:#fff; }
 
+/* ── CHECKLIST EDITOR ── */
+.cl-editor-section{background:#fff;border:1.5px solid var(--border);border-radius:10px;margin-bottom:18px;overflow:hidden;}
+.cl-editor-section-hdr{background:var(--cream-dark);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+.cl-editor-section-name{font-size:13px;font-weight:700;color:var(--teal);}
+.cl-editor-section-meta{font-size:11px;color:rgba(23,72,84,.45);}
+.cl-editor-section-body{padding:10px 12px 12px;}
+.cl-editor-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid rgba(23,72,84,.06);}
+.cl-editor-item:last-child{border-bottom:none;}
+.cl-editor-item-text{flex:1;font-size:13px;color:var(--teal);line-height:1.45;}
+.cl-editor-item-type{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(23,72,84,.07);color:var(--teal);white-space:nowrap;flex-shrink:0;margin-top:2px;}
+.cl-editor-item-del{background:none;border:none;color:rgba(220,80,60,.5);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;flex-shrink:0;transition:color .15s;}
+.cl-editor-item-del:hover{color:rgba(220,80,60,.9);}
+.cl-editor-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.cl-editor-add-row input,.cl-editor-add-row select{padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--teal);background:var(--cream);outline:none;}
+.cl-editor-add-row input{flex:1;min-width:160px;}
+.cl-editor-add-row input:focus,.cl-editor-add-row select:focus{border-color:var(--teal);}
+.cl-editor-add-btn{padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.cl-editor-add-btn:hover{opacity:.88;}
+.cl-editor-checklist-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.cl-editor-checklist-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--teal);}
+.cl-editor-select{padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--teal);background:var(--cream);outline:none;cursor:pointer;}
+.cl-editor-select:focus{border-color:var(--teal);}
+.cl-editor-saving{font-size:11px;color:var(--olive);font-weight:600;opacity:0;transition:opacity .3s;}
+.cl-editor-saving.show{opacity:1;}
   </style>
 </head>
 <body>
@@ -800,11 +824,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
       <button id="cl-view-cl-btn" class="task-view-btn active" onclick="switchClScoreTab('checklists')">Checklists</button>
       <button id="cl-view-sc-btn" class="task-view-btn" onclick="switchClScoreTab('scorecard')">Scorecard</button>
+      <button id="cl-view-edit-btn" class="task-view-btn" onclick="switchClScoreTab('editor')">✏ Edit</button>
     </div>
     <div id="cl-tab-checklists"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
     <div id="cl-tab-scorecard" style="display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
+    <div id="cl-tab-editor" style="display:none;padding:16px 16px 80px;"><div id="cl-editor-body"></div></div>
   </div>
-  <div id="mgr-tab-scorecard" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
   <div id="mgr-tab-people" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="people-body"></div></div>
 </div>
@@ -917,6 +942,8 @@ async function loadData(){
     }
     // Always fetch live team from rally_team
     await loadTeam();
+    // Load editable checklist config from Supabase
+    await loadChecklistConfig();
   }catch(e){
     console.warn('Load failed:', e);
     showToast('⚠ Could not connect to database');
@@ -1512,7 +1539,8 @@ function showMgrTab(tab, el) {
   const completedEl = document.getElementById('mgr-tab-completed');
   if(completedEl) completedEl.style.display = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
-  document.getElementById('mgr-tab-scorecard').style.display   = 'none';
+  const scorecardTab = document.getElementById('mgr-tab-scorecard');
+  if(scorecardTab) scorecardTab.style.display = 'none';
   document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
   if(tab === 'people')      renderPeople();
   if(tab === 'tasks') {
@@ -2459,10 +2487,13 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 function switchClScoreTab(view) {
   document.getElementById('cl-view-cl-btn').classList.toggle('active', view === 'checklists');
   document.getElementById('cl-view-sc-btn').classList.toggle('active', view === 'scorecard');
+  document.getElementById('cl-view-edit-btn').classList.toggle('active', view === 'editor');
   document.getElementById('cl-tab-checklists').style.display = view === 'checklists' ? 'block' : 'none';
   document.getElementById('cl-tab-scorecard').style.display  = view === 'scorecard'  ? 'block' : 'none';
+  document.getElementById('cl-tab-editor').style.display     = view === 'editor'     ? 'block' : 'none';
   if(view === 'checklists') renderMgrClHub();
   if(view === 'scorecard')  renderScorecard();
+  if(view === 'editor')     renderClEditor();
 }
 
 function switchTaskView(view) {
@@ -4327,6 +4358,208 @@ function goBackToHub() {
     <div class="cl-signoff-sub" id="cl-signoff-sub"></div>
   </div>
 </div>
+
+
+<script>
+// ─── CHECKLIST EDITOR ────────────────────────────────────────────────────────
+
+const CL_SUPA      = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+const CL_SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+const CL_HDRS      = { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${CL_SUPA_KEY}`, 'Content-Type': 'application/json' };
+
+// Label map for display
+const CL_LABELS = {
+  manager_opening:  { role:'Manager',    type:'Daily',   label:'Opening Checklist',       icon:'🌅' },
+  manager_closing:  { role:'Manager',    type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  manager_weekly:   { role:'Manager',    type:'Weekly',  label:'Weekly Tasks',             icon:'📅' },
+  manager_monthly:  { role:'Manager',    type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+  bar_opening:      { role:'Bar',        type:'Daily',   label:'Opening Checklist',        icon:'🌅' },
+  bar_closing:      { role:'Bar',        type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  bar_weekly_mon:   { role:'Bar',        type:'Weekly',  label:'Weekly Tasks — Monday',    icon:'📅' },
+  bar_weekly_tue:   { role:'Bar',        type:'Weekly',  label:'Weekly Tasks — Tuesday',   icon:'📅' },
+  bar_weekly_wed:   { role:'Bar',        type:'Weekly',  label:'Weekly Tasks — Wednesday', icon:'📅' },
+  bar_weekly_thu:   { role:'Bar',        type:'Weekly',  label:'Weekly Tasks — Thursday',  icon:'📅' },
+  bar_monthly:      { role:'Bar',        type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+  captain_opening:  { role:'Captain',    type:'Daily',   label:'Opening Checklist',        icon:'🌅' },
+  captain_closing:  { role:'Captain',    type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  captain_weekly:   { role:'Captain',    type:'Weekly',  label:'Weekly Tasks',             icon:'📅' },
+  captain_monthly:  { role:'Captain',    type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+  swarmer_opening:  { role:'Swarmer',    type:'Daily',   label:'Opening Checklist',        icon:'🌅' },
+  swarmer_closing:  { role:'Swarmer',    type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  swarmer_weekly:   { role:'Swarmer',    type:'Weekly',  label:'Weekly Tasks',             icon:'📅' },
+  swarmer_monthly:  { role:'Swarmer',    type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+  host_opening:     { role:'Host',       type:'Daily',   label:'Opening Checklist',        icon:'🌅' },
+  host_closing:     { role:'Host',       type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  host_weekly:      { role:'Host',       type:'Weekly',  label:'Weekly Tasks',             icon:'📅' },
+  host_monthly:     { role:'Host',       type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+  barista_opening:  { role:'Barista',    type:'Daily',   label:'Opening Checklist',        icon:'☕' },
+  barista_closing:  { role:'Barista',    type:'Daily',   label:'Closing Checklist',        icon:'🌙' },
+  barista_weekly:   { role:'Barista',    type:'Weekly',  label:'Weekly Tasks',             icon:'📅' },
+  barista_monthly:  { role:'Barista',    type:'Monthly', label:'Monthly Tasks',            icon:'🗓' },
+};
+
+// Load checklist config from Supabase — call on app load
+async function loadChecklistConfig() {
+  try {
+    const res = await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config?id=eq.all_checklists&select=data`, {
+      headers: CL_HDRS
+    });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (rows && rows.length && rows[0].data) {
+      const saved = rows[0].data;
+      // Merge: saved keys override defaults; unknown keys are added
+      Object.keys(saved).forEach(k => { ALL_CHECKLISTS[k] = saved[k]; });
+    }
+  } catch(e) {
+    console.warn('Could not load checklist config:', e);
+  }
+}
+
+// Save full ALL_CHECKLISTS to Supabase
+async function saveChecklistConfig() {
+  clEditorShowSaving(true);
+  try {
+    await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config`, {
+      method: 'POST',
+      headers: { ...CL_HDRS, 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({ id: 'all_checklists', data: ALL_CHECKLISTS, updated_at: new Date().toISOString() })
+    });
+  } catch(e) {
+    console.warn('Could not save checklist config:', e);
+    showToast('⚠ Save failed — check connection');
+  }
+  setTimeout(() => clEditorShowSaving(false), 1200);
+}
+
+function clEditorShowSaving(on) {
+  const el = document.getElementById('cl-editor-saving-badge');
+  if (el) el.classList.toggle('show', on);
+}
+
+// ── RENDER EDITOR ────────────────────────────────────────────────────────────
+let clEditorRole = 'Manager';
+
+function renderClEditor() {
+  const body = document.getElementById('cl-editor-body');
+  if (!body) return;
+
+  const roles = [...new Set(Object.values(CL_LABELS).map(v => v.role))];
+  const role  = clEditorRole;
+  const keys  = Object.keys(CL_LABELS).filter(k => CL_LABELS[k].role === role);
+
+  // Group by type
+  const byType = { Daily: [], Weekly: [], Monthly: [] };
+  keys.forEach(k => {
+    const t = CL_LABELS[k].type;
+    if (byType[t]) byType[t].push(k);
+  });
+
+  body.innerHTML = `
+    <div class="cl-editor-checklist-hdr">
+      <div class="cl-editor-checklist-title">Edit Checklists</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="cl-editor-saving-badge" class="cl-editor-saving">Saved ✓</span>
+        <select class="cl-editor-select" onchange="clEditorRole=this.value;renderClEditor()">
+          ${roles.map(r => `<option value="${r}" ${r===role?'selected':''}>${r}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    ${['Daily','Weekly','Monthly'].map(type => {
+      const typeKeys = byType[type];
+      if (!typeKeys.length) return '';
+      return `
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--olive);margin:20px 0 8px;display:flex;align-items:center;gap:8px;">
+          ${type} <span style="flex:1;height:1px;background:rgba(23,72,84,.1);display:inline-block;margin-left:6px;"></span>
+        </div>
+        ${typeKeys.map(key => clEditorRenderSection(key)).join('')}
+      `;
+    }).join('')}
+  `;
+}
+
+function clEditorRenderSection(key) {
+  const meta  = CL_LABELS[key];
+  const items = ALL_CHECKLISTS[key] || [];
+
+  // Group items by section
+  const sections = {};
+  items.forEach(item => {
+    const s = item.section || 'General';
+    if (!sections[s]) sections[s] = [];
+    sections[s].push(item);
+  });
+
+  const itemsHtml = Object.keys(sections).length === 0
+    ? `<div style="font-size:12px;color:rgba(23,72,84,.35);padding:10px 0;">No items yet — add one below.</div>`
+    : Object.entries(sections).map(([sec, secItems]) => `
+        <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:10px 0 4px;">${sec}</div>
+        ${secItems.map(item => `
+          <div class="cl-editor-item">
+            <div class="cl-editor-item-text">${item.text}</div>
+            <span class="cl-editor-item-type">${item.type === 'rate' ? '⭐ rate' : '✓ check'}</span>
+            <button class="cl-editor-item-del" onclick="clEditorRemoveItem('${key}','${item.id}')" title="Remove">×</button>
+          </div>
+        `).join('')}
+      `).join('');
+
+  return `
+    <div class="cl-editor-section">
+      <div class="cl-editor-section-hdr">
+        <span class="cl-editor-section-name">${meta.icon} ${meta.label}</span>
+        <span class="cl-editor-section-meta">${items.length} item${items.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="cl-editor-section-body">
+        ${itemsHtml}
+        <div class="cl-editor-add-row" style="margin-top:12px;">
+          <input type="text" id="cl-add-text-${key}" placeholder="New item text…" onkeydown="if(event.key==='Enter')clEditorAddItem('${key}')">
+          <input type="text" id="cl-add-sec-${key}" placeholder="Section (e.g. Opening Duties)" style="max-width:180px;">
+          <select id="cl-add-type-${key}">
+            <option value="check">✓ Check</option>
+            <option value="rate">⭐ Rate</option>
+          </select>
+          <button class="cl-editor-add-btn" onclick="clEditorAddItem('${key}')">+ Add</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function clEditorAddItem(key) {
+  const textEl = document.getElementById(`cl-add-text-${key}`);
+  const secEl  = document.getElementById(`cl-add-sec-${key}`);
+  const typeEl = document.getElementById(`cl-add-type-${key}`);
+  if (!textEl) return;
+
+  const text = textEl.value.trim();
+  if (!text) { textEl.focus(); return; }
+
+  const section = secEl?.value.trim() || 'General';
+  const type    = typeEl?.value || 'check';
+  const id      = `${key}_${Date.now()}`;
+
+  if (!ALL_CHECKLISTS[key]) ALL_CHECKLISTS[key] = [];
+  ALL_CHECKLISTS[key].push({ id, section, text, type });
+
+  saveChecklistConfig();
+  renderClEditor();
+  showToast('Item added ✓');
+}
+
+function clEditorRemoveItem(key, itemId) {
+  if (!ALL_CHECKLISTS[key]) return;
+  if (!confirm('Remove this checklist item?')) return;
+  ALL_CHECKLISTS[key] = ALL_CHECKLISTS[key].filter(i => i.id !== itemId);
+  saveChecklistConfig();
+  renderClEditor();
+  showToast('Item removed');
+}
+
+// ── Load config on startup (call after app loads) ─────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadChecklistConfig();
+});
+</script>
 
 </body>
 </html>
