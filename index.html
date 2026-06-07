@@ -1965,6 +1965,18 @@ function srLockPMAgain() {
   srRerender();
 }
 
+async function srStartNewReport() {
+  if(!confirm('Start a fresh report for today? The previous report will remain saved and unchanged.')) return;
+  srRecordId   = null;
+  srData       = {};
+  srAmLocked   = false;
+  srAmEditMode = false;
+  srPmEditMode = false;
+  // Re-render immediately from blank state — srSave will create a new record on first input
+  srRerender();
+  showToast('New report started ✅');
+}
+
 // Shared re-render from memory — never re-fetches Supabase
 async function srRerender() {
   const panel = document.getElementById('mgr-tab-shiftreport');
@@ -1972,51 +1984,66 @@ async function srRerender() {
   const u = users.find(x => x.id === currentUser);
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
-  const amLocked  = srAmLocked && !srAmEditMode;
+  const amLocked  = srAmLocked && !srAmEditMode || srIsArchived();
   const pmDone    = !!srData.pm_submitted;
   panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, amLocked, pmDone);
   await srLoadCompData();
   srUpdateSummary();
 }
 
-// Check if report is from a previous day (past midnight) — lock both sections
-function srIsPastMidnight() {
+// Check if the loaded report is from a previous day (not today) — show as read-only archive
+function srIsArchived() {
   return srData.date && srData.date !== getTodayStr();
 }
 
 async function renderShiftReportForm() {
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
-  panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading today\'s shift report...</div>';
+  panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading shift report...</div>';
 
   const today = getTodayStr();
   const u = users.find(x => x.id === currentUser);
   if(!u) { panel.innerHTML = '<div style="padding:24px;color:rgba(23,72,84,.4);">No user found.</div>'; return; }
 
-  // Load team roster for multi-check fields
   await loadSrTeam();
 
-  // Always fetch today's record fresh — ignore any cached srRecordId
   try {
+    // First try to find today's report
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
       {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     console.log('SR load:', rows);
+
     if(Array.isArray(rows) && rows[0]) {
+      // Found today's report — load it normally
       srRecordId = rows[0].id;
       srData     = rows[0].data || {};
       srAmLocked = !!srData.am_locked;
       srAmEditMode = false;
       srPmEditMode = false;
-      console.log('SR found: id='+srRecordId+' am_locked='+srAmLocked+' data keys:'+Object.keys(srData).length);
+      console.log('SR found today: id='+srRecordId+' am_locked='+srAmLocked);
     } else {
-      srRecordId   = null;
-      srData       = {};
-      srAmLocked   = false;
-      srAmEditMode = false;
-      srPmEditMode = false;
-      console.log('SR: no record today, starting fresh');
+      // No report for today — load the most recent one (any date) as read-only
+      const res2 = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?order=id.desc&limit=1`,
+        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
+      const rows2 = res2.ok ? await res2.json() : [];
+      if(Array.isArray(rows2) && rows2[0]) {
+        srRecordId = rows2[0].id;
+        srData     = rows2[0].data || {};
+        srAmLocked = true;
+        srAmEditMode = false;
+        srPmEditMode = false;
+        console.log('SR showing previous report as archived: id='+srRecordId+' date='+rows2[0].date);
+      } else {
+        // Truly no reports exist at all — start fresh
+        srRecordId = null;
+        srData = {};
+        srAmLocked = false;
+        srAmEditMode = false;
+        srPmEditMode = false;
+        console.log('SR: no reports exist, starting fresh');
+      }
     }
   } catch(e) {
     console.warn('SR load failed', e);
@@ -2026,12 +2053,11 @@ async function renderShiftReportForm() {
 
   const d = new Date();
   const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const isArchived = srIsArchived();
   const pmSubmitted = !!srData.pm_submitted;
-  var pastMidnight = srIsPastMidnight();
-  const amLocked = (srAmLocked && !srAmEditMode) || pastMidnight;
+  const amLocked = (srAmLocked && !srAmEditMode) || isArchived;
 
   panel.innerHTML = buildSrHTML(u.name, today, dayName, amLocked, pmSubmitted);
-  // Load comparison data then update summary
   await srLoadCompData();
   srUpdateSummary();
 }
@@ -2304,7 +2330,7 @@ function srSetCount(key, val) {
 }
 
 function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
-  var pastMidnight = srIsPastMidnight();
+  const isArchived = srIsArchived();
   const d = new Date();
   const dayName2 = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 
@@ -2324,8 +2350,8 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
 
   // ── AM SECTION ────────────────────────────────────────────────
   const AL = amLocked; // shorthand
-  const amStatus = pastMidnight
-    ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Locked — previous day</span>'
+  const amStatus = isArchived
+    ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Previous day — read only</span>'
     : srAmLocked
       ? (srAmEditMode
           ? `<span style="color:#c87a00;font-size:12px;font-weight:600;">✏️ Editing AM</span><button onclick="srLockAMAgain()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Lock again</button>`
@@ -2382,14 +2408,14 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
     </div>`;
 
   // ── PM SECTION ────────────────────────────────────────────────
-  const PL = pmSubmitted && !srPmEditMode || pastMidnight;
+  const PL = pmSubmitted && !srPmEditMode || isArchived;
 
   const pmSection = `
     <div class="sr-shift-block ${PL?'sr-locked':''}">
       <div class="sr-shift-header">
         <span>🌙 PM SHIFT</span>
-        ${pastMidnight
-          ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Locked — previous day</span>'
+        ${isArchived
+          ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Previous day — read only</span>'
           : pmSubmitted && !srPmEditMode
             ? `<span style="color:#4e622c;font-size:12px;font-weight:600;">✅ Submitted by ${srData.pm_submitted_by||'PM manager'}</span><button onclick="srUnlockPM()" style="margin-left:8px;padding:3px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:5px;background:#fff;font-size:11px;cursor:pointer;font-family:inherit;">Edit</button>`
             : srPmEditMode
@@ -2460,12 +2486,16 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       </div>
     </div>`;
 
-  // ── SUBMIT BUTTON ─────────────────────────────────────────────
-  const submitBar = pastMidnight ? '' : !pmSubmitted ? `
-    <div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
-      <button onclick="srSubmitPM()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Full Report ✅</button>
-    </div>` : `
-    <div style="padding:16px 0 80px;text-align:center;color:#4e622c;font-size:13px;font-weight:600;">✅ This report was submitted on ${srData.pm_submitted_at ? new Date(srData.pm_submitted_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'today'}</div>`;
+  // ── SUBMIT / FOOTER BAR ───────────────────────────────────────
+  const submitBar = isArchived
+    ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
+        <button onclick="srStartNewReport()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">+ Start Today's Report</button>
+      </div>`
+    : !pmSubmitted
+      ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
+          <button onclick="srSubmitPM()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Full Report ✅</button>
+        </div>`
+      : `<div style="padding:16px 0 80px;text-align:center;color:#4e622c;font-size:13px;font-weight:600;">✅ This report was submitted on ${srData.pm_submitted_at ? new Date(srData.pm_submitted_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'today'}</div>`;
 
   return `
     <div style="padding:14px 16px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fbf6ed;z-index:10;padding-bottom:12px;border-bottom:1px solid rgba(23,72,84,.1);">
@@ -2477,10 +2507,10 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
     </div>
     <div class="sr-form" style="padding:14px;">
       ${amSection}
-      ${srAmLocked ? pmSection : '<div style="padding:16px;background:rgba(23,72,84,.04);border-radius:8px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">Save the AM shift first to unlock the PM section.</div>'}
-      ${srAmLocked ? evHtml : ''}
-      ${srAmLocked ? sumBlock : ''}
-      ${srAmLocked ? submitBar : ''}
+      ${srAmLocked || isArchived ? pmSection : '<div style="padding:16px;background:rgba(23,72,84,.04);border-radius:8px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">Save the AM shift first to unlock the PM section.</div>'}
+      ${srAmLocked || isArchived ? evHtml : ''}
+      ${srAmLocked || isArchived ? sumBlock : ''}
+      ${submitBar}
     </div>`;
 }
 
