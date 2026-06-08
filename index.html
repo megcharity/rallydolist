@@ -2495,7 +2495,10 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
           <button onclick="srSubmitPM()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Full Report ✅</button>
         </div>`
-      : `<div style="padding:16px 0 80px;text-align:center;color:#4e622c;font-size:13px;font-weight:600;">✅ This report was submitted on ${srData.pm_submitted_at ? new Date(srData.pm_submitted_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'today'}</div>`;
+      : `<div style="padding:16px 0 80px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:#4e622c;font-size:13px;font-weight:600;">✅ This report was submitted on ${srData.pm_submitted_at ? new Date(srData.pm_submitted_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'today'}</div>
+          <button onclick="srStartNewReport()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">+ Start Today's Report</button>
+        </div>`;
 
   return `
     <div style="padding:14px 16px 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fbf6ed;z-index:10;padding-bottom:12px;border-bottom:1px solid rgba(23,72,84,.1);">
