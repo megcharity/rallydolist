@@ -2612,8 +2612,8 @@ async function srLoadTrailingAvg() {
       return;
     }
 
-    // Only use reports that have PM sales data
-    const complete = rows.filter(function(r){ return r.data && (parseFloat(r.data.pm_food_sales)||0)+(parseFloat(r.data.pm_bev_sales)||0) > 0; });
+    // Use all reports that have any data saved
+    const complete = rows.filter(function(r){ return r.data && Object.keys(r.data).length > 0; });
     const n = complete.length;
     if(!n) {
       metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
