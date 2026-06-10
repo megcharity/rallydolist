@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<!-- BUILD: 2026-06-10-v4 -->
 <title>Rally Do List</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -1696,35 +1700,10 @@ async function renderScorecard() {
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
   try {
-    // Read from both tables (old scores in rally_manager_scores, new in rally_scores) and merge
-    const [res1, res2] = await Promise.all([
-      fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}}),
-      fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}})
-    ]);
-    const rows1 = res1.ok ? await res1.json().catch(()=>[]) : [];
-    const rows2 = []; // rally_manager_scores does not exist
+    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = res.ok ? await res.json() : [];
 
-    // Normalize old rally_manager_scores rows to match new shape
-    const normalised2 = Array.isArray(rows2) ? rows2.map(r => ({
-      shift_date:      r.shift_date,
-      graded_manager:  r.graded_manager,
-      grading_manager: r.grading_manager,
-      score:           r.pct ?? r.score,
-      grade:           r.grade,
-      flagged_items:   null,
-      deductions:      null,
-    })) : [];
-
-    const allRows = [...(Array.isArray(rows1) ? rows1 : []), ...normalised2];
-    const seen = new Set();
-    const rows = allRows.filter(r => {
-      const key = r.shift_date + '|' + r.graded_manager;
-      if(seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).sort((a,b) => (b.shift_date||'').localeCompare(a.shift_date||''));
-
-    if(!rows.length) {
+    if(!Array.isArray(rows) || !rows.length) {
       body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No scores yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Scores are recorded when the opening manager completes the Arrival Walkthrough.</span></div>';
       return;
     }
@@ -4218,13 +4197,11 @@ function gradeBg(grade) {
 }
 
 async function submitWalkthroughScore(closingManagerName) {
-  console.log('submitWalkthroughScore called for:', closingManagerName, 'currentChecklistKey:', currentChecklistKey);
   const score = calcWalkthroughScore(clState);
-  console.log('calcWalkthroughScore result:', score);
-  if(!score) { console.warn('Score was null — no items found. Skipping save.'); return; }
+  if(!score) return;
   const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
-  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
   const payload = {
@@ -4233,17 +4210,20 @@ async function submitWalkthroughScore(closingManagerName) {
     grading_manager: u ? u.name : 'Manager',
     score:           score.pct,
     grade:           score.grade,
-    total_items:     score.total,
-    flagged_items:   score.flagged,
-    deductions:      score.deductions,
-    items_raw:       clState,
+    items_rated:     score.total,
     created_at:      new Date().toISOString()
   };
+  console.log('Posting score payload:', JSON.stringify(payload));
   try {
-    await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
-    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.flagged} flags · -${score.deductions}pts)`);
-    showToast(`${closingManagerName} scored ${score.grade} — ${score.pct}% (${score.flagged} flag${score.flagged!==1?'s':''})`);
-  } catch(e) { console.warn('Manager score submit failed', e); }
+    const res = await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+    const resText = await res.text();
+    console.log('Score POST response:', res.status, resText);
+    if(res.ok) {
+      showToast(`${closingManagerName} scored ${score.grade} — ${score.pct}%`);
+    } else {
+      showToast('Score could not be saved: ' + res.status + ' ' + resText.slice(0,80));
+    }
+  } catch(e) { console.error('Score save error:', e); showToast('Score save error — check console'); }
 }
 
 async function signOffChecklist() {
