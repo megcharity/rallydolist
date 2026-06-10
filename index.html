@@ -559,6 +559,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button class="slide-close" onclick="closeAddTask()">×</button>
     </div>
     <div class="fg full"><label>Task Description</label><textarea id="f-text" placeholder="What needs doing..."></textarea></div>
+    <div class="form-grid">
+      <div class="fg"><label>Deadline (optional)</label><input type="datetime-local" id="f-dl" onchange="updatePts()"/></div>
+      <div class="fg"><label>Added By</label><input type="text" id="f-by-display" style="background:rgba(23,72,84,.04);color:rgba(23,72,84,.6);" readonly/></div>
+    </div>
     <div class="fg full"><label>Instructions (optional)</label><textarea id="f-inst" placeholder="Step-by-step..."></textarea></div>
     <div class="fg full"><label>Resource Link (optional)</label><input type="url" id="f-link" placeholder="https://..."/></div>
     <div class="fg full"><label>Job Code <span style="color:rgba(23,72,84,.4);font-weight:400;">(who should see this task)</span></label>
@@ -585,8 +589,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="fg"><label>Priority</label>
         <select id="f-pri"><option value="normal">Normal</option><option value="urgent">🔴 Urgent</option></select>
       </div>
-      <div class="fg"><label>Deadline (optional)</label><input type="datetime-local" id="f-dl" onchange="updatePts()"/></div>
-      <div class="fg"><label>Added By</label><input type="text" id="f-by-display" style="background:rgba(23,72,84,.04);color:rgba(23,72,84,.6);" readonly/></div>
     </div>
     <div class="pts-preview">
       <div><div class="pts-lbl">Estimated Points</div><div class="pts-sub" id="pts-sub">No deadline set</div></div>
@@ -1476,21 +1478,66 @@ function setLbMode(m){lbMode=m;renderLeaderboard();}
 
 
 // ─── ADD TASK PANEL ──────────────────────────────────────────────────────────
-function openAddTask() {
+function openAddTask(forManager=false) {
   // Populate "Added By" and assign dropdown fresh each time
   const byLabel = currentUser
     ? (users.find(x=>x.id===currentUser)?.name || currentRole)
     : ({owner:'Owner',director:'Director',manager:'Manager'}[currentRole] || 'Manager');
   const byEl = document.getElementById('f-by-display');
   if(byEl) byEl.value = byLabel;
-  const hosts = users.filter(u=>u.role==='associate');
-  const sel = document.getElementById('f-assign');
-  if(sel) sel.innerHTML = '<option value="">Select associate...</option>' + hosts.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
   // Reset form
   ['f-text','f-inst','f-link','f-dl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   isAssigning=false;
   const at=document.getElementById('assign-toggle');if(at)at.classList.remove('on');
   const aw=document.getElementById('assign-wrap');if(aw)aw.style.display='none';
+  // If opening from manager tasks tab, pre-select manager position
+  const posEl = document.getElementById('f-assign-pos');
+  if(posEl) posEl.value = forManager ? 'manager' : '';
+  updateAssignNames();
+  // Update job code row — hide entirely for manager tasks (always manager-only)
+  const jcRow = document.getElementById('f-jobcode')?.closest('.fg');
+  const jcEl  = document.getElementById('f-jobcode');
+  if(forManager) {
+    if(jcRow) jcRow.style.display = 'none';
+    if(jcEl)  { jcEl.value = 'manager'; }
+  } else {
+    if(jcRow) jcRow.style.display = '';
+    if(jcEl)  {
+      jcEl.innerHTML = `<option value="">Everyone</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>`;
+      jcEl.disabled = false;
+    }
+  }
+  // Lock assign position dropdown to manager-only when in manager mode
+  const posEl2 = document.getElementById('f-assign-pos');
+  if(posEl2) {
+    if(forManager) {
+      posEl2.innerHTML = '<option value="manager">👔 Manager</option>';
+      posEl2.value = 'manager';
+      posEl2.disabled = true;
+    } else {
+      posEl2.innerHTML = `<option value="">All positions</option>
+        <option value="manager">👔 Manager</option>
+        <option value="Bartender">🍺 Bartender</option>
+        <option value="Captain">⚡ Captain</option>
+        <option value="Swarmer">🌀 Swarmer</option>
+        <option value="Barista">☕ Barista</option>
+        <option value="Host">🎙 Host</option>
+        <option value="Team Lead">🌟 Team Lead</option>
+        <option value="Pickle Champ">🏓 Pickle Champ</option>`;
+      posEl2.disabled = false;
+    }
+  }
+  updateAssignNames();
+  // Update button
+  const btn = document.querySelector('.add-task-btn');
+  if(btn) btn.onclick = () => addTask(forManager);
   updatePts();
   document.getElementById('add-task-panel').classList.add('open');
 }
@@ -1716,6 +1763,20 @@ async function renderScorecard() {
     });
 
     let html = '<div style="padding:16px 16px 80px;">';
+
+    // Grading explanation
+    html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">How Scores Work</div>
+      <div style="font-size:13px;color:rgba(23,72,84,.7);line-height:1.6;">
+        The opening manager walks through the venue each morning and rates each area on the <strong>Opening Checklist</strong>. Every shift starts at <strong>100%</strong>. If an item is flagged ⚠️ and a note is written describing the issue, <strong>5 points are deducted</strong> from the closing manager's score — reflecting how they left things the night before.
+      </div>
+      <div style="display:flex;gap:20px;margin-top:12px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-weight:700;color:#4e622c;">A &nbsp;90–100%</div>
+        <div style="font-size:12px;font-weight:700;color:#174854;">B &nbsp;75–89%</div>
+        <div style="font-size:12px;font-weight:700;color:#c87a00;">C &nbsp;60–74%</div>
+        <div style="font-size:12px;font-weight:700;color:#c04020;">D &nbsp;below 60%</div>
+      </div>
+    </div>`;
 
     // Summary cards per manager
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
@@ -2541,6 +2602,9 @@ function switchTaskView(view) {
   document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
   document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
   document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
+  // Update FAB so + Add Task opens the right form for the current view
+  const fab = document.getElementById('fab-add');
+  if(fab) fab.onclick = () => openAddTask(view === 'manager');
   if(view === 'active')  renderMgr();
   else if(view === 'manager') renderMgrManagerTasks();
   else renderMgrCompleted();
@@ -2814,7 +2878,7 @@ function renderMgrManagerTasks(){
           <select class="ov-asel" id="ov-sel-${t.id}">
             <option value="">Assign to manager...</option>
             <option value="0">🔓 Unassign</option>
-            ${users.map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name} ${u.role==='manager'?'👔':''}</option>`).join('')}
+            ${users.filter(u=>['manager','owner','director'].includes(u.role)).map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name} 👔</option>`).join('')}
           </select>
           <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
