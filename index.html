@@ -1734,6 +1734,7 @@ async function renderScorecard() {
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Date</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Closing Manager</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Graded By</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Flags</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Grade</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Score</th>
         </tr></thead>
@@ -1742,6 +1743,7 @@ async function renderScorecard() {
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
             <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
+            <td style="padding:11px 14px;text-align:center;font-size:13px;color:${r.flagged_items>0?'#c87a00':'#4e622c'};">${r.flagged_items>0?`⚠️ ${r.flagged_items}`:'✅ 0'}</td>
             <td style="padding:11px 14px;text-align:center;">
               <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
             </td>
@@ -1997,7 +1999,6 @@ function srIsArchived() {
 }
 
 async function renderShiftReportForm() {
-  srPastOpen = false; // reset past-reports toggle on fresh load
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
   panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading shift report...</div>';
@@ -2507,330 +2508,15 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
         <div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:500;color:#174854;">Shift Report</div>
         <div style="font-size:12px;color:rgba(23,72,84,.45);">${dayName}, ${today} · Rally Social Club</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11px;color:rgba(23,72,84,.35);" id="sr-save-label"></span>
-        <button onclick="srTogglePastReports()" id="sr-past-btn" style="padding:6px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;transition:all .2s;" onmouseover="this.style.borderColor='#174854'" onmouseout="this.style.borderColor='rgba(23,72,84,.2)'">📅 Past Reports</button>
-      </div>
+      <span style="font-size:11px;color:rgba(23,72,84,.35);" id="sr-save-label"></span>
     </div>
-    <div id="sr-past-panel" style="display:none;"></div>
-    <div id="sr-current-form">
     <div class="sr-form" style="padding:14px;">
       ${amSection}
       ${srAmLocked || isArchived ? pmSection : '<div style="padding:16px;background:rgba(23,72,84,.04);border-radius:8px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">Save the AM shift first to unlock the PM section.</div>'}
       ${srAmLocked || isArchived ? evHtml : ''}
       ${srAmLocked || isArchived ? sumBlock : ''}
       ${submitBar}
-    </div>
-    </div>`; // closes sr-current-form
-}
-
-// ── PAST REPORTS TOGGLE ───────────────────────────────────────────────────
-let srPastOpen = false;
-
-function srTogglePastReports() {
-  srPastOpen = !srPastOpen;
-  const panel = document.getElementById('sr-past-panel');
-  const form  = document.getElementById('sr-current-form');
-  const btn   = document.getElementById('sr-past-btn');
-  if(!panel || !form) return;
-  if(srPastOpen) {
-    panel.style.display = 'block';
-    form.style.display  = 'none';
-    if(btn) { btn.textContent = '✕ Close'; btn.style.background = 'rgba(23,72,84,.07)'; }
-    srShowPastReports();
-  } else {
-    panel.style.display = 'none';
-    form.style.display  = 'block';
-    if(btn) { btn.textContent = '📅 Past Reports'; btn.style.background = '#fff'; }
-  }
-}
-
-async function srShowPastReports() {
-  const panel = document.getElementById('sr-past-panel');
-  if(!panel) return;
-  const today = getTodayStr();
-  const yest  = new Date(); yest.setDate(yest.getDate()-1);
-  const defaultDate = yest.toISOString().slice(0,10);
-
-  // Render shell immediately so picker is usable while avg loads
-  panel.innerHTML =
-    '<div style="padding:16px 16px 80px;">'+
-      // ── Trailing average card ──
-      '<div id="sr-avg-card" style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;padding:16px;margin-bottom:20px;">'+
-        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">'+
-          '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;">4-Week Trailing Average</div>'+
-          '<div id="sr-avg-badge" style="font-size:11px;color:rgba(23,72,84,.4);">Loading…</div>'+
-        '</div>'+
-        '<div id="sr-avg-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:12px;">'+
-          // placeholder shimmer cells
-          ['COVERS','FOOD','BEV','TOTAL','PPA'].map(function(l){
-            return '<div style="text-align:center;">'+
-              '<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.35);margin-bottom:5px;">'+l+'</div>'+
-              '<div style="height:22px;background:rgba(23,72,84,.06);border-radius:4px;animation:pulse 1s ease-in-out infinite;"></div>'+
-            '</div>';
-          }).join('')+
-        '</div>'+
-      '</div>'+
-      // ── Date picker ──
-      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;margin-bottom:6px;">View a Specific Day</div>'+
-      '<div style="font-size:12px;color:rgba(23,72,84,.45);margin-bottom:14px;">Select a date to open that day\'s full report.</div>'+
-      '<div style="display:flex;gap:10px;align-items:center;">'+
-        '<input type="date" id="sr-date-picker" value="'+defaultDate+'" max="'+today+'"'+
-          ' style="flex:1;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fff;outline:none;cursor:pointer;"'+
-          ' onchange="srPickerDateChanged(this.value)"'+
-        '>'+
-        '<button onclick="srPickerGo()" style="padding:10px 20px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">View Report →</button>'+
-      '</div>'+
-      '<div id="sr-picker-status" style="margin-top:10px;font-size:12px;color:rgba(23,72,84,.4);min-height:18px;"></div>'+
-    '</div>';
-
-  // Kick off both in parallel
-  srPickerDateChanged(defaultDate);
-  srLoadTrailingAvg();
-}
-
-async function srLoadTrailingAvg() {
-  const card    = document.getElementById('sr-avg-card');
-  const metrics = document.getElementById('sr-avg-metrics');
-  const badge   = document.getElementById('sr-avg-badge');
-  if(!metrics || !badge) return;
-
-  try {
-    // Fetch last 28 days of reports (excludes today)
-    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-28);
-    const cutoffStr = cutoff.toISOString().slice(0,10);
-    const today  = getTodayStr();
-    const res = await fetch(
-      SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+cutoffStr+'&date=lt.'+today+'&select=date,data&order=date.desc',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
-    );
-    const rows = await res.json();
-
-    if(!Array.isArray(rows) || !rows.length) {
-      metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
-      badge.textContent = '';
-      return;
-    }
-
-    // Use all reports that have any data saved
-    const complete = rows.filter(function(r){ return r.data && Object.keys(r.data).length > 0; });
-    const n = complete.length;
-    if(!n) {
-      metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
-      badge.textContent = '';
-      return;
-    }
-
-    var totCovers=0, totFood=0, totBev=0;
-    complete.forEach(function(r){
-      var d = r.data;
-      totCovers += parseFloat(d.pm_covers)||0;
-      totFood   += parseFloat(d.pm_food_sales)||0;
-      totBev    += parseFloat(d.pm_bev_sales)||0;
-    });
-    var avgCovers = totCovers/n;
-    var avgFood   = totFood/n;
-    var avgBev    = totBev/n;
-    var avgTotal  = avgFood+avgBev;
-    var avgPPA    = avgCovers ? avgTotal/avgCovers : 0;
-
-    badge.innerHTML = '<span style="background:rgba(23,72,84,.07);padding:2px 8px;border-radius:4px;">'+n+' shift'+(n!==1?'s':'')+' · last 28 days</span>';
-
-    var cols = [
-      {label:'COVERS', val:avgCovers, fmt:function(v){return v.toFixed(1);}},
-      {label:'FOOD',   val:avgFood,   fmt:function(v){return '$'+v.toFixed(0);}},
-      {label:'BEV',    val:avgBev,    fmt:function(v){return '$'+v.toFixed(0);}},
-      {label:'TOTAL',  val:avgTotal,  fmt:function(v){return '$'+v.toFixed(0);}},
-      {label:'PPA',    val:avgPPA,    fmt:function(v){return '$'+v.toFixed(2);}}
-    ];
-
-    metrics.innerHTML = cols.map(function(m){
-      return '<div style="text-align:center;">'+
-        '<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:5px;">'+m.label+'</div>'+
-        '<div style="font-size:20px;font-weight:700;color:#174854;font-family:\'Cormorant Garamond\',serif;">'+m.fmt(m.val)+'</div>'+
-      '</div>';
-    }).join('');
-
-  } catch(e) {
-    if(metrics) metrics.innerHTML = '<div style="color:rgba(220,80,60,.5);font-size:12px;grid-column:1/-1;">Could not load averages.</div>';
-    if(badge)   badge.textContent = '';
-    console.warn('srLoadTrailingAvg failed', e);
-  }
-}
-
-async function srPickerDateChanged(date) {
-  const status = document.getElementById('sr-picker-status');
-  if(!status || !date) return;
-  status.textContent = 'Checking…';
-  try {
-    const res = await fetch(
-      SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&limit=1',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
-    );
-    const rows = await res.json();
-    if(Array.isArray(rows) && rows[0]) {
-      const d = rows[0].data || {};
-      const amMgr = d.am_manager_name || '—';
-      const pmMgr = d.pm_manager_name || '—';
-      const food  = parseFloat(d.pm_food_sales)||0;
-      const bev   = parseFloat(d.pm_bev_sales)||0;
-      const total = food+bev;
-      const amOk  = d.am_locked    ? '✅ AM saved' : '○ AM not saved';
-      const pmOk  = d.pm_submitted ? '✅ PM submitted' : '○ PM not submitted';
-      status.innerHTML =
-        '<span style="color:#4e622c;font-weight:600;">Report found</span>'+
-        ' &nbsp;·&nbsp; '+amOk+' &nbsp;·&nbsp; '+pmOk+
-        (total ? ' &nbsp;·&nbsp; <strong>$'+total.toFixed(0)+'</strong> total sales' : '')+
-        '<br><span style="color:rgba(23,72,84,.45);">'+amMgr+' (AM) &nbsp;·&nbsp; '+pmMgr+' (PM)</span>';
-    } else {
-      status.innerHTML = '<span style="color:rgba(23,72,84,.4);">No report found for this date.</span>';
-    }
-  } catch(e) {
-    status.innerHTML = '<span style="color:rgba(220,80,60,.6);">Could not check this date.</span>';
-  }
-}
-
-async function srPickerGo() {
-  const picker = document.getElementById('sr-date-picker');
-  if(!picker || !picker.value) { showToast('Pick a date first'); return; }
-  await srLoadReportForDate(picker.value, null);
-}
-
-async function srLoadReportForDate(date, recordId) {
-  const panel = document.getElementById('sr-past-panel');
-  if(!panel) return;
-  panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">Loading report…</div>';
-  try {
-    // Fetch by date (recordId is optional / may be null)
-    const url = recordId
-      ? SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+recordId+'&select=id,date,data&limit=1'
-      : SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&order=id.desc&limit=1';
-    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} });
-    const rows = await res.json();
-    if(!Array.isArray(rows)||!rows[0]) {
-      panel.innerHTML =
-        '<div style="padding:32px 16px;text-align:center;">'+
-          '<div style="font-size:32px;margin-bottom:12px;">📋</div>'+
-          '<div style="font-weight:700;font-size:15px;color:#174854;margin-bottom:6px;">No report for this date</div>'+
-          '<div style="font-size:13px;color:rgba(23,72,84,.45);margin-bottom:20px;">There\'s no shift report saved for '+date+'.</div>'+
-          '<button onclick="srShowPastReports()" style="padding:8px 18px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">← Pick another date</button>'+
-        '</div>';
-      return;
-    }
-    const r    = rows[0];
-    const snap = r.data || {};
-
-    // Build a fully read-only view of this report
-    const dateObj  = new Date(date+'T12:00:00');
-    const dayLabel = dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-
-    function lv(key) {
-      var v = snap[key];
-      if(v===undefined||v===null||v==='') return '—';
-      return String(v);
-    }
-    function lockedDiv(key) { return '<div class="sr-locked-val">'+lv(key)+'</div>'; }
-    function lockedTA(key)  { return '<div class="sr-locked-val" style="white-space:pre-wrap;">'+lv(key)+'</div>'; }
-    function sec(t)  { return '<div class="sr-section-header">'+t+'</div>'; }
-    function lbl(t)  { return '<div class="sr-label">'+t+'</div>'; }
-    function r2(a,b) { return '<div class="sr-row2">'+a+b+'</div>'; }
-
-    // Temporarily swap srData so srProgramSection reads the right snapshot
-    var prevData = srData;
-    srData = snap;
-    var amProg = srProgramSection('am',true);
-    var pmProg = srProgramSection('pm',true);
-    srData = prevData;
-
-    var amSection =
-      '<div class="sr-shift-block sr-locked">'+
-        '<div class="sr-shift-header"><span>🌅 AM SHIFT</span><span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Read only</span></div>'+
-        sec('AM MANAGER')+
-        r2('<div>'+lbl('Manager Name')+lockedDiv('am_manager_name')+'</div>','<div>'+lbl('Shift Start')+lockedDiv('am_shift_start')+'</div>')+
-        lbl('Shift End')+lockedDiv('am_shift_end')+
-        sec('AM · COURT RESERVATIONS')+
-        r2('<div>'+lbl('Counted up until')+lockedDiv('am_count_time')+'</div>','<div>'+lbl('AM Court Reservations')+lockedDiv('am_court_res')+'</div>')+
-        sec('AM · PEAK TIMES')+lbl('Peak times')+lockedDiv('am_peak_times')+
-        sec('AM · EVENTS & PROGRAMMING')+amProg+
-        sec('AM · TEAM')+
-        r2('<div>'+lbl('Host Desk')+lockedDiv('am_host_desk')+'</div>','<div>'+lbl('Café')+lockedDiv('am_cafe')+'</div>')+
-        r2('<div>'+lbl('Captain(s)')+lockedDiv('am_captains')+'</div>','<div>'+lbl('Team Lead')+lockedDiv('am_team_lead')+'</div>')+
-        r2('<div>'+lbl('Swarmer')+lockedDiv('am_swarmer')+'</div>','<div>'+lbl('Bar')+lockedDiv('am_bar')+'</div>')+
-        lbl('Staffing Adjustments')+lockedDiv('am_staffing')+
-        lbl('Coaching & Feedback Notes')+lockedTA('am_coaching')+
-        sec('AM · COMPS')+lbl('Comp Notes')+lockedTA('am_comp_notes')+
-        sec("AM · 86'D ITEMS")+
-        r2('<div>'+lbl('Food')+lockedTA('am_eighty_food')+'</div>','<div>'+lbl('Bar / Beverage')+lockedTA('am_eighty_bar')+'</div>')+
-        sec('AM · REPAIRS, MAINTENANCE & CLEANING')+lockedTA('am_rm_issues')+
-        sec('AM · SHIFT NOTES & HANDOFF TO PM')+lockedTA('am_shift_notes')+
-      '</div>';
-
-    var pmSection =
-      '<div class="sr-shift-block sr-locked">'+
-        '<div class="sr-shift-header"><span>🌙 PM SHIFT</span><span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Read only</span></div>'+
-        sec('PM MANAGER')+
-        r2('<div>'+lbl('Manager Name')+lockedDiv('pm_manager_name')+'</div>','<div>'+lbl('Shift Start')+lockedDiv('pm_shift_start')+'</div>')+
-        lbl('Shift End')+lockedDiv('pm_shift_end')+
-        sec('PM · COURT RESERVATIONS & COVERS')+
-        r2('<div>'+lbl('PM Court Reservations')+lockedDiv('pm_court_res')+'</div>','<div>'+lbl('Covers on Toast')+lockedDiv('pm_covers')+'</div>')+
-        sec('PM · SALES')+
-        r2('<div>'+lbl('Food Sales ($)')+lockedDiv('pm_food_sales')+'</div>','<div>'+lbl('Bev Sales ($)')+lockedDiv('pm_bev_sales')+'</div>')+
-        sec('PM · COMPS')+
-        r2('<div>'+lbl('Positive Comps ($)')+lockedDiv('pm_pos_comps_amt')+'</div>','<div>'+lbl('Negative Comps ($)')+lockedDiv('pm_neg_comps_amt')+'</div>')+
-        lbl('Positive Comp Notes')+lockedTA('pm_comp_notes')+
-        lbl('Negative Comp Notes')+lockedTA('pm_neg_comp_notes')+
-        sec("PM · 86'D ITEMS")+
-        r2('<div>'+lbl('Food')+lockedTA('pm_eighty_food')+'</div>','<div>'+lbl('Bar / Beverage')+lockedTA('pm_eighty_bar')+'</div>')+
-        sec('PM · PEAK TIMES')+lbl('Peak times')+lockedDiv('pm_peak_times')+
-        sec('PM · EVENTS & PROGRAMMING')+pmProg+
-        sec('PM · TEAM')+
-        r2('<div>'+lbl('Host Desk')+lockedDiv('pm_host_desk')+'</div>','<div>'+lbl('Captain(s)')+lockedDiv('pm_captains')+'</div>')+
-        r2('<div>'+lbl('Team Lead')+lockedDiv('pm_team_lead')+'</div>','<div>'+lbl('Bar')+lockedDiv('pm_bar')+'</div>')+
-        r2('<div>'+lbl('Swarmer')+lockedDiv('pm_swarmer')+'</div>','<div>'+lbl('Staffing Adjustments')+lockedDiv('pm_staffing')+'</div>')+
-        lbl('Coaching & Feedback Notes')+lockedTA('pm_coaching')+
-        sec('PM · REPAIRS, MAINTENANCE & CLEANING')+lockedTA('pm_rm_issues')+
-        sec('PM · SHIFT NOTES & CLOSE')+lockedTA('pm_shift_notes')+
-      '</div>';
-
-    var food  = parseFloat(snap.pm_food_sales)||0;
-    var bev   = parseFloat(snap.pm_bev_sales)||0;
-    var total = food+bev;
-    var cvrs  = parseFloat(snap.pm_covers)||0;
-    var courts= (parseFloat(snap.am_court_res)||0)+(parseFloat(snap.pm_court_res)||0);
-    var ppa   = cvrs ? (total/cvrs) : 0;
-    var posC  = parseFloat(snap.pm_pos_comps_amt)||0;
-    var negC  = parseFloat(snap.pm_neg_comps_amt)||0;
-    var mets = [
-      ['Total Courts', courts, false],
-      ['Covers',       cvrs,   false],
-      ['Food Sales',   food,   true],
-      ['Bev Sales',    bev,    true],
-      ['Total Sales',  total,  true],
-      ['PPA',          ppa,    true],
-      ['+ Comps',      posC,   true],
-      ['- Comps',      negC,   true]
-    ];
-    var sumBlock = '<div class="sr-shift-block"><div class="sr-shift-header"><span>📊 DAY SUMMARY</span></div>'+
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;padding:4px 0 8px;">'+
-      mets.map(function(m){
-        var val = m[1]===0 ? '—' : (m[2] ? '$'+m[1].toFixed(2) : m[1].toFixed(0));
-        return '<div style="text-align:center;"><div style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:4px;">'+m[0]+'</div><div style="font-size:17px;font-weight:700;color:#174854;">'+val+'</div></div>';
-      }).join('')+
-      '</div></div>';
-
-    panel.innerHTML =
-      '<div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(23,72,84,.1);padding-bottom:12px;position:sticky;top:0;background:#fbf6ed;z-index:9;">'+
-        '<button onclick="srShowPastReports()" style="padding:5px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">← Pick date</button>'+
-        '<div>'+
-          '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;">'+dayLabel+'</div>'+
-          '<div style="font-size:11px;color:rgba(23,72,84,.4);">Read-only archive · Rally Social Club</div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="sr-form" style="padding:14px;">'+amSection+pmSection+sumBlock+'<div style="height:60px;"></div></div>';
-  } catch(e) {
-    panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(220,80,60,.6);">Failed to load report.<br><br><button onclick="srShowPastReports()" style="padding:8px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit;">← Pick date</button></div>';
-    console.warn('srLoadReportForDate failed',e);
-  }
+    </div>`;
 }
 
 function switchClScoreTab(view) {
@@ -4477,16 +4163,22 @@ const WALKTHROUGH_IDS = (function(){
 })();
 
 function calcWalkthroughScore(clStateItems) {
-  // Good = 5pts, Needs Work = 0pts
-  const rated = WALKTHROUGH_IDS.filter(id => clStateItems[id] && clStateItems[id].rating);
-  if(!rated.length) return null;
-  const pts = rated.reduce((sum, id) => {
-    return sum + (clStateItems[id].rating === 'good' ? 5 : 0);
-  }, 0);
-  const maxPts = rated.length * 5;
-  const pct = Math.round((pts / maxPts) * 100);
+  const items = ALL_CHECKLISTS[currentChecklistKey] || [];
+  if(!items.length) return null;
+
+  const total = items.length;
+  // A deduction applies when an item is flagged AND has a written note
+  const flaggedWithNote = items.filter(i => {
+    const s = clStateItems[i.id] || {};
+    if(i.type === 'check') return false; // check items don't get flagged
+    return s.rating === 'needs' && s.issue && s.issue.trim().length > 0;
+  });
+
+  const deductions = flaggedWithNote.length * 5;
+  const pct = Math.max(0, 100 - deductions);
   const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
-  return { pts, maxPts, pct, grade, rated: rated.length };
+
+  return { pts: pct, maxPts: 100, pct, grade, total, flagged: flaggedWithNote.length, deductions };
 }
 
 function gradeColor(grade) {
@@ -4505,21 +4197,21 @@ async function submitWalkthroughScore(closingManagerName) {
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
   const payload = {
-    shift_date:     yesterday.toISOString().slice(0,10),
-    graded_manager: closingManagerName,
+    shift_date:      yesterday.toISOString().slice(0,10),
+    graded_manager:  closingManagerName,
     grading_manager: u ? u.name : 'Manager',
-    pts:            score.pts,
-    max_pts:        score.maxPts,
-    pct:            score.pct,
-    grade:          score.grade,
-    items_rated:    score.rated,
-    items_raw:      clState,
-    created_at:     new Date().toISOString()
+    score:           score.pct,
+    grade:           score.grade,
+    total_items:     score.total,
+    flagged_items:   score.flagged,
+    deductions:      score.deductions,
+    items_raw:       clState,
+    created_at:      new Date().toISOString()
   };
   try {
-    await fetch(`${SUPA}/rest/v1/rally_manager_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
-    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.pts}/${score.maxPts}pts)`);
-    showToast(`${closingManagerName} scored ${score.grade} — ${score.pts}/${score.maxPts} pts`);
+    await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.flagged} flags · -${score.deductions}pts)`);
+    showToast(`${closingManagerName} scored ${score.grade} — ${score.pct}% (${score.flagged} flag${score.flagged!==1?'s':''})`);
   } catch(e) { console.warn('Manager score submit failed', e); }
 }
 
