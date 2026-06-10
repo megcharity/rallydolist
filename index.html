@@ -1696,11 +1696,35 @@ async function renderScorecard() {
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`,
-      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
-    const rows = await res.json();
+    // Read from both tables (old scores in rally_manager_scores, new in rally_scores) and merge
+    const [res1, res2] = await Promise.all([
+      fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}}),
+      fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}})
+    ]);
+    const rows1 = res1.ok ? await res1.json() : [];
+    const rows2 = res2.ok ? await res2.json() : [];
 
-    if(!Array.isArray(rows) || !rows.length) {
+    // Normalize old rally_manager_scores rows to match new shape
+    const normalised2 = Array.isArray(rows2) ? rows2.map(r => ({
+      shift_date:      r.shift_date,
+      graded_manager:  r.graded_manager,
+      grading_manager: r.grading_manager,
+      score:           r.pct ?? r.score,
+      grade:           r.grade,
+      flagged_items:   null,
+      deductions:      null,
+    })) : [];
+
+    const allRows = [...(Array.isArray(rows1) ? rows1 : []), ...normalised2];
+    const seen = new Set();
+    const rows = allRows.filter(r => {
+      const key = r.shift_date + '|' + r.graded_manager;
+      if(seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).sort((a,b) => (b.shift_date||'').localeCompare(a.shift_date||''));
+
+    if(!rows.length) {
       body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No scores yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Scores are recorded when the opening manager completes the Arrival Walkthrough.</span></div>';
       return;
     }
@@ -1743,7 +1767,7 @@ async function renderScorecard() {
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
             <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
-            <td style="padding:11px 14px;text-align:center;font-size:13px;color:${r.flagged_items>0?'#c87a00':'#4e622c'};">${r.flagged_items>0?`⚠️ ${r.flagged_items}`:'✅ 0'}</td>
+            <td style="padding:11px 14px;text-align:center;font-size:13px;color:${r.flagged_items>0?'#c87a00':'#4e622c'};">${r.flagged_items==null?'—':r.flagged_items>0?`⚠️ ${r.flagged_items}`:'✅ 0'}</td>
             <td style="padding:11px 14px;text-align:center;">
               <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
             </td>
