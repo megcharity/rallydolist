@@ -998,7 +998,7 @@ function computeLeaderboardPts() {
   // Recalculate all points from completed tasks — source of truth
   const monday = getMonday();
   users.forEach(u => { u.effortPts=0; u.deadlinePts=0; u.weeklyEffort=0; u.weeklyDeadline=0; });
-  tasks.filter(t=>t.done).forEach(t=>{
+  tasks.filter(t=>t.done&&!t.isManagerTask).forEach(t=>{
     // awardedTo can be array (multiple) or single ID, then claimedBy, then doneBy
     const rawAward = t.awardedTo;
     const uids = rawAward
@@ -1158,9 +1158,9 @@ function renderStats(){
   const u=users.find(x=>x.id===me);
   const myClaimed=tasks.filter(t=>String(t.claimedBy)===String(me)&&!t.done).length;
   const myAssigned=tasks.filter(t=>String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
-  const total=tasks.length,done=tasks.filter(t=>t.done).length;
+  const total=tasks.filter(t=>!t.isManagerTask).length,done=tasks.filter(t=>t.done&&!t.isManagerTask).length;
   const pct=total?Math.round(done/total*100):0;
-  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy).length;
+  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&!t.isManagerTask).length;
   document.getElementById('stats-strip').innerHTML=`
     ${u?`<div class="stat-card"><div class="stat-val">${u.effortPts+u.deadlinePts}</div><div class="stat-lbl">My Pts</div></div>
     <div class="stat-card"><div class="stat-val">${u.weeklyEffort+u.weeklyDeadline}</div><div class="stat-lbl">This Wk</div></div>`:''}
@@ -1172,8 +1172,8 @@ function renderStats(){
 function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
-  const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
+  const yours=tasks.filter(t=>!t.done&&!t.isManagerTask&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.isManagerTask&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
@@ -1254,7 +1254,7 @@ function pickUp(id){
 }
 function renderMyTasks(){
   const me = String(currentUser);
-  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
+  const mine=tasks.filter(t=>!t.isManagerTask&&(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
   const wrap=document.getElementById('my-wrap');if(!wrap)return;
   if(!mine.length){wrap.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No active tasks</div><div class="empty-hint">Tasks assigned to you or picked up from the pool will appear here.</div></div>';return;}
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
@@ -1406,7 +1406,7 @@ function renderPublicLb() {
 // Also update the in-app leaderboard to show badges
 // ─── COMPLETED TAB ───────────────────────────────────────────
 function renderCompleted(){
-  const done = tasks.filter(t=>t.done).sort((a,b)=>new Date(b.doneAt)-new Date(a.doneAt));
+  const done = tasks.filter(t=>t.done&&!t.isManagerTask).sort((a,b)=>new Date(b.doneAt)-new Date(a.doneAt));
   const wrap = document.getElementById('done-wrap');
   if(!wrap) return;
   if(!done.length){
@@ -2632,10 +2632,10 @@ function renderMgr(){
   const hosts=users.filter(u=>u.role==='associate');
   // filter overview
   let ovTasks=tasks;
-  if(ovFilter==='all')ovTasks=tasks.filter(t=>!t.done);
-  else if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy);
-  else if(ovFilter==='active')ovTasks=tasks.filter(t=>t.claimedBy&&!t.done);
-  else if(ovFilter==='overdue')ovTasks=tasks.filter(t=>!t.done&&t.deadline&&t.deadline<now());
+  if(ovFilter==='all')ovTasks=tasks.filter(t=>!t.done&&!t.isManagerTask);
+  else if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy&&!t.isManagerTask);
+  else if(ovFilter==='active')ovTasks=tasks.filter(t=>t.claimedBy&&!t.done&&!t.isManagerTask);
+  else if(ovFilter==='overdue')ovTasks=tasks.filter(t=>!t.done&&t.deadline&&t.deadline<now()&&!t.isManagerTask);
   const ovHTML=ovTasks.length?ovTasks.map(t=>{
     const ds=dlStatus(t.deadline),pts=EP[t.effort]+getDBonus(t.deadline);
     const claimer=t.claimedBy?users.find(u=>u.id===t.claimedBy):null;
