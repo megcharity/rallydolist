@@ -1701,8 +1701,17 @@ async function renderScorecard() {
       fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}}),
       fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}})
     ]);
-    const rows1 = res1.ok ? await res1.json() : [];
-    const rows2 = res2.ok ? await res2.json() : [];
+    const rows1raw = await res1.text();
+    const rows2raw = await res2.text();
+    console.log('rally_scores status:', res1.status, 'body:', rows1raw);
+    console.log('rally_manager_scores status:', res2.status, 'body:', rows2raw);
+    let rows1, rows2;
+    try { rows1 = JSON.parse(rows1raw); } catch(e) { rows1 = []; }
+    try { rows2 = JSON.parse(rows2raw); } catch(e) { rows2 = []; }
+    // Show debug info in the UI temporarily
+    body.innerHTML += `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:10px;margin:8px 16px;font-size:11px;font-family:monospace;white-space:pre-wrap;">DEBUG — rally_scores (${res1.status}): ${rows1raw.slice(0,300)}
+
+rally_manager_scores (${res2.status}): ${rows2raw.slice(0,300)}</div>`;
 
     // Normalize old rally_manager_scores rows to match new shape
     const normalised2 = Array.isArray(rows2) ? rows2.map(r => ({
