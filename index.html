@@ -4187,24 +4187,29 @@ const WALKTHROUGH_IDS = (function(){
 })();
 
 function calcWalkthroughScore(clStateItems) {
-  const items = ALL_CHECKLISTS[currentChecklistKey] || [];
-  if(!items.length) return null;
+  // Use currentChecklistKey if available, else fall back to manager_opening
+  const key = currentChecklistKey || 'manager_opening';
+  const items = ALL_CHECKLISTS[key] || [];
+  const total = items.length || Object.keys(clStateItems).length || 1;
 
-  const total = items.length;
-  // A deduction applies when an item is flagged AND has a written note
-  const flaggedWithNote = items.filter(i => {
-    const s = clStateItems[i.id] || {};
-    if(i.type === 'check') return false; // check items don't get flagged
-    return s.rating === 'needs' && s.issue && s.issue.trim().length > 0;
-  });
+  // Deduct 5pts for every flagged item that has a written note
+  let flagged = 0;
+  if(items.length) {
+    items.forEach(i => {
+      const s = clStateItems[i.id] || {};
+      if(s.rating === 'needs' && s.issue && s.issue.trim().length > 0) flagged++;
+    });
+  } else {
+    Object.values(clStateItems).forEach(s => {
+      if(s && s.rating === 'needs' && s.issue && s.issue.trim().length > 0) flagged++;
+    });
+  }
 
-  const deductions = flaggedWithNote.length * 5;
+  const deductions = flagged * 5;
   const pct = Math.max(0, 100 - deductions);
   const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
-
-  return { pts: pct, maxPts: 100, pct, grade, total, flagged: flaggedWithNote.length, deductions };
+  return { pts: pct, maxPts: 100, pct, grade, total, flagged, deductions };
 }
-
 function gradeColor(grade) {
   return {A:'#4e622c', B:'#174854', C:'#c87a00', D:'#c04020'}[grade] || '#174854';
 }
