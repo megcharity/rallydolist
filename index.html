@@ -805,7 +805,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="hdr-right">
       <span class="hdr-user" id="mgr-hdr-user"></span>
-      <button class="btn-sm amber" onclick="openAddTask()">+ Add Task</button>
+      <button class="btn-sm amber" id="hdr-add-task-btn" onclick="openAddTask(false)">+ Add Task</button>
       <button class="btn-sm" onclick="goBackFromMgr()">← Back</button>
       <button class="btn-sm danger" onclick="doLogout()">Out</button>
     </div>
@@ -2602,9 +2602,12 @@ function switchTaskView(view) {
   document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
   document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
   document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
-  // Update FAB so + Add Task opens the right form for the current view
+  // Update FAB and header button so + Add Task opens the right form for the current view
+  const isManagerView = view === 'manager';
   const fab = document.getElementById('fab-add');
-  if(fab) fab.onclick = () => openAddTask(view === 'manager');
+  if(fab) fab.onclick = () => openAddTask(isManagerView);
+  const hdrBtn = document.getElementById('hdr-add-task-btn');
+  if(hdrBtn) hdrBtn.onclick = () => openAddTask(isManagerView);
   if(view === 'active')  renderMgr();
   else if(view === 'manager') renderMgrManagerTasks();
   else renderMgrCompleted();
