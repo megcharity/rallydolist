@@ -1795,7 +1795,7 @@ async function srLoadCompData() {
     const d = new Date();
     const yest = new Date(d); yest.setDate(d.getDate()-1);
     const lw   = new Date(d); lw.setDate(d.getDate()-7);
-    const fmt  = dt => dt.toISOString().slice(0,10);
+    const fmt  = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
     const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`};
     const [r1,r2] = await Promise.all([
       fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(yest)}&order=id.desc&limit=1`,{headers:hdrs}),
@@ -2573,7 +2573,7 @@ async function srShowPastReports() {
   if(!panel) return;
   const today = getTodayStr();
   const yest  = new Date(); yest.setDate(yest.getDate()-1);
-  const defaultDate = yest.toISOString().slice(0,10);
+  const defaultDate = (function(){ const y=new Date(); y.setDate(y.getDate()-1); return y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); })();
 
   // Render shell immediately so picker is usable while avg loads
   panel.innerHTML =
@@ -2621,7 +2621,7 @@ async function srLoadTrailingAvg() {
   try {
     // Fetch last 28 days of reports (excludes today)
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-28);
-    const cutoffStr = cutoff.toISOString().slice(0,10);
+    const cutoffStr = cutoff.getFullYear()+'-'+String(cutoff.getMonth()+1).padStart(2,'0')+'-'+String(cutoff.getDate()).padStart(2,'0');
     const today  = getTodayStr();
     const res = await fetch(
       SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+cutoffStr+'&date=lt.'+today+'&select=date,data&order=date.desc',
