@@ -3,10 +3,6 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/>
-<!-- BUILD: 2026-06-10-v4 -->
 <title>Rally Do List</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -559,10 +555,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button class="slide-close" onclick="closeAddTask()">×</button>
     </div>
     <div class="fg full"><label>Task Description</label><textarea id="f-text" placeholder="What needs doing..."></textarea></div>
-    <div class="form-grid">
-      <div class="fg"><label>Deadline (optional)</label><input type="datetime-local" id="f-dl" onchange="updatePts()"/></div>
-      <div class="fg"><label>Added By</label><input type="text" id="f-by-display" style="background:rgba(23,72,84,.04);color:rgba(23,72,84,.6);" readonly/></div>
-    </div>
     <div class="fg full"><label>Instructions (optional)</label><textarea id="f-inst" placeholder="Step-by-step..."></textarea></div>
     <div class="fg full"><label>Resource Link (optional)</label><input type="url" id="f-link" placeholder="https://..."/></div>
     <div class="fg full"><label>Job Code <span style="color:rgba(23,72,84,.4);font-weight:400;">(who should see this task)</span></label>
@@ -589,6 +581,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="fg"><label>Priority</label>
         <select id="f-pri"><option value="normal">Normal</option><option value="urgent">🔴 Urgent</option></select>
       </div>
+      <div class="fg"><label>Deadline (optional)</label><input type="datetime-local" id="f-dl" onchange="updatePts()"/></div>
+      <div class="fg"><label>Added By</label><input type="text" id="f-by-display" style="background:rgba(23,72,84,.04);color:rgba(23,72,84,.6);" readonly/></div>
     </div>
     <div class="pts-preview">
       <div><div class="pts-lbl">Estimated Points</div><div class="pts-sub" id="pts-sub">No deadline set</div></div>
@@ -805,7 +799,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="hdr-right">
       <span class="hdr-user" id="mgr-hdr-user"></span>
-      <button class="btn-sm amber" id="hdr-add-task-btn" onclick="openAddTask(false)">+ Add Task</button>
+      <button class="btn-sm amber" onclick="openAddTask()">+ Add Task</button>
       <button class="btn-sm" onclick="goBackFromMgr()">← Back</button>
       <button class="btn-sm danger" onclick="doLogout()">Out</button>
     </div>
@@ -998,7 +992,7 @@ function computeLeaderboardPts() {
   // Recalculate all points from completed tasks — source of truth
   const monday = getMonday();
   users.forEach(u => { u.effortPts=0; u.deadlinePts=0; u.weeklyEffort=0; u.weeklyDeadline=0; });
-  tasks.filter(t=>t.done&&!t.isManagerTask).forEach(t=>{
+  tasks.filter(t=>t.done).forEach(t=>{
     // awardedTo can be array (multiple) or single ID, then claimedBy, then doneBy
     const rawAward = t.awardedTo;
     const uids = rawAward
@@ -1158,9 +1152,9 @@ function renderStats(){
   const u=users.find(x=>x.id===me);
   const myClaimed=tasks.filter(t=>String(t.claimedBy)===String(me)&&!t.done).length;
   const myAssigned=tasks.filter(t=>String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
-  const total=tasks.filter(t=>!t.isManagerTask).length,done=tasks.filter(t=>t.done&&!t.isManagerTask).length;
+  const total=tasks.length,done=tasks.filter(t=>t.done).length;
   const pct=total?Math.round(done/total*100):0;
-  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&!t.isManagerTask).length;
+  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy).length;
   document.getElementById('stats-strip').innerHTML=`
     ${u?`<div class="stat-card"><div class="stat-val">${u.effortPts+u.deadlinePts}</div><div class="stat-lbl">My Pts</div></div>
     <div class="stat-card"><div class="stat-val">${u.weeklyEffort+u.weeklyDeadline}</div><div class="stat-lbl">This Wk</div></div>`:''}
@@ -1172,8 +1166,8 @@ function renderStats(){
 function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
-  const yours=tasks.filter(t=>!t.done&&!t.isManagerTask&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.isManagerTask&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
+  const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
@@ -1254,7 +1248,7 @@ function pickUp(id){
 }
 function renderMyTasks(){
   const me = String(currentUser);
-  const mine=tasks.filter(t=>!t.isManagerTask&&(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
+  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
   const wrap=document.getElementById('my-wrap');if(!wrap)return;
   if(!mine.length){wrap.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No active tasks</div><div class="empty-hint">Tasks assigned to you or picked up from the pool will appear here.</div></div>';return;}
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
@@ -1406,7 +1400,7 @@ function renderPublicLb() {
 // Also update the in-app leaderboard to show badges
 // ─── COMPLETED TAB ───────────────────────────────────────────
 function renderCompleted(){
-  const done = tasks.filter(t=>t.done&&!t.isManagerTask).sort((a,b)=>new Date(b.doneAt)-new Date(a.doneAt));
+  const done = tasks.filter(t=>t.done).sort((a,b)=>new Date(b.doneAt)-new Date(a.doneAt));
   const wrap = document.getElementById('done-wrap');
   if(!wrap) return;
   if(!done.length){
@@ -1478,66 +1472,21 @@ function setLbMode(m){lbMode=m;renderLeaderboard();}
 
 
 // ─── ADD TASK PANEL ──────────────────────────────────────────────────────────
-function openAddTask(forManager=false) {
+function openAddTask() {
   // Populate "Added By" and assign dropdown fresh each time
   const byLabel = currentUser
     ? (users.find(x=>x.id===currentUser)?.name || currentRole)
     : ({owner:'Owner',director:'Director',manager:'Manager'}[currentRole] || 'Manager');
   const byEl = document.getElementById('f-by-display');
   if(byEl) byEl.value = byLabel;
+  const hosts = users.filter(u=>u.role==='associate');
+  const sel = document.getElementById('f-assign');
+  if(sel) sel.innerHTML = '<option value="">Select associate...</option>' + hosts.map(u=>`<option value="${u.id}">${u.name}</option>`).join('');
   // Reset form
   ['f-text','f-inst','f-link','f-dl'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   isAssigning=false;
   const at=document.getElementById('assign-toggle');if(at)at.classList.remove('on');
   const aw=document.getElementById('assign-wrap');if(aw)aw.style.display='none';
-  // If opening from manager tasks tab, pre-select manager position
-  const posEl = document.getElementById('f-assign-pos');
-  if(posEl) posEl.value = forManager ? 'manager' : '';
-  updateAssignNames();
-  // Update job code row — hide entirely for manager tasks (always manager-only)
-  const jcRow = document.getElementById('f-jobcode')?.closest('.fg');
-  const jcEl  = document.getElementById('f-jobcode');
-  if(forManager) {
-    if(jcRow) jcRow.style.display = 'none';
-    if(jcEl)  { jcEl.value = 'manager'; }
-  } else {
-    if(jcRow) jcRow.style.display = '';
-    if(jcEl)  {
-      jcEl.innerHTML = `<option value="">Everyone</option>
-        <option value="Bartender">🍺 Bartender</option>
-        <option value="Captain">⚡ Captain</option>
-        <option value="Swarmer">🌀 Swarmer</option>
-        <option value="Barista">☕ Barista</option>
-        <option value="Host">🎙 Host</option>
-        <option value="Team Lead">🌟 Team Lead</option>
-        <option value="Pickle Champ">🏓 Pickle Champ</option>`;
-      jcEl.disabled = false;
-    }
-  }
-  // Lock assign position dropdown to manager-only when in manager mode
-  const posEl2 = document.getElementById('f-assign-pos');
-  if(posEl2) {
-    if(forManager) {
-      posEl2.innerHTML = '<option value="manager">👔 Manager</option>';
-      posEl2.value = 'manager';
-      posEl2.disabled = true;
-    } else {
-      posEl2.innerHTML = `<option value="">All positions</option>
-        <option value="manager">👔 Manager</option>
-        <option value="Bartender">🍺 Bartender</option>
-        <option value="Captain">⚡ Captain</option>
-        <option value="Swarmer">🌀 Swarmer</option>
-        <option value="Barista">☕ Barista</option>
-        <option value="Host">🎙 Host</option>
-        <option value="Team Lead">🌟 Team Lead</option>
-        <option value="Pickle Champ">🏓 Pickle Champ</option>`;
-      posEl2.disabled = false;
-    }
-  }
-  updateAssignNames();
-  // Update button
-  const btn = document.querySelector('.add-task-btn');
-  if(btn) btn.onclick = () => addTask(forManager);
   updatePts();
   document.getElementById('add-task-panel').classList.add('open');
 }
@@ -1747,8 +1696,9 @@ async function renderScorecard() {
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`, {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
-    const rows = res.ok ? await res.json() : [];
+    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`,
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
+    const rows = await res.json();
 
     if(!Array.isArray(rows) || !rows.length) {
       body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No scores yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Scores are recorded when the opening manager completes the Arrival Walkthrough.</span></div>';
@@ -1763,20 +1713,6 @@ async function renderScorecard() {
     });
 
     let html = '<div style="padding:16px 16px 80px;">';
-
-    // Grading explanation
-    html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:20px;">
-      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">How Scores Work</div>
-      <div style="font-size:13px;color:rgba(23,72,84,.7);line-height:1.6;">
-        The opening manager walks through the venue each morning and rates each area on the <strong>Opening Checklist</strong>. Every shift starts at <strong>100%</strong>. If an item is flagged ⚠️ and a note is written describing the issue, <strong>5 points are deducted</strong> from the closing manager's score — reflecting how they left things the night before.
-      </div>
-      <div style="display:flex;gap:20px;margin-top:12px;flex-wrap:wrap;">
-        <div style="font-size:12px;font-weight:700;color:#4e622c;">A &nbsp;90–100%</div>
-        <div style="font-size:12px;font-weight:700;color:#174854;">B &nbsp;75–89%</div>
-        <div style="font-size:12px;font-weight:700;color:#c87a00;">C &nbsp;60–74%</div>
-        <div style="font-size:12px;font-weight:700;color:#c04020;">D &nbsp;below 60%</div>
-      </div>
-    </div>`;
 
     // Summary cards per manager
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
@@ -1798,7 +1734,6 @@ async function renderScorecard() {
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Date</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Closing Manager</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Graded By</th>
-          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Flags</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Grade</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Score</th>
         </tr></thead>
@@ -1807,7 +1742,6 @@ async function renderScorecard() {
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
             <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
             <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
-            <td style="padding:11px 14px;text-align:center;font-size:13px;color:${r.flagged_items>0?'#c87a00':'#4e622c'};">${r.flagged_items==null?'—':r.flagged_items>0?`⚠️ ${r.flagged_items}`:'✅ 0'}</td>
             <td style="padding:11px 14px;text-align:center;">
               <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
             </td>
@@ -2063,6 +1997,7 @@ function srIsArchived() {
 }
 
 async function renderShiftReportForm() {
+  srPastOpen = false; // reset past-reports toggle on fresh load
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
   panel.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading shift report...</div>';
@@ -2346,22 +2281,21 @@ function srProgramSection(pfx, locked) {
 
   // Pickleball
   if(hasPickle) {
-    var pkName    = srGet(pfx+'_pk_name');
-    var pkPlayers = srGet(pfx+'_pk_players');
-    var pkNotes   = srGet(pfx+'_pk_notes');
+    var numPickle = parseInt(srGet(pfx+'_prog_pickle_count')) || 0;
     if(!locked) {
       html += '<div class="sr-prog-block">';
-      html += '<div class="sr-row2">';
-      html += '<div><div class="sr-label" style="margin-top:0;">Program Name</div><input class="sr-inp" placeholder="e.g. Open Play, Clinic..." value="'+pkName.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_pk_name\',this.value)"></div>';
-      html += '<div><div class="sr-label" style="margin-top:0;">Number of Players</div><input class="sr-inp" type="number" placeholder="0" value="'+pkPlayers+'" oninput="srSet(\''+pfx+'_pk_players\',this.value)"></div>';
-      html += '</div>';
-      html += '<div class="sr-label">Notes</div><textarea class="sr-ta" rows="2" placeholder="Any notes..." oninput="srSet(\''+pfx+'_pk_notes\',this.value)">'+pkNotes+'</textarea>';
+      html += '<div class="sr-label" style="margin-top:0;">How many pickleball programs?&nbsp;';
+      html += '<select class="sr-inp" style="width:80px;display:inline-block;" onchange="srSetCount(\''+pfx+'_prog_pickle_count\',this.value)">';
+      [0,1,2,3,4,5,6].forEach(function(n) {
+        html += '<option value="'+n+'"'+(numPickle===n?' selected':'')+'>'+n+'</option>';
+      });
+      html += '</select></div>';
+      for(var i=1;i<=numPickle;i++) html += srPickleBlock(pfx,i,false);
       html += '<button onclick="srSave(false);showToast(\'Pickleball saved ✓\')" style="margin-top:10px;padding:6px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">Save ✓</button>';
       html += '</div>';
     } else {
-      html += '<div class="sr-label">🏓 Pickleball Programming</div>';
-      if(pkName)    html += '<div style="font-size:13px;font-weight:600;color:#174854;margin:4px 0;">'+pkName+(pkPlayers?' · '+pkPlayers+' players':'')+'</div>';
-      if(pkNotes)   html += '<div style="font-size:13px;color:rgba(23,72,84,.7);">'+pkNotes+'</div>';
+      html += '<div class="sr-label">🏓 Pickleball Programming ('+numPickle+')</div>';
+      for(var i=1;i<=numPickle;i++) html += srPickleBlock(pfx,i,true);
     }
   }
 
@@ -2369,6 +2303,30 @@ function srProgramSection(pfx, locked) {
     html = '<div style="color:rgba(23,72,84,.35);font-size:13px;">None</div>';
   }
 
+  return html;
+}
+
+function srPickleBlock(pfx, i, locked) {
+  var name    = srGet(pfx+'_pk_'+i+'_name');
+  var players = srGet(pfx+'_pk_'+i+'_players');
+  var notes   = srGet(pfx+'_pk_'+i+'_notes');
+  var html = '';
+  if(!locked) {
+    html += '<div style="border:1px solid rgba(23,72,84,.12);border-radius:8px;padding:12px;margin-top:10px;background:rgba(23,72,84,.02);">';
+    html += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:10px;">Program '+i+'</div>';
+    html += '<div class="sr-row2">';
+    html += '<div><div class="sr-label" style="margin-top:0;">Program Name</div><input class="sr-inp" placeholder="e.g. Open Play, Clinic…" value="'+name.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_pk_'+i+'_name\',this.value)"></div>';
+    html += '<div><div class="sr-label" style="margin-top:0;">Players</div><input class="sr-inp" type="number" min="0" placeholder="0" value="'+players+'" oninput="srSet(\''+pfx+'_pk_'+i+'_players\',this.value)"></div>';
+    html += '</div>';
+    html += '<div class="sr-label">Notes</div><textarea class="sr-ta" rows="2" placeholder="Any notes…" oninput="srSet(\''+pfx+'_pk_'+i+'_notes\',this.value)">'+notes+'</textarea>';
+    html += '</div>';
+  } else {
+    html += '<div style="margin:6px 0 10px;padding:10px 12px;border-left:3px solid rgba(23,72,84,.15);background:rgba(23,72,84,.03);border-radius:0 6px 6px 0;">';
+    html += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.35);margin-bottom:4px;">Program '+i+'</div>';
+    html += '<div style="font-size:13px;font-weight:600;color:#174854;">'+( name||'—')+(players ? ' · '+players+' players' : '')+'</div>';
+    if(notes) html += '<div style="font-size:13px;color:rgba(23,72,84,.65);margin-top:3px;">'+notes+'</div>';
+    html += '</div>';
+  }
   return html;
 }
 
@@ -2572,15 +2530,330 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
         <div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:500;color:#174854;">Shift Report</div>
         <div style="font-size:12px;color:rgba(23,72,84,.45);">${dayName}, ${today} · Rally Social Club</div>
       </div>
-      <span style="font-size:11px;color:rgba(23,72,84,.35);" id="sr-save-label"></span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:rgba(23,72,84,.35);" id="sr-save-label"></span>
+        <button onclick="srTogglePastReports()" id="sr-past-btn" style="padding:6px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;transition:all .2s;" onmouseover="this.style.borderColor='#174854'" onmouseout="this.style.borderColor='rgba(23,72,84,.2)'">📅 Past Reports</button>
+      </div>
     </div>
+    <div id="sr-past-panel" style="display:none;"></div>
+    <div id="sr-current-form">
     <div class="sr-form" style="padding:14px;">
       ${amSection}
       ${srAmLocked || isArchived ? pmSection : '<div style="padding:16px;background:rgba(23,72,84,.04);border-radius:8px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">Save the AM shift first to unlock the PM section.</div>'}
       ${srAmLocked || isArchived ? evHtml : ''}
       ${srAmLocked || isArchived ? sumBlock : ''}
       ${submitBar}
-    </div>`;
+    </div>
+    </div>`; // closes sr-current-form
+}
+
+// ── PAST REPORTS TOGGLE ───────────────────────────────────────────────────
+let srPastOpen = false;
+
+function srTogglePastReports() {
+  srPastOpen = !srPastOpen;
+  const panel = document.getElementById('sr-past-panel');
+  const form  = document.getElementById('sr-current-form');
+  const btn   = document.getElementById('sr-past-btn');
+  if(!panel || !form) return;
+  if(srPastOpen) {
+    panel.style.display = 'block';
+    form.style.display  = 'none';
+    if(btn) { btn.textContent = '✕ Close'; btn.style.background = 'rgba(23,72,84,.07)'; }
+    srShowPastReports();
+  } else {
+    panel.style.display = 'none';
+    form.style.display  = 'block';
+    if(btn) { btn.textContent = '📅 Past Reports'; btn.style.background = '#fff'; }
+  }
+}
+
+async function srShowPastReports() {
+  const panel = document.getElementById('sr-past-panel');
+  if(!panel) return;
+  const today = getTodayStr();
+  const yest  = new Date(); yest.setDate(yest.getDate()-1);
+  const defaultDate = yest.toISOString().slice(0,10);
+
+  // Render shell immediately so picker is usable while avg loads
+  panel.innerHTML =
+    '<div style="padding:16px 16px 80px;">'+
+      // ── Trailing average card ──
+      '<div id="sr-avg-card" style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;padding:16px;margin-bottom:20px;">'+
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">'+
+          '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;">4-Week Trailing Average</div>'+
+          '<div id="sr-avg-badge" style="font-size:11px;color:rgba(23,72,84,.4);">Loading…</div>'+
+        '</div>'+
+        '<div id="sr-avg-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:12px;">'+
+          // placeholder shimmer cells
+          ['COVERS','FOOD','BEV','TOTAL','PPA'].map(function(l){
+            return '<div style="text-align:center;">'+
+              '<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.35);margin-bottom:5px;">'+l+'</div>'+
+              '<div style="height:22px;background:rgba(23,72,84,.06);border-radius:4px;animation:pulse 1s ease-in-out infinite;"></div>'+
+            '</div>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      // ── Date picker ──
+      '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;margin-bottom:6px;">View a Specific Day</div>'+
+      '<div style="font-size:12px;color:rgba(23,72,84,.45);margin-bottom:14px;">Select a date to open that day\'s full report.</div>'+
+      '<div style="display:flex;gap:10px;align-items:center;">'+
+        '<input type="date" id="sr-date-picker" value="'+defaultDate+'" max="'+today+'"'+
+          ' style="flex:1;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fff;outline:none;cursor:pointer;"'+
+          ' onchange="srPickerDateChanged(this.value)"'+
+        '>'+
+        '<button onclick="srPickerGo()" style="padding:10px 20px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">View Report →</button>'+
+      '</div>'+
+      '<div id="sr-picker-status" style="margin-top:10px;font-size:12px;color:rgba(23,72,84,.4);min-height:18px;"></div>'+
+    '</div>';
+
+  // Kick off both in parallel
+  srPickerDateChanged(defaultDate);
+  srLoadTrailingAvg();
+}
+
+async function srLoadTrailingAvg() {
+  const card    = document.getElementById('sr-avg-card');
+  const metrics = document.getElementById('sr-avg-metrics');
+  const badge   = document.getElementById('sr-avg-badge');
+  if(!metrics || !badge) return;
+
+  try {
+    // Fetch last 28 days of reports (excludes today)
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate()-28);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+    const today  = getTodayStr();
+    const res = await fetch(
+      SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+cutoffStr+'&date=lt.'+today+'&select=date,data&order=date.desc',
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
+    );
+    const rows = await res.json();
+
+    if(!Array.isArray(rows) || !rows.length) {
+      metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
+      badge.textContent = '';
+      return;
+    }
+
+    // Use all reports that have any data saved
+    const complete = rows.filter(function(r){ return r.data && Object.keys(r.data).length > 0; });
+    const n = complete.length;
+    if(!n) {
+      metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
+      badge.textContent = '';
+      return;
+    }
+
+    var totCovers=0, totFood=0, totBev=0;
+    complete.forEach(function(r){
+      var d = r.data;
+      totCovers += parseFloat(d.pm_covers)||0;
+      totFood   += parseFloat(d.pm_food_sales)||0;
+      totBev    += parseFloat(d.pm_bev_sales)||0;
+    });
+    var avgCovers = totCovers/n;
+    var avgFood   = totFood/n;
+    var avgBev    = totBev/n;
+    var avgTotal  = avgFood+avgBev;
+    var avgPPA    = avgCovers ? avgTotal/avgCovers : 0;
+
+    badge.innerHTML = '<span style="background:rgba(23,72,84,.07);padding:2px 8px;border-radius:4px;">'+n+' shift'+(n!==1?'s':'')+' · last 28 days</span>';
+
+    var cols = [
+      {label:'COVERS', val:avgCovers, fmt:function(v){return v.toFixed(1);}},
+      {label:'FOOD',   val:avgFood,   fmt:function(v){return '$'+v.toFixed(0);}},
+      {label:'BEV',    val:avgBev,    fmt:function(v){return '$'+v.toFixed(0);}},
+      {label:'TOTAL',  val:avgTotal,  fmt:function(v){return '$'+v.toFixed(0);}},
+      {label:'PPA',    val:avgPPA,    fmt:function(v){return '$'+v.toFixed(2);}}
+    ];
+
+    metrics.innerHTML = cols.map(function(m){
+      return '<div style="text-align:center;">'+
+        '<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:5px;">'+m.label+'</div>'+
+        '<div style="font-size:20px;font-weight:700;color:#174854;font-family:\'Cormorant Garamond\',serif;">'+m.fmt(m.val)+'</div>'+
+      '</div>';
+    }).join('');
+
+  } catch(e) {
+    if(metrics) metrics.innerHTML = '<div style="color:rgba(220,80,60,.5);font-size:12px;grid-column:1/-1;">Could not load averages.</div>';
+    if(badge)   badge.textContent = '';
+    console.warn('srLoadTrailingAvg failed', e);
+  }
+}
+
+async function srPickerDateChanged(date) {
+  const status = document.getElementById('sr-picker-status');
+  if(!status || !date) return;
+  status.textContent = 'Checking…';
+  try {
+    const res = await fetch(
+      SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&limit=1',
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
+    );
+    const rows = await res.json();
+    if(Array.isArray(rows) && rows[0]) {
+      const d = rows[0].data || {};
+      const amMgr = d.am_manager_name || '—';
+      const pmMgr = d.pm_manager_name || '—';
+      const food  = parseFloat(d.pm_food_sales)||0;
+      const bev   = parseFloat(d.pm_bev_sales)||0;
+      const total = food+bev;
+      const amOk  = d.am_locked    ? '✅ AM saved' : '○ AM not saved';
+      const pmOk  = d.pm_submitted ? '✅ PM submitted' : '○ PM not submitted';
+      status.innerHTML =
+        '<span style="color:#4e622c;font-weight:600;">Report found</span>'+
+        ' &nbsp;·&nbsp; '+amOk+' &nbsp;·&nbsp; '+pmOk+
+        (total ? ' &nbsp;·&nbsp; <strong>$'+total.toFixed(0)+'</strong> total sales' : '')+
+        '<br><span style="color:rgba(23,72,84,.45);">'+amMgr+' (AM) &nbsp;·&nbsp; '+pmMgr+' (PM)</span>';
+    } else {
+      status.innerHTML = '<span style="color:rgba(23,72,84,.4);">No report found for this date.</span>';
+    }
+  } catch(e) {
+    status.innerHTML = '<span style="color:rgba(220,80,60,.6);">Could not check this date.</span>';
+  }
+}
+
+async function srPickerGo() {
+  const picker = document.getElementById('sr-date-picker');
+  if(!picker || !picker.value) { showToast('Pick a date first'); return; }
+  await srLoadReportForDate(picker.value, null);
+}
+
+async function srLoadReportForDate(date, recordId) {
+  const panel = document.getElementById('sr-past-panel');
+  if(!panel) return;
+  panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">Loading report…</div>';
+  try {
+    // Fetch by date (recordId is optional / may be null)
+    const url = recordId
+      ? SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+recordId+'&select=id,date,data&limit=1'
+      : SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&order=id.desc&limit=1';
+    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} });
+    const rows = await res.json();
+    if(!Array.isArray(rows)||!rows[0]) {
+      panel.innerHTML =
+        '<div style="padding:32px 16px;text-align:center;">'+
+          '<div style="font-size:32px;margin-bottom:12px;">📋</div>'+
+          '<div style="font-weight:700;font-size:15px;color:#174854;margin-bottom:6px;">No report for this date</div>'+
+          '<div style="font-size:13px;color:rgba(23,72,84,.45);margin-bottom:20px;">There\'s no shift report saved for '+date+'.</div>'+
+          '<button onclick="srShowPastReports()" style="padding:8px 18px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">← Pick another date</button>'+
+        '</div>';
+      return;
+    }
+    const r    = rows[0];
+    const snap = r.data || {};
+
+    // Build a fully read-only view of this report
+    const dateObj  = new Date(date+'T12:00:00');
+    const dayLabel = dateObj.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+
+    function lv(key) {
+      var v = snap[key];
+      if(v===undefined||v===null||v==='') return '—';
+      return String(v);
+    }
+    function lockedDiv(key) { return '<div class="sr-locked-val">'+lv(key)+'</div>'; }
+    function lockedTA(key)  { return '<div class="sr-locked-val" style="white-space:pre-wrap;">'+lv(key)+'</div>'; }
+    function sec(t)  { return '<div class="sr-section-header">'+t+'</div>'; }
+    function lbl(t)  { return '<div class="sr-label">'+t+'</div>'; }
+    function r2(a,b) { return '<div class="sr-row2">'+a+b+'</div>'; }
+
+    // Temporarily swap srData so srProgramSection reads the right snapshot
+    var prevData = srData;
+    srData = snap;
+    var amProg = srProgramSection('am',true);
+    var pmProg = srProgramSection('pm',true);
+    srData = prevData;
+
+    var amSection =
+      '<div class="sr-shift-block sr-locked">'+
+        '<div class="sr-shift-header"><span>🌅 AM SHIFT</span><span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Read only</span></div>'+
+        sec('AM MANAGER')+
+        r2('<div>'+lbl('Manager Name')+lockedDiv('am_manager_name')+'</div>','<div>'+lbl('Shift Start')+lockedDiv('am_shift_start')+'</div>')+
+        lbl('Shift End')+lockedDiv('am_shift_end')+
+        sec('AM · COURT RESERVATIONS')+
+        r2('<div>'+lbl('Counted up until')+lockedDiv('am_count_time')+'</div>','<div>'+lbl('AM Court Reservations')+lockedDiv('am_court_res')+'</div>')+
+        sec('AM · PEAK TIMES')+lbl('Peak times')+lockedDiv('am_peak_times')+
+        sec('AM · EVENTS & PROGRAMMING')+amProg+
+        sec('AM · TEAM')+
+        r2('<div>'+lbl('Host Desk')+lockedDiv('am_host_desk')+'</div>','<div>'+lbl('Café')+lockedDiv('am_cafe')+'</div>')+
+        r2('<div>'+lbl('Captain(s)')+lockedDiv('am_captains')+'</div>','<div>'+lbl('Team Lead')+lockedDiv('am_team_lead')+'</div>')+
+        r2('<div>'+lbl('Swarmer')+lockedDiv('am_swarmer')+'</div>','<div>'+lbl('Bar')+lockedDiv('am_bar')+'</div>')+
+        lbl('Staffing Adjustments')+lockedDiv('am_staffing')+
+        lbl('Coaching & Feedback Notes')+lockedTA('am_coaching')+
+        sec('AM · COMPS')+lbl('Comp Notes')+lockedTA('am_comp_notes')+
+        sec("AM · 86'D ITEMS")+
+        r2('<div>'+lbl('Food')+lockedTA('am_eighty_food')+'</div>','<div>'+lbl('Bar / Beverage')+lockedTA('am_eighty_bar')+'</div>')+
+        sec('AM · REPAIRS, MAINTENANCE & CLEANING')+lockedTA('am_rm_issues')+
+        sec('AM · SHIFT NOTES & HANDOFF TO PM')+lockedTA('am_shift_notes')+
+      '</div>';
+
+    var pmSection =
+      '<div class="sr-shift-block sr-locked">'+
+        '<div class="sr-shift-header"><span>🌙 PM SHIFT</span><span style="color:rgba(23,72,84,.4);font-size:12px;">🔒 Read only</span></div>'+
+        sec('PM MANAGER')+
+        r2('<div>'+lbl('Manager Name')+lockedDiv('pm_manager_name')+'</div>','<div>'+lbl('Shift Start')+lockedDiv('pm_shift_start')+'</div>')+
+        lbl('Shift End')+lockedDiv('pm_shift_end')+
+        sec('PM · COURT RESERVATIONS & COVERS')+
+        r2('<div>'+lbl('PM Court Reservations')+lockedDiv('pm_court_res')+'</div>','<div>'+lbl('Covers on Toast')+lockedDiv('pm_covers')+'</div>')+
+        sec('PM · SALES')+
+        r2('<div>'+lbl('Food Sales ($)')+lockedDiv('pm_food_sales')+'</div>','<div>'+lbl('Bev Sales ($)')+lockedDiv('pm_bev_sales')+'</div>')+
+        sec('PM · COMPS')+
+        r2('<div>'+lbl('Positive Comps ($)')+lockedDiv('pm_pos_comps_amt')+'</div>','<div>'+lbl('Negative Comps ($)')+lockedDiv('pm_neg_comps_amt')+'</div>')+
+        lbl('Positive Comp Notes')+lockedTA('pm_comp_notes')+
+        lbl('Negative Comp Notes')+lockedTA('pm_neg_comp_notes')+
+        sec("PM · 86'D ITEMS")+
+        r2('<div>'+lbl('Food')+lockedTA('pm_eighty_food')+'</div>','<div>'+lbl('Bar / Beverage')+lockedTA('pm_eighty_bar')+'</div>')+
+        sec('PM · PEAK TIMES')+lbl('Peak times')+lockedDiv('pm_peak_times')+
+        sec('PM · EVENTS & PROGRAMMING')+pmProg+
+        sec('PM · TEAM')+
+        r2('<div>'+lbl('Host Desk')+lockedDiv('pm_host_desk')+'</div>','<div>'+lbl('Captain(s)')+lockedDiv('pm_captains')+'</div>')+
+        r2('<div>'+lbl('Team Lead')+lockedDiv('pm_team_lead')+'</div>','<div>'+lbl('Bar')+lockedDiv('pm_bar')+'</div>')+
+        r2('<div>'+lbl('Swarmer')+lockedDiv('pm_swarmer')+'</div>','<div>'+lbl('Staffing Adjustments')+lockedDiv('pm_staffing')+'</div>')+
+        lbl('Coaching & Feedback Notes')+lockedTA('pm_coaching')+
+        sec('PM · REPAIRS, MAINTENANCE & CLEANING')+lockedTA('pm_rm_issues')+
+        sec('PM · SHIFT NOTES & CLOSE')+lockedTA('pm_shift_notes')+
+      '</div>';
+
+    var food  = parseFloat(snap.pm_food_sales)||0;
+    var bev   = parseFloat(snap.pm_bev_sales)||0;
+    var total = food+bev;
+    var cvrs  = parseFloat(snap.pm_covers)||0;
+    var courts= (parseFloat(snap.am_court_res)||0)+(parseFloat(snap.pm_court_res)||0);
+    var ppa   = cvrs ? (total/cvrs) : 0;
+    var posC  = parseFloat(snap.pm_pos_comps_amt)||0;
+    var negC  = parseFloat(snap.pm_neg_comps_amt)||0;
+    var mets = [
+      ['Total Courts', courts, false],
+      ['Covers',       cvrs,   false],
+      ['Food Sales',   food,   true],
+      ['Bev Sales',    bev,    true],
+      ['Total Sales',  total,  true],
+      ['PPA',          ppa,    true],
+      ['+ Comps',      posC,   true],
+      ['- Comps',      negC,   true]
+    ];
+    var sumBlock = '<div class="sr-shift-block"><div class="sr-shift-header"><span>📊 DAY SUMMARY</span></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:14px;padding:4px 0 8px;">'+
+      mets.map(function(m){
+        var val = m[1]===0 ? '—' : (m[2] ? '$'+m[1].toFixed(2) : m[1].toFixed(0));
+        return '<div style="text-align:center;"><div style="font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:4px;">'+m[0]+'</div><div style="font-size:17px;font-weight:700;color:#174854;">'+val+'</div></div>';
+      }).join('')+
+      '</div></div>';
+
+    panel.innerHTML =
+      '<div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(23,72,84,.1);padding-bottom:12px;position:sticky;top:0;background:#fbf6ed;z-index:9;">'+
+        '<button onclick="srShowPastReports()" style="padding:5px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">← Pick date</button>'+
+        '<div>'+
+          '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;">'+dayLabel+'</div>'+
+          '<div style="font-size:11px;color:rgba(23,72,84,.4);">Read-only archive · Rally Social Club</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sr-form" style="padding:14px;">'+amSection+pmSection+sumBlock+'<div style="height:60px;"></div></div>';
+  } catch(e) {
+    panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(220,80,60,.6);">Failed to load report.<br><br><button onclick="srShowPastReports()" style="padding:8px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit;">← Pick date</button></div>';
+    console.warn('srLoadReportForDate failed',e);
+  }
 }
 
 function switchClScoreTab(view) {
@@ -2602,12 +2875,6 @@ function switchTaskView(view) {
   document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
   document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
   document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
-  // Update FAB and header button so + Add Task opens the right form for the current view
-  const isManagerView = view === 'manager';
-  const fab = document.getElementById('fab-add');
-  if(fab) fab.onclick = () => openAddTask(isManagerView);
-  const hdrBtn = document.getElementById('hdr-add-task-btn');
-  if(hdrBtn) hdrBtn.onclick = () => openAddTask(isManagerView);
   if(view === 'active')  renderMgr();
   else if(view === 'manager') renderMgrManagerTasks();
   else renderMgrCompleted();
@@ -2635,10 +2902,10 @@ function renderMgr(){
   const hosts=users.filter(u=>u.role==='associate');
   // filter overview
   let ovTasks=tasks;
-  if(ovFilter==='all')ovTasks=tasks.filter(t=>!t.done&&!t.isManagerTask);
-  else if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy&&!t.isManagerTask);
-  else if(ovFilter==='active')ovTasks=tasks.filter(t=>t.claimedBy&&!t.done&&!t.isManagerTask);
-  else if(ovFilter==='overdue')ovTasks=tasks.filter(t=>!t.done&&t.deadline&&t.deadline<now()&&!t.isManagerTask);
+  if(ovFilter==='all')ovTasks=tasks.filter(t=>!t.done);
+  else if(ovFilter==='pending')ovTasks=tasks.filter(t=>!t.done&&!t.claimedBy);
+  else if(ovFilter==='active')ovTasks=tasks.filter(t=>t.claimedBy&&!t.done);
+  else if(ovFilter==='overdue')ovTasks=tasks.filter(t=>!t.done&&t.deadline&&t.deadline<now());
   const ovHTML=ovTasks.length?ovTasks.map(t=>{
     const ds=dlStatus(t.deadline),pts=EP[t.effort]+getDBonus(t.deadline);
     const claimer=t.claimedBy?users.find(u=>u.id===t.claimedBy):null;
@@ -2881,7 +3148,7 @@ function renderMgrManagerTasks(){
           <select class="ov-asel" id="ov-sel-${t.id}">
             <option value="">Assign to manager...</option>
             <option value="0">🔓 Unassign</option>
-            ${users.filter(u=>['manager','owner','director'].includes(u.role)).map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name} 👔</option>`).join('')}
+            ${users.map(u=>`<option value="${u.id}" ${t.assignedTo===u.id?'selected':''}>${u.name} ${u.role==='manager'?'👔':''}</option>`).join('')}
           </select>
           <button class="ov-abtn" onclick="reassign(${t.id})">Assign</button>
           <button class="ov-abtn" onclick="openEditModal(${t.id})">✏</button>
@@ -3624,7 +3891,7 @@ let clProgressCache = {}; // {key: {done, total, pct}} — loaded from Supabase 
 let clLogs = [];
 
 // ── DATE HELPERS ──────────────────────────────────────────────
-function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+function getTodayStr() { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function getDayOfWeek() { return new Date().getDay(); } // 0=Sun, 1=Mon...
 function getDateOfMonth() { return new Date().getDate(); }
 function isMonday() { return getDayOfWeek() === 1; }
@@ -4233,29 +4500,18 @@ const WALKTHROUGH_IDS = (function(){
 })();
 
 function calcWalkthroughScore(clStateItems) {
-  // Use currentChecklistKey if available, else fall back to manager_opening
-  const key = currentChecklistKey || 'manager_opening';
-  const items = ALL_CHECKLISTS[key] || [];
-  const total = items.length || Object.keys(clStateItems).length || 1;
-
-  // Deduct 5pts for every flagged item that has a written note
-  let flagged = 0;
-  if(items.length) {
-    items.forEach(i => {
-      const s = clStateItems[i.id] || {};
-      if(s.rating === 'needs' && s.issue && s.issue.trim().length > 0) flagged++;
-    });
-  } else {
-    Object.values(clStateItems).forEach(s => {
-      if(s && s.rating === 'needs' && s.issue && s.issue.trim().length > 0) flagged++;
-    });
-  }
-
-  const deductions = flagged * 5;
-  const pct = Math.max(0, 100 - deductions);
+  // Good = 5pts, Needs Work = 0pts
+  const rated = WALKTHROUGH_IDS.filter(id => clStateItems[id] && clStateItems[id].rating);
+  if(!rated.length) return null;
+  const pts = rated.reduce((sum, id) => {
+    return sum + (clStateItems[id].rating === 'good' ? 5 : 0);
+  }, 0);
+  const maxPts = rated.length * 5;
+  const pct = Math.round((pts / maxPts) * 100);
   const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
-  return { pts: pct, maxPts: 100, pct, grade, total, flagged, deductions };
+  return { pts, maxPts, pct, grade, rated: rated.length };
 }
+
 function gradeColor(grade) {
   return {A:'#4e622c', B:'#174854', C:'#c87a00', D:'#c04020'}[grade] || '#174854';
 }
@@ -4268,29 +4524,26 @@ async function submitWalkthroughScore(closingManagerName) {
   if(!score) return;
   const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
-  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=representation'};
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
   const payload = {
-    shift_date:      yesterday.toISOString().slice(0,10),
-    graded_manager:  closingManagerName,
+    shift_date:     yesterday.toISOString().slice(0,10),
+    graded_manager: closingManagerName,
     grading_manager: u ? u.name : 'Manager',
-    score:           score.pct,
-    grade:           score.grade,
-    items_rated:     score.total,
-    created_at:      new Date().toISOString()
+    pts:            score.pts,
+    max_pts:        score.maxPts,
+    pct:            score.pct,
+    grade:          score.grade,
+    items_rated:    score.rated,
+    items_raw:      clState,
+    created_at:     new Date().toISOString()
   };
-  console.log('Posting score payload:', JSON.stringify(payload));
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
-    const resText = await res.text();
-    console.log('Score POST response:', res.status, resText);
-    if(res.ok) {
-      showToast(`${closingManagerName} scored ${score.grade} — ${score.pct}%`);
-    } else {
-      showToast('Score could not be saved: ' + res.status + ' ' + resText.slice(0,80));
-    }
-  } catch(e) { console.error('Score save error:', e); showToast('Score save error — check console'); }
+    await fetch(`${SUPA}/rest/v1/rally_manager_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.pts}/${score.maxPts}pts)`);
+    showToast(`${closingManagerName} scored ${score.grade} — ${score.pts}/${score.maxPts} pts`);
+  } catch(e) { console.warn('Manager score submit failed', e); }
 }
 
 async function signOffChecklist() {
