@@ -608,7 +608,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <label style="margin-top:8px;">Assign To</label>
       <select id="f-assign"><option value="">Select person...</option></select>
     </div>
-    <button class="add-task-btn" onclick="addTask()">Add Task 🎯</button>
+    <button class="add-task-btn" onclick="addTask(true)">Add Task 🎯</button>
   </div>
 </div>
 
@@ -1166,8 +1166,8 @@ function renderStats(){
 function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
-  const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
+  const yours=tasks.filter(t=>!t.done&&!t.isManagerTask&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.isManagerTask&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
@@ -1248,7 +1248,7 @@ function pickUp(id){
 }
 function renderMyTasks(){
   const me = String(currentUser);
-  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
+  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done&&!t.isManagerTask);
   const wrap=document.getElementById('my-wrap');if(!wrap)return;
   if(!mine.length){wrap.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No active tasks</div><div class="empty-hint">Tasks assigned to you or picked up from the pool will appear here.</div></div>';return;}
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
