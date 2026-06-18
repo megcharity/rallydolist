@@ -1698,7 +1698,7 @@ async function renderScorecard() {
   const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_scores?select=*&order=shift_date.desc&limit=60`,
+    const res = await fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`,
       {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
     const rows = await res.json();
 
@@ -1719,7 +1719,7 @@ async function renderScorecard() {
     // Summary cards per manager
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
     Object.entries(byManager).forEach(([mgr, scores]) => {
-      const avg = Math.round(scores.reduce((s,r) => s+r.score, 0) / scores.length);
+      const avg = Math.round(scores.reduce((s,r) => s+(r.pct||r.score||0), 0) / scores.length);
       const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : 'D';
       html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">${mgr}</div>
@@ -1747,7 +1747,7 @@ async function renderScorecard() {
             <td style="padding:11px 14px;text-align:center;">
               <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
             </td>
-            <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.score}%</td>
+            <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.pct||r.score}%</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -3518,7 +3518,6 @@ const ALL_CHECKLISTS = {
 
 // ── MANAGER OPENING (expanded from SOPs) ─────────────────────
 "manager_opening": [
-  {"id":"mo_23","section":"Opening Duties","text":"Unlock the venue","type":"check"},
   {"id":"mo_24","section":"Opening Duties","text":"Turn on all lights (including court number lights), TVs, and music — adjust volume at opening","type":"check"},
   {"id":"mo_26","section":"Opening Duties","text":"If cleaners were in: take stools off bar tops and put chairs back under tables","type":"check"},
   {"id":"mo_27","section":"Opening Duties","text":"Fill lounges with water — fill jugs with ice and place on cart","type":"check"},
@@ -3530,8 +3529,7 @@ const ALL_CHECKLISTS = {
   {"id":"mo_c1_05","section":"Court 1","text":"No spills or stains on cushions","type":"rate"},
   {"id":"mo_c1_06","section":"Court 1","text":"QR codes out","type":"rate"},
   {"id":"mo_c1_07","section":"Court 1","text":"Marketing frames out on table and up to date","type":"rate"},
-  {"id":"mo_c1_08","section":"Court 1","text":"Plastic Rally cups out","type":"rate"},
-  {"id":"mo_c1_09","section":"Court 1","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_c1_08","section":"Court 1","text":"Water station set up (glass and plastic cups out)","type":"rate"},
   {"id":"mo_c1_10","section":"Court 1","text":"Hand sanitizer out","type":"rate"},
   {"id":"mo_c1_11","section":"Court 1","text":"Tablet plugged in","type":"rate"},
   {"id":"mo_c1_12","section":"Court 1","text":"Drink and food menu on drink rail","type":"rate"},
@@ -3543,37 +3541,23 @@ const ALL_CHECKLISTS = {
   {"id":"mo_ppw_05","section":"Ping Pong Wing","text":"Marketing frame out and up to date","type":"rate"},
   {"id":"mo_ppw_06","section":"Ping Pong Wing","text":"QR code out","type":"rate"},
 
-  {"id":"mo_c4_01","section":"Court 4","text":"Turn on court light","type":"rate"},
-  {"id":"mo_c4_02","section":"Court 4","text":"No food below drink rail","type":"rate"},
-  {"id":"mo_c4_03","section":"Court 4","text":"No food on carpet","type":"rate"},
-  {"id":"mo_c4_04","section":"Court 4","text":"Pillows straight","type":"rate"},
-  {"id":"mo_c4_05","section":"Court 4","text":"No spills or stains on cushions","type":"rate"},
-  {"id":"mo_c4_06","section":"Court 4","text":"QR codes out","type":"rate"},
-  {"id":"mo_c4_07","section":"Court 4","text":"Marketing frames out on table and up to date","type":"rate"},
-  {"id":"mo_c4_08","section":"Court 4","text":"Plastic Rally cups out","type":"rate"},
-  {"id":"mo_c4_09","section":"Court 4","text":"Glass water cups out","type":"rate"},
-  {"id":"mo_c4_10","section":"Court 4","text":"Hand sanitizer out","type":"rate"},
-  {"id":"mo_c4_11","section":"Court 4","text":"Tablet plugged in","type":"rate"},
-  {"id":"mo_c4_12","section":"Court 4","text":"Drink and food menu on drink rail","type":"rate"},
+  {"id":"mo_c4_01","section":"South Lounge, C3 & C4","text":"Turn on court light","type":"rate"},
+  {"id":"mo_c4_02","section":"South Lounge, C3 & C4","text":"No food below drink rail","type":"rate"},
+  {"id":"mo_c4_03","section":"South Lounge, C3 & C4","text":"No food on carpet","type":"rate"},
+  {"id":"mo_c4_04","section":"South Lounge, C3 & C4","text":"Pillows straight","type":"rate"},
+  {"id":"mo_c4_05","section":"South Lounge, C3 & C4","text":"No spills or stains on cushions","type":"rate"},
+  {"id":"mo_c4_06","section":"South Lounge, C3 & C4","text":"QR codes out","type":"rate"},
+  {"id":"mo_c4_07","section":"South Lounge, C3 & C4","text":"Marketing frames out on table and up to date","type":"rate"},
+  {"id":"mo_c4_08","section":"South Lounge, C3 & C4","text":"Water station set up (glass and plastic cups out)","type":"rate"},
+  {"id":"mo_c4_10","section":"South Lounge, C3 & C4","text":"Hand sanitizer out","type":"rate"},
+  {"id":"mo_c4_11","section":"South Lounge, C3 & C4","text":"Tablet plugged in","type":"rate"},
+  {"id":"mo_c4_12","section":"South Lounge, C3 & C4","text":"Drink and food menu on drink rail","type":"rate"},
 
-  {"id":"mo_c34_01","section":"Area Behind C3 & C4","text":"No food on floor","type":"rate"},
-  {"id":"mo_c34_02","section":"Area Behind C3 & C4","text":"No food under tables","type":"rate"},
-  {"id":"mo_c34_03","section":"Area Behind C3 & C4","text":"No drink marks on tables","type":"rate"},
-  {"id":"mo_c34_04","section":"Area Behind C3 & C4","text":"Trash can empty","type":"rate"},
-  {"id":"mo_c34_05","section":"Area Behind C3 & C4","text":"QR codes out","type":"rate"},
-  {"id":"mo_c34_06","section":"Area Behind C3 & C4","text":"Marketing frame out and up to date","type":"rate"},
+  {"id":"mo_c34_01","section":"South Lounge, C3 & C4","text":"No food on floor","type":"rate"},
+  {"id":"mo_c34_02","section":"South Lounge, C3 & C4","text":"No food under tables","type":"rate"},
+  {"id":"mo_c34_03","section":"South Lounge, C3 & C4","text":"No drink marks on tables","type":"rate"},
+  {"id":"mo_c34_04","section":"South Lounge, C3 & C4","text":"Trash can empty","type":"rate"},
 
-  {"id":"mo_c3_01","section":"Court 3","text":"No food below drink rail","type":"rate"},
-  {"id":"mo_c3_02","section":"Court 3","text":"No food on carpet","type":"rate"},
-  {"id":"mo_c3_03","section":"Court 3","text":"Pillows straight","type":"rate"},
-  {"id":"mo_c3_04","section":"Court 3","text":"No spills or stains on cushions","type":"rate"},
-  {"id":"mo_c3_05","section":"Court 3","text":"QR codes out","type":"rate"},
-  {"id":"mo_c3_06","section":"Court 3","text":"Marketing frames out on table and up to date","type":"rate"},
-  {"id":"mo_c3_07","section":"Court 3","text":"Plastic Rally cups out","type":"rate"},
-  {"id":"mo_c3_08","section":"Court 3","text":"Glass water cups out","type":"rate"},
-  {"id":"mo_c3_09","section":"Court 3","text":"Hand sanitizer out","type":"rate"},
-  {"id":"mo_c3_10","section":"Court 3","text":"Tablet plugged in","type":"rate"},
-  {"id":"mo_c3_11","section":"Court 3","text":"Drink and food menu on drink rail","type":"rate"},
 
   {"id":"mo_bm_01","section":"Bathrooms — Men's","text":"Clean counter (wipe soap off if no cleaners)","type":"rate"},
   {"id":"mo_bm_02","section":"Bathrooms — Men's","text":"Toilet paper stocked","type":"rate"},
@@ -3635,8 +3619,7 @@ const ALL_CHECKLISTS = {
   {"id":"mo_out_03","section":"Outdoor Setup","text":"Pillows straight, no spills or stains on cushions","type":"rate"},
   {"id":"mo_out_04","section":"Outdoor Setup","text":"QR codes out on all tables","type":"rate"},
   {"id":"mo_out_05","section":"Outdoor Setup","text":"Marketing frames out and up to date","type":"rate"},
-  {"id":"mo_out_06","section":"Outdoor Setup","text":"Plastic Rally cups out","type":"rate"},
-  {"id":"mo_out_07","section":"Outdoor Setup","text":"Glass water cups out","type":"rate"},
+  {"id":"mo_out_06","section":"Outdoor Setup","text":"Water station set up (glass and plastic cups out)","type":"rate"},
   {"id":"mo_out_08","section":"Outdoor Setup","text":"TV covers removed, TVs on displaying Rally content","type":"rate"},
   {"id":"mo_out_09","section":"Outdoor Setup","text":"☀️ Summer: Water and ice out for guests, cold towels rolled and ready","type":"rate"},
   {"id":"mo_out_10","section":"Outdoor Setup","text":"❄️ Winter: Heaters out and positioned, confirm they are working","type":"rate"},
@@ -3678,8 +3661,7 @@ const ALL_CHECKLISTS = {
   {"id":"mc_c1_04","section":"Court 1","text":"No spills or stains on cushions","type":"check"},
   {"id":"mc_c1_05","section":"Court 1","text":"QR codes out","type":"check"},
   {"id":"mc_c1_06","section":"Court 1","text":"Marketing frames out and up to date","type":"check"},
-  {"id":"mc_c1_07","section":"Court 1","text":"Plastic Rally cups out","type":"check"},
-  {"id":"mc_c1_08","section":"Court 1","text":"Glass water cups out","type":"check"},
+  {"id":"mc_c1_07","section":"Court 1","text":"Water station set up (glass and plastic cups out)","type":"check"},
   {"id":"mc_c1_09","section":"Court 1","text":"Hand sanitizer out","type":"check"},
   {"id":"mc_c1_10","section":"Court 1","text":"Tablet plugged in","type":"check"},
   {"id":"mc_c1_11","section":"Court 1","text":"Drink and food menu on drink rail","type":"check"},
@@ -3691,36 +3673,34 @@ const ALL_CHECKLISTS = {
   {"id":"mc_ppw_05","section":"Ping Pong Wing","text":"Marketing frame out and up to date","type":"check"},
   {"id":"mc_ppw_06","section":"Ping Pong Wing","text":"QR code out","type":"check"},
 
-  {"id":"mc_c4_01","section":"Court 4","text":"No food below drink rail","type":"check"},
-  {"id":"mc_c4_02","section":"Court 4","text":"No food on carpet","type":"check"},
-  {"id":"mc_c4_03","section":"Court 4","text":"Pillows straight","type":"check"},
-  {"id":"mc_c4_04","section":"Court 4","text":"No spills or stains on cushions","type":"check"},
-  {"id":"mc_c4_05","section":"Court 4","text":"QR codes out","type":"check"},
-  {"id":"mc_c4_06","section":"Court 4","text":"Marketing frames out and up to date","type":"check"},
-  {"id":"mc_c4_07","section":"Court 4","text":"Plastic Rally cups out","type":"check"},
-  {"id":"mc_c4_08","section":"Court 4","text":"Glass water cups out","type":"check"},
-  {"id":"mc_c4_09","section":"Court 4","text":"Hand sanitizer out","type":"check"},
-  {"id":"mc_c4_10","section":"Court 4","text":"Tablet plugged in","type":"check"},
-  {"id":"mc_c4_11","section":"Court 4","text":"Drink and food menu on drink rail","type":"check"},
+  {"id":"mc_c4_01","section":"South Lounge, C3 & C4","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c4_02","section":"South Lounge, C3 & C4","text":"No food on carpet","type":"check"},
+  {"id":"mc_c4_03","section":"South Lounge, C3 & C4","text":"Pillows straight","type":"check"},
+  {"id":"mc_c4_04","section":"South Lounge, C3 & C4","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c4_05","section":"South Lounge, C3 & C4","text":"QR codes out","type":"check"},
+  {"id":"mc_c4_06","section":"South Lounge, C3 & C4","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c4_07","section":"South Lounge, C3 & C4","text":"Water station set up (glass and plastic cups out)","type":"check"},
+  {"id":"mc_c4_09","section":"South Lounge, C3 & C4","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c4_10","section":"South Lounge, C3 & C4","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c4_11","section":"South Lounge, C3 & C4","text":"Drink and food menu on drink rail","type":"check"},
 
-  {"id":"mc_c34_01","section":"Area Behind C3 & C4","text":"No food on floor","type":"check"},
-  {"id":"mc_c34_02","section":"Area Behind C3 & C4","text":"No food under tables","type":"check"},
-  {"id":"mc_c34_03","section":"Area Behind C3 & C4","text":"No drink marks on tables","type":"check"},
-  {"id":"mc_c34_04","section":"Area Behind C3 & C4","text":"Trash can empty","type":"check"},
-  {"id":"mc_c34_05","section":"Area Behind C3 & C4","text":"QR codes out","type":"check"},
-  {"id":"mc_c34_06","section":"Area Behind C3 & C4","text":"Marketing frame out and up to date","type":"check"},
+  {"id":"mc_c34_01","section":"South Lounge, C3 & C4","text":"No food on floor","type":"check"},
+  {"id":"mc_c34_02","section":"South Lounge, C3 & C4","text":"No food under tables","type":"check"},
+  {"id":"mc_c34_03","section":"South Lounge, C3 & C4","text":"No drink marks on tables","type":"check"},
+  {"id":"mc_c34_04","section":"South Lounge, C3 & C4","text":"Trash can empty","type":"check"},
+  {"id":"mc_c34_05","section":"South Lounge, C3 & C4","text":"QR codes out","type":"check"},
+  {"id":"mc_c34_06","section":"South Lounge, C3 & C4","text":"Marketing frame out and up to date","type":"check"},
 
-  {"id":"mc_c3_01","section":"Court 3","text":"No food below drink rail","type":"check"},
-  {"id":"mc_c3_02","section":"Court 3","text":"No food on carpet","type":"check"},
-  {"id":"mc_c3_03","section":"Court 3","text":"Pillows straight","type":"check"},
-  {"id":"mc_c3_04","section":"Court 3","text":"No spills or stains on cushions","type":"check"},
-  {"id":"mc_c3_05","section":"Court 3","text":"QR codes out","type":"check"},
-  {"id":"mc_c3_06","section":"Court 3","text":"Marketing frames out and up to date","type":"check"},
-  {"id":"mc_c3_07","section":"Court 3","text":"Plastic Rally cups out","type":"check"},
-  {"id":"mc_c3_08","section":"Court 3","text":"Glass water cups out","type":"check"},
-  {"id":"mc_c3_09","section":"Court 3","text":"Hand sanitizer out","type":"check"},
-  {"id":"mc_c3_10","section":"Court 3","text":"Tablet plugged in","type":"check"},
-  {"id":"mc_c3_11","section":"Court 3","text":"Drink and food menu on drink rail","type":"check"},
+  {"id":"mc_c3_01","section":"South Lounge, C3 & C4","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c3_02","section":"South Lounge, C3 & C4","text":"No food on carpet","type":"check"},
+  {"id":"mc_c3_03","section":"South Lounge, C3 & C4","text":"Pillows straight","type":"check"},
+  {"id":"mc_c3_04","section":"South Lounge, C3 & C4","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c3_05","section":"South Lounge, C3 & C4","text":"QR codes out","type":"check"},
+  {"id":"mc_c3_06","section":"South Lounge, C3 & C4","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c3_07","section":"South Lounge, C3 & C4","text":"Water station set up (glass and plastic cups out)","type":"check"},
+  {"id":"mc_c3_09","section":"South Lounge, C3 & C4","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c3_10","section":"South Lounge, C3 & C4","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c3_11","section":"South Lounge, C3 & C4","text":"Drink and food menu on drink rail","type":"check"},
 
   {"id":"mc_bm_01","section":"Bathrooms — Men's","text":"Clean counter (wipe soap off if no cleaners)","type":"check"},
   {"id":"mc_bm_02","section":"Bathrooms — Men's","text":"Toilet paper stocked","type":"check"},
