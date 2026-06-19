@@ -2906,6 +2906,8 @@ async function srLoadReportForDate(date, recordId) {
     }
     const r    = rows[0];
     const snap = r.data || {};
+    srPastSnap = snap;
+    srPastDate = date;
 
     // Build a fully read-only view of this report
     const dateObj  = new Date(date+'T12:00:00');
@@ -3008,15 +3010,44 @@ async function srLoadReportForDate(date, recordId) {
     panel.innerHTML =
       '<div style="padding:14px 16px 0;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(23,72,84,.1);padding-bottom:12px;position:sticky;top:0;background:#fbf6ed;z-index:9;">'+
         '<button onclick="srShowPastReports()" style="padding:5px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;">← Pick date</button>'+
-        '<div>'+
+        '<div style="flex:1;">'+
           '<div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;">'+dayLabel+'</div>'+
           '<div style="font-size:11px;color:rgba(23,72,84,.4);">Read-only archive · Rally Social Club</div>'+
         '</div>'+
+        '<button onclick="srResendEmail()" id="sr-resend-btn" style="padding:6px 14px;background:#174854;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">📧 Resend Email</button>'+
       '</div>'+
       '<div class="sr-form" style="padding:14px;">'+amSection+pmSection+sumBlock+'<div style="height:60px;"></div></div>';
   } catch(e) {
     panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(220,80,60,.6);">Failed to load report.<br><br><button onclick="srShowPastReports()" style="padding:8px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit;">← Pick date</button></div>';
     console.warn('srLoadReportForDate failed',e);
+  }
+}
+
+// Resend email for the currently viewed past report
+let srPastSnap = null; // stores the last loaded past report data
+let srPastDate = null;
+
+async function srResendEmail() {
+  const btn = document.getElementById('sr-resend-btn');
+  if(!srPastSnap) { showToast('No report loaded'); return; }
+  if(btn) { btn.textContent = '⏳ Sending...'; btn.disabled = true; }
+  try {
+    // Temporarily swap srData so srSendEmail uses the past report
+    const prevData = srData;
+    const prevDate = srPastDate;
+    srData = srPastSnap;
+    // Override getTodayStr for email label
+    const realGetTodayStr = window.getTodayStr;
+    window.getTodayStr = () => prevDate || realGetTodayStr();
+    await srSendEmail();
+    window.getTodayStr = realGetTodayStr;
+    srData = prevData;
+    if(btn) { btn.textContent = '✅ Sent!'; setTimeout(()=>{ if(btn){ btn.textContent='📧 Resend Email'; btn.disabled=false; } }, 3000); }
+    showToast('Report emailed ✅');
+  } catch(e) {
+    console.warn('Resend failed', e);
+    if(btn) { btn.textContent = '❌ Failed'; setTimeout(()=>{ if(btn){ btn.textContent='📧 Resend Email'; btn.disabled=false; } }, 3000); }
+    showToast('Email failed — check console');
   }
 }
 
