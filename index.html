@@ -1250,7 +1250,7 @@ function pickUp(id){
 }
 function renderMyTasks(){
   const me = String(currentUser);
-  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done);
+  const mine=tasks.filter(t=>(String(t.claimedBy)===me||String(t.assignedTo)===me)&&!t.done&&t.isManagerTask!==true&&t.isManagerTask!=='true');
   const wrap=document.getElementById('my-wrap');if(!wrap)return;
   if(!mine.length){wrap.innerHTML='<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-title">No active tasks</div><div class="empty-hint">Tasks assigned to you or picked up from the pool will appear here.</div></div>';return;}
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
