@@ -801,7 +801,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="hdr-right">
       <span class="hdr-user" id="mgr-hdr-user"></span>
-      <button class="btn-sm amber" onclick="openAddTask()">+ Add Task</button>
+      <button class="btn-sm amber" onclick="openAddTask(true)">+ Add Task</button>
       <button class="btn-sm" onclick="goBackFromMgr()">← Back</button>
       <button class="btn-sm danger" onclick="doLogout()">Out</button>
     </div>
@@ -1152,11 +1152,11 @@ function showTab(tab,el){
 function renderStats(){
   const me=currentUser;
   const u=users.find(x=>x.id===me);
-  const myClaimed=tasks.filter(t=>!t.isManagerTask&&String(t.claimedBy)===String(me)&&!t.done).length;
-  const myAssigned=tasks.filter(t=>!t.isManagerTask&&String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
-  const total=tasks.filter(t=>!t.isManagerTask).length,done=tasks.filter(t=>!t.isManagerTask&&t.done).length;
+  const myClaimed=tasks.filter(t=>String(t.claimedBy)===String(me)&&!t.done).length;
+  const myAssigned=tasks.filter(t=>String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
+  const total=tasks.length,done=tasks.filter(t=>t.done).length;
   const pct=total?Math.round(done/total*100):0;
-  const inPool=tasks.filter(t=>!t.isManagerTask&&!t.done&&!t.assignedTo&&!t.claimedBy).length;
+  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy).length;
   document.getElementById('stats-strip').innerHTML=`
     ${u?`<div class="stat-card"><div class="stat-val">${u.effortPts+u.deadlinePts}</div><div class="stat-lbl">My Pts</div></div>
     <div class="stat-card"><div class="stat-val">${u.weeklyEffort+u.weeklyDeadline}</div><div class="stat-lbl">This Wk</div></div>`:''}
@@ -1168,8 +1168,8 @@ function renderStats(){
 function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
-  const yours=tasks.filter(t=>!t.done&&!t.isManagerTask&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.isManagerTask&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
+  const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
@@ -1474,7 +1474,10 @@ function setLbMode(m){lbMode=m;renderLeaderboard();}
 
 
 // ─── ADD TASK PANEL ──────────────────────────────────────────────────────────
-function openAddTask() {
+let _openingManagerTask = false;
+
+function openAddTask(isManagerTask=false) {
+  _openingManagerTask = isManagerTask;
   // Populate "Added By" and assign dropdown fresh each time
   const byLabel = currentUser
     ? (users.find(x=>x.id===currentUser)?.name || currentRole)
@@ -1490,6 +1493,11 @@ function openAddTask() {
   const at=document.getElementById('assign-toggle');if(at)at.classList.remove('on');
   const aw=document.getElementById('assign-wrap');if(aw)aw.style.display='none';
   updatePts();
+  // Hide job code for manager tasks
+  const jcWrap = document.getElementById('f-jobcode')?.closest('.fg');
+  if(jcWrap) jcWrap.style.display = isManagerTask ? 'none' : '';
+  const titleEl = document.querySelector('#add-task-panel .slide-title');
+  if(titleEl) titleEl.textContent = isManagerTask ? 'Add Manager Task' : 'Add New Task';
   document.getElementById('add-task-panel').classList.add('open');
 }
 function closeAddTask(e) {
@@ -3237,7 +3245,7 @@ function addTask(isManagerTask=false){
   const instLink=document.getElementById('f-link')?.value.trim()||'';
   const assignTo=isAssigning?(parseInt(document.getElementById('f-assign')?.value)||null):null;
   const jobCode=document.getElementById('f-jobcode')?.value||'';
-  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,jobCode,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null,isManagerTask:isManagerTask});
+  tasks.unshift({id:nextTid++,text,effort,priority,by,instructions,instLink,deadline:dl?new Date(dl):null,claimedBy:null,assignedTo:assignTo,assignedBy:assignTo?by:null,jobCode:_openingManagerTask?'':jobCode,progress:0,workers:[],done:false,doneBy:null,doneAt:null,earnedDPts:0,startedAt:null,isManagerTask:_openingManagerTask});
   document.getElementById('f-text').value='';document.getElementById('f-dl').value='';document.getElementById('f-inst').value='';document.getElementById('f-link').value='';
   const jc=document.getElementById('f-jobcode');if(jc)jc.value='';
   isAssigning=false;
@@ -3248,7 +3256,7 @@ function addTask(isManagerTask=false){
   showToast(assignee?`Assigned to ${assignee.name}!`:'Task added! 🎯');
   closeAddTask();
   saveData();
-  if(isManagerTask) renderMgrManagerTasks(); else renderMgr();
+  if(_openingManagerTask) renderMgrManagerTasks(); else renderMgr();
 }
 
 function createTaskFromChecklist(itemId) {
