@@ -3094,6 +3094,9 @@ function switchTaskView(view) {
   document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
   document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
   document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
+  // Update FAB to open correct task type
+  const fab = document.getElementById('fab-add');
+  if(fab) fab.setAttribute('onclick', view === 'manager' ? 'openAddTask(true)' : 'openAddTask()');
   if(view === 'active')  renderMgr();
   else if(view === 'manager') renderMgrManagerTasks();
   else renderMgrCompleted();
