@@ -1152,11 +1152,11 @@ function showTab(tab,el){
 function renderStats(){
   const me=currentUser;
   const u=users.find(x=>x.id===me);
-  const myClaimed=tasks.filter(t=>String(t.claimedBy)===String(me)&&!t.done).length;
-  const myAssigned=tasks.filter(t=>String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
-  const total=tasks.length,done=tasks.filter(t=>t.done).length;
+  const myClaimed=tasks.filter(t=>!t.isManagerTask&&String(t.claimedBy)===String(me)&&!t.done).length;
+  const myAssigned=tasks.filter(t=>!t.isManagerTask&&String(t.assignedTo)===String(me)&&!t.claimedBy&&!t.done).length;
+  const total=tasks.filter(t=>!t.isManagerTask).length,done=tasks.filter(t=>!t.isManagerTask&&t.done).length;
   const pct=total?Math.round(done/total*100):0;
-  const inPool=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy).length;
+  const inPool=tasks.filter(t=>!t.isManagerTask&&!t.done&&!t.assignedTo&&!t.claimedBy).length;
   document.getElementById('stats-strip').innerHTML=`
     ${u?`<div class="stat-card"><div class="stat-val">${u.effortPts+u.deadlinePts}</div><div class="stat-lbl">My Pts</div></div>
     <div class="stat-card"><div class="stat-val">${u.weeklyEffort+u.weeklyDeadline}</div><div class="stat-lbl">This Wk</div></div>`:''}
@@ -1168,8 +1168,8 @@ function renderStats(){
 function renderPool(){
   const me=parseInt(currentUser);
   const sort=(a,b)=>{const o={overdue:0,urgent:1,warning:2,ok:3};return(o[dlStatus(a.deadline)]??4)-(o[dlStatus(b.deadline)]??4);};
-  const yours=tasks.filter(t=>!t.done&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
-  const open=tasks.filter(t=>!t.done&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
+  const yours=tasks.filter(t=>!t.done&&!t.isManagerTask&&(String(t.assignedTo)===String(me)||String(t.claimedBy)===String(me))).sort(sort);
+  const open=tasks.filter(t=>!t.done&&!t.isManagerTask&&!t.assignedTo&&!t.claimedBy&&(!t.jobCode||t.jobCode===currentPosition)).sort(sort);
   const done=tasks.filter(t=>t.done);
   let html='';
   if(yours.length){html+=`<div class="sec-head">📌 Your Tasks <span class="sec-count">${yours.length}</span></div>`;html+=yours.map(t=>taskCard(t,t.claimedBy===me?'active':'assigned')).join('');}
