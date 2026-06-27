@@ -4517,7 +4517,12 @@ function renderChecklist(signedOff = false) {
 
   let html = '';
   Object.entries(sections).forEach(([sec, secItems]) => {
-    html += `<div class="cl-section-header">${sec} <span class="cl-section-badge">${secItems.length}</span></div>`;
+    const secId = sec.replace(/[^a-z0-9]/gi,'_');
+    const allDone = secItems.every(i => i.type === 'check' ? !!(clState[i.id]||{}).done : !!(clState[i.id]||{}).rating);
+    html += `<div class="cl-section-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <button onclick="checkAllSection('${secId}')" style="flex-shrink:0;padding:4px 12px;border-radius:6px;border:1.5px solid ${allDone?'var(--olive)':'rgba(23,72,84,.2)'};background:${allDone?'rgba(78,98,44,.1)':'#fff'};font-size:11px;font-weight:700;color:${allDone?'var(--olive)':'rgba(23,72,84,.45)'};cursor:pointer;font-family:inherit;transition:all .15s;" id="cl-checkall-${secId}">${allDone?'✓ All Done':'Check All'}</button>
+      <span>${sec} <span class="cl-section-badge">${secItems.length}</span></span>
+    </div>`;
     secItems.forEach(item => { html += renderClItem(item); });
   });
 
@@ -4582,6 +4587,33 @@ function toggleClItem(id) {
   if(!clState[id]) clState[id] = {};
   clState[id].done = !clState[id].done;
   refreshClItem(id);
+  updateClProgress();
+  autoSaveCl();
+}
+
+function checkAllSection(secId) {
+  const items = ALL_CHECKLISTS[currentChecklistKey] || [];
+  // Find which section this secId corresponds to
+  const sections = {};
+  items.forEach(item => {
+    const sid = (item.section||'').replace(/[^a-z0-9]/gi,'_');
+    if(!sections[sid]) sections[sid] = [];
+    sections[sid].push(item);
+  });
+  const secItems = sections[secId] || [];
+  if(!secItems.length) return;
+
+  // If all already done, uncheck all; otherwise check all
+  const allDone = secItems.every(i => i.type === 'check' ? !!(clState[i.id]||{}).done : !!(clState[i.id]||{}).rating);
+  secItems.forEach(item => {
+    if(!clState[item.id]) clState[item.id] = {};
+    if(item.type === 'check') {
+      clState[item.id].done = !allDone;
+    } else {
+      clState[item.id].rating = allDone ? '' : 'good';
+    }
+    refreshClItem(item.id);
+  });
   updateClProgress();
   autoSaveCl();
 }
