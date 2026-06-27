@@ -1748,15 +1748,24 @@ async function renderScorecard() {
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Score</th>
         </tr></thead>
         <tbody>
-          ${rows.map((r,i) => `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};">
-            <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
-            <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
-            <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
-            <td style="padding:11px 14px;text-align:center;">
-              <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
-            </td>
-            <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.pct||r.score}%</td>
-          </tr>`).join('')}
+          ${rows.map((r,i) => {
+            const flagged = Array.isArray(r.flagged_items) ? r.flagged_items : [];
+            const flagCount = flagged.length;
+            const flagDetail = flagged.filter(f=>f.issue).map(f => {
+              const items = ALL_CHECKLISTS['manager_opening']||[];
+              const item = items.find(x=>x.id===f.id);
+              return `<div style="font-size:11px;color:#c87a00;margin-top:3px;">⚠️ ${item?item.text:f.id}${f.issue ? ': '+f.issue : ''}</div>`;
+            }).join('');
+            return `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};">
+              <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
+              <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
+              <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.grading_manager}</td>
+              <td style="padding:11px 14px;text-align:center;">
+                <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
+              </td>
+              <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.pct||r.score}%${flagCount?`<div style="font-size:10px;font-weight:700;color:#c87a00;margin-top:2px;">${flagCount} flag${flagCount!==1?'s':''}</div>`:''}</td>
+            </tr>${flagDetail ? `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};background:rgba(248,154,28,.04);"><td colspan="5" style="padding:6px 14px 10px;">${flagDetail}</td></tr>` : ''}`;
+          }).join('')}
         </tbody>
       </table>
     </div>`;
@@ -4724,26 +4733,31 @@ async function saveClProgress(signedOff = false) {
 
 
 // ── SCORECARD ─────────────────────────────────────────────────────────────
-// Walkthrough item IDs (mo_01–mo_22) grade the closing manager
-// All rate items in manager_opening (the court/area sections)
-const WALKTHROUGH_IDS = (function(){
-  const ids = [];
+// Built lazily so Supabase-loaded checklist config is used, not the hardcoded defaults.
+function getWalkthroughIDs() {
   const opening = ALL_CHECKLISTS['manager_opening'] || [];
-  opening.forEach(item => { if(item.type === 'rate') ids.push(item.id); });
-  return ids;
-})();
+  return opening.filter(item => item.type === 'rate').map(item => item.id);
+}
 
 function calcWalkthroughScore(clStateItems) {
-  // Good = 5pts, Needs Work = 0pts
-  const rated = WALKTHROUGH_IDS.filter(id => clStateItems[id] && clStateItems[id].rating);
-  if(!rated.length) return null;
-  const pts = rated.reduce((sum, id) => {
-    return sum + (clStateItems[id].rating === 'good' ? 5 : 0);
-  }, 0);
-  const maxPts = rated.length * 5;
+  // All rate items in manager_opening form the denominator.
+  // Good = 5pts, Needs Work = 0pts, unrated = 0pts.
+  const ids = getWalkthroughIDs();
+  if(!ids.length) return null;
+  let pts = 0, anyRated = false;
+  ids.forEach(id => {
+    const rating = (clStateItems[id] || {}).rating;
+    if(rating) anyRated = true;
+    if(rating === 'good') pts += 5;
+  });
+  if(!anyRated) return null;
+  const maxPts = ids.length * 5;
   const pct = Math.round((pts / maxPts) * 100);
   const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
-  return { pts, maxPts, pct, grade, rated: rated.length };
+  const flagged = ids
+    .filter(id => (clStateItems[id]||{}).rating === 'needs')
+    .map(id => ({ id, issue: (clStateItems[id]||{}).issue || '' }));
+  return { pts, maxPts, pct, grade, rated: ids.length, flagged };
 }
 
 function gradeColor(grade) {
@@ -4770,6 +4784,7 @@ async function submitWalkthroughScore(closingManagerName) {
     pct:            score.pct,
     grade:          score.grade,
     items_rated:    score.rated,
+    flagged_items:  score.flagged,
     items_raw:      clState,
     created_at:     new Date().toISOString()
   };
