@@ -1871,7 +1871,7 @@ async function srUpdateSummary() {
 
   metrics.forEach(m => {
     const el = document.getElementById('sr_sum_'+m.id);
-    if(!el) return;
+    if(!el) return; // skip this metric if element not in DOM yet
     const valStr = m.val === null ? '—'
       : m.currency ? '$'+m.val.toFixed(2)
       : m.val.toFixed(0);
@@ -2549,7 +2549,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
   // Helper: editable input
   const inp = (key, placeholder='', type='text', locked=false) => locked
     ? `<div class="sr-locked-val">${srGet(key)||'—'}</div>`
-    : `<input type="${type}" class="sr-inp" placeholder="${placeholder}" value="${srGet(key).replace(/"/g,'&quot;')}" oninput="srSet('${key}',this.value)" />`;
+    : `<input type="${type||'text'}" class="sr-inp" placeholder="${placeholder}" value="${srGet(key).replace(/"/g,'&quot;')}" oninput="srSet('${key}',this.value)" onchange="srSet('${key}',this.value)" />`;
 
   // Helper: editable textarea
   const ta = (key, placeholder='', rows=2, locked=false) => locked
