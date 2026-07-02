@@ -2147,7 +2147,7 @@ async function srSendEmail() {
 </html>`;
 
   await emailjs.send('service_yuz9zab', 'template_0nxwpkt', {
-    subject: `Shift Report — ${dayName} · Rally Social Club`,
+    subject: `Rally Shift Report - ${dayName}`,
     message: html,
     to_email: srEmailRecipient || '',
   });
