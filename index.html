@@ -1746,6 +1746,7 @@ async function renderScorecard() {
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:left;border-bottom:1px solid var(--border);">Graded By</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Grade</th>
           <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Score</th>
+          <th style="padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.45);text-align:center;border-bottom:1px solid var(--border);">Close Rating</th>
         </tr></thead>
         <tbody>
           ${rows.map((r,i) => {
@@ -1756,6 +1757,11 @@ async function renderScorecard() {
               const item = items.find(x=>x.id===f.id);
               return `<div style="font-size:11px;color:#c87a00;margin-top:3px;">⚠️ ${item?item.text:f.id}${f.issue ? ': '+f.issue : ''}</div>`;
             }).join('');
+            const ratingMeta = CLOSE_RATING_SCALE.find(cr => cr.value === r.overall_rating) || null;
+            const noteDetail = r.notes ? `<div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:3px;">📝 ${r.notes}</div>` : '';
+            const extraDetail = flagDetail || noteDetail
+              ? `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};background:rgba(248,154,28,.04);"><td colspan="6" style="padding:6px 14px 10px;">${flagDetail}${noteDetail}</td></tr>`
+              : '';
             return `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};">
               <td style="padding:11px 14px;font-size:13px;color:rgba(23,72,84,.6);">${r.shift_date}</td>
               <td style="padding:11px 14px;font-size:13px;font-weight:600;color:var(--teal);">${r.graded_manager}</td>
@@ -1764,7 +1770,8 @@ async function renderScorecard() {
                 <span style="display:inline-block;width:32px;height:32px;border-radius:50%;background:${gradeBg(r.grade)};color:${gradeColor(r.grade)};font-weight:800;font-size:16px;line-height:32px;font-family:'Cormorant Garamond',serif;">${r.grade}</span>
               </td>
               <td style="padding:11px 14px;text-align:center;font-size:13px;font-weight:600;color:${gradeColor(r.grade)};">${r.pct||r.score}%${flagCount?`<div style="font-size:10px;font-weight:700;color:#c87a00;margin-top:2px;">${flagCount} flag${flagCount!==1?'s':''}</div>`:''}</td>
-            </tr>${flagDetail ? `<tr style="border-bottom:${i<rows.length-1?'1px solid var(--border)':'none'};background:rgba(248,154,28,.04);"><td colspan="5" style="padding:6px 14px 10px;">${flagDetail}</td></tr>` : ''}`;
+              <td style="padding:11px 14px;text-align:center;font-size:13px;">${ratingMeta ? `<span title="${ratingMeta.label}">${ratingMeta.emoji}</span> <span style="font-size:11px;font-weight:600;color:${ratingMeta.color};">${ratingMeta.label}</span>` : '<span style="color:rgba(23,72,84,.3);">—</span>'}</td>
+            </tr>${extraDetail}`;
           }).join('')}
         </tbody>
       </table>
@@ -4830,7 +4837,16 @@ function gradeBg(grade) {
   return {A:'rgba(78,98,44,.12)', B:'rgba(23,72,84,.08)', C:'rgba(200,122,0,.12)', D:'rgba(192,64,32,.1)'}[grade] || 'transparent';
 }
 
-async function submitWalkthroughScore(closingManagerName) {
+// The 5-point "Rate the Close" scale shown at sign-off (Excellent → Very Bad)
+const CLOSE_RATING_SCALE = [
+  { value:'excellent', label:'Excellent', emoji:'😄', color:'#1f9d6e' },
+  { value:'good',      label:'Good',      emoji:'🙂', color:'#7cc576' },
+  { value:'medium',    label:'Medium',    emoji:'😐', color:'#f0a02c' },
+  { value:'poor',       label:'Poor',      emoji:'🙁', color:'#e8604a' },
+  { value:'very_bad',  label:'Very Bad',  emoji:'😠', color:'#e13228' }
+];
+
+async function submitWalkthroughScore(closingManagerName, overallRating, closeNotes) {
   const score = calcWalkthroughScore(clState);
   if(!score) return;
   const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
@@ -4838,7 +4854,9 @@ async function submitWalkthroughScore(closingManagerName) {
   const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
-  const payload = {
+  const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === overallRating) || null;
+
+  const basePayload = {
     shift_date:     yesterday.toISOString().slice(0,10),
     graded_manager: closingManagerName,
     grading_manager: u ? u.name : 'Manager',
@@ -4851,11 +4869,32 @@ async function submitWalkthroughScore(closingManagerName) {
     items_raw:      clState,
     created_at:     new Date().toISOString()
   };
+  const fullPayload = { ...basePayload, overall_rating: overallRating || null, notes: closeNotes || null };
+
+  const insert = (payload) => fetch(`${SUPA}/rest/v1/rally_manager_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
+
   try {
-    await fetch(`${SUPA}/rest/v1/rally_manager_scores`, {method:'POST', headers:hdrs, body:JSON.stringify(payload)});
-    console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.pts}/${score.maxPts}pts)`);
-    showToast(`${closingManagerName} scored ${score.grade} — ${score.pts}/${score.maxPts} pts`);
-  } catch(e) { console.warn('Manager score submit failed', e); }
+    let res = await insert(fullPayload);
+    if(!res.ok) {
+      // Most likely cause: `overall_rating` / `notes` columns don't exist on rally_manager_scores yet.
+      // Retry without them so the core score is never lost — surface a clear console hint either way.
+      const errText = await res.text().catch(()=> '');
+      console.warn(`Manager score insert with rating/notes failed (HTTP ${res.status}): ${errText}. Retrying without overall_rating/notes — add those columns (text) to rally_manager_scores to store them.`);
+      res = await insert(basePayload);
+    }
+    if(res.ok) {
+      console.log(`Manager score: ${closingManagerName} → ${score.grade} (${score.pct}% · ${score.pts}/${score.maxPts}pts)`);
+      const ratingTxt = ratingMeta ? ` · Close rated ${ratingMeta.label}` : '';
+      showToast(`${closingManagerName} scored ${score.grade} — ${score.pts}/${score.maxPts} pts${ratingTxt}`);
+    } else {
+      const errText = await res.text().catch(()=> '');
+      console.warn('Manager score submit failed', res.status, errText);
+      showToast('⚠️ Score could not be saved — check connection');
+    }
+  } catch(e) {
+    console.warn('Manager score submit failed', e);
+    showToast('⚠️ Score could not be saved — check connection');
+  }
 }
 
 async function signOffChecklist() {
@@ -4886,6 +4925,12 @@ async function signOffChecklist() {
       if(Array.isArray(rows) && rows[0]?.manager_name) autoCloser = rows[0].manager_name;
     } catch(e) {}
 
+    const ratingButtons = CLOSE_RATING_SCALE.map(r => `
+        <button type="button" class="close-rating-btn" data-value="${r.value}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border:1.5px solid rgba(23,72,84,.15);border-radius:8px;background:#fbf6ed;cursor:pointer;font-family:inherit;transition:all .15s;">
+          <span style="font-size:22px;line-height:1;">${r.emoji}</span>
+          <span style="font-size:10px;font-weight:700;color:${r.color};">${r.label}</span>
+        </button>`).join('');
+
     const pickerHtml = `
       <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#174854;margin-bottom:12px;">Sign Off Opening</div>
       <p style="font-size:13px;color:rgba(23,72,84,.6);margin-bottom:16px;">Who closed last night? Their score will be calculated from your ratings.</p>
@@ -4894,12 +4939,22 @@ async function signOffChecklist() {
         <option value="">— Select closing manager —</option>
         ${mgr_opts}
       </select>
-      <p style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;">Auto-detected from last night's closing checklist.</p>
+      <p style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;margin-bottom:18px;">Auto-detected from last night's closing checklist.</p>
+
+      <div style="font-size:13px;font-weight:700;color:#174854;margin-bottom:8px;">Rate the Close</div>
+      <div id="close-rating-group" style="display:flex;gap:6px;margin-bottom:6px;">
+        ${ratingButtons}
+      </div>
+      <p id="close-rating-err" style="font-size:11px;color:#e13228;min-height:14px;margin-bottom:12px;"></p>
+
+      <div style="font-size:13px;font-weight:700;color:#174854;margin-bottom:8px;">Notes <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></div>
+      <textarea id="close-notes" rows="3" placeholder="Anything the closer should know, or details about the close…" style="width:100%;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fbf6ed;resize:vertical;margin-bottom:4px;"></textarea>
+
       ${incomplete > 0 ? `<p style="font-size:12px;color:rgba(200,100,0,.7);margin-top:8px;">⚠️ ${incomplete} items not yet rated</p>` : '<p style="font-size:12px;color:#4e622c;margin-top:8px;">✅ All items rated — ready to sign off</p>'}`;
 
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
-    overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:360px;max-width:92vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
       ${pickerHtml}
       <div style="display:flex;gap:8px;margin-top:16px;">
         <button id="signoff-confirm" style="flex:1;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Sign Off ✓</button>
@@ -4914,13 +4969,30 @@ async function signOffChecklist() {
       if(sel) { const opt = Array.from(sel.options).find(o=>o.value===autoCloser); if(opt) sel.value=autoCloser; }
     }
 
+    // Close-rating selection handling
+    let selectedCloseRating = '';
+    const ratingBtns = Array.from(overlay.querySelectorAll('.close-rating-btn'));
+    ratingBtns.forEach(btn => {
+      btn.onclick = () => {
+        selectedCloseRating = btn.dataset.value;
+        const meta = CLOSE_RATING_SCALE.find(r => r.value === selectedCloseRating);
+        ratingBtns.forEach(b => { b.style.borderColor = 'rgba(23,72,84,.15)'; b.style.background = '#fbf6ed'; b.style.transform = 'none'; });
+        btn.style.borderColor = meta.color;
+        btn.style.background = meta.color + '1f';
+        btn.style.transform = 'translateY(-2px)';
+        document.getElementById('close-rating-err').textContent = '';
+      };
+    });
+
     await new Promise(resolve => {
       document.getElementById('signoff-confirm').onclick = async () => {
         const closer = document.getElementById('closer-picker').value;
         if(!closer) { showToast('Please select who closed last night'); return; }
+        if(!selectedCloseRating) { document.getElementById('close-rating-err').textContent = 'Please rate the close before signing off.'; return; }
+        const closeNotes = document.getElementById('close-notes').value.trim();
         overlay.remove();
         await saveClProgress(true);
-        await submitWalkthroughScore(closer);
+        await submitWalkthroughScore(closer, selectedCloseRating, closeNotes);
         resolve();
       };
       document.getElementById('signoff-cancel').onclick = () => { overlay.remove(); resolve('cancel'); };
