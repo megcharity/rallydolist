@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+window.RALLY_SUPABASE_URL = 'https://dndnkvxefjgcufllkkpj.supabase.co';
+window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Rally Do List</title>
@@ -294,35 +298,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* ── CONFETTI ── */
 .cp{position:fixed;width:8px;height:8px;border-radius:2px;animation:cf 1.4s ease-in forwards;pointer-events:none;z-index:9999;}
 @keyframes cf{0%{transform:translateY(-16px) rotate(0);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
-
-/* ── PEOPLE TAB ── */
-.people-table{width:100%;border-collapse:collapse;font-size:13px;}
-.people-table th{padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:rgba(23,72,84,.5);letter-spacing:.06em;text-transform:uppercase;background:#f9fafb;border-bottom:1px solid var(--border);position:sticky;top:0;}
-.people-table td{padding:10px 10px;border-bottom:1px solid rgba(23,72,84,.07);vertical-align:middle;}
-.people-table tr:hover td{background:rgba(23,72,84,.02);}
-.people-table tr.editing td{background:rgba(23,72,84,.03);}
-.people-td-av{display:flex;align-items:center;gap:8px;}
-.people-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
-.people-name{font-weight:600;color:var(--teal);}
-.people-role-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;}
-.role-badge-owner{background:rgba(248,154,28,.15);color:#7a4a00;}
-.role-badge-director{background:rgba(23,72,84,.1);color:var(--teal);}
-.role-badge-manager{background:rgba(78,98,44,.1);color:#2e4010;}
-.role-badge-associate{background:rgba(206,228,207,.5);color:var(--teal);}
-.people-inp{width:100%;padding:5px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--teal);background:var(--cream);outline:none;}
-.people-inp:focus{border-color:var(--teal);}
-.people-sel{width:100%;padding:5px 8px;border:1.5px solid var(--border);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--teal);background:var(--cream);outline:none;}
-.people-action-btn{padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.pab-edit{border:1px solid var(--border);background:#fff;color:var(--teal);}
-.pab-edit:hover{border-color:var(--teal);}
-.pab-save{border:none;background:var(--olive);color:#fff;}
-.pab-save:hover{opacity:.88;}
-.pab-cancel{border:1px solid var(--border);background:#fff;color:rgba(23,72,84,.5);}
-.pab-cancel:hover{border-color:var(--teal);}
-.pab-del{border:1px solid rgba(245,134,100,.4);background:#fff;color:var(--coral);}
-.pab-del:hover{background:var(--coral);color:#fff;}
-.people-add-row{background:#f8faff;border-bottom:2px solid rgba(23,72,84,.1);}
-.people-stats{font-size:11px;color:rgba(23,72,84,.4);padding:8px 10px;border-top:1px solid var(--border);}
 
 /* ── ADD TASK FLOAT BUTTON ── */
 .fab{position:fixed;bottom:24px;right:20px;z-index:300;background:var(--teal);color:#fff;border:none;border-radius:8px;padding:11px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(23,72,84,.3);transition:all .2s;display:none;align-items:center;gap:8px;}
@@ -810,7 +785,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
-    <button class="nav-tab" onclick="showMgrTab('people',this)">People</button>
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
@@ -833,7 +807,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="cl-tab-editor" style="display:none;padding:16px 16px 80px;"><div id="cl-editor-body"></div></div>
   </div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
-  <div id="mgr-tab-people" style="flex:1;overflow-y:auto;display:none;"><div class="mgr-body" id="people-body"></div></div>
 </div>
 
 <script>
@@ -856,8 +829,8 @@ let pinBuf='', pinEditId=null;
 let lbMode='weekly', ovFilter='pending', isAssigning=false, timerInt=null, mgrTab='tasks', peopleEditId=null, newPersonRole='associate';
 
 // ─── SUPABASE ───────────────────────────────────────────────────────────────
-const SUPA_URL='https://dndnkvxefjgcufllkkpj.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+const SUPA_URL=window.RALLY_SUPABASE_URL;
+const SUPA_KEY=window.RALLY_SUPABASE_ANON_KEY;
 let saveTimer=null, isSaving=false;
 
 function saveData(){clearTimeout(saveTimer);saveTimer=setTimeout(flushSave,600);}
@@ -1551,8 +1524,6 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
   const scorecardTab = document.getElementById('mgr-tab-scorecard');
   if(scorecardTab) scorecardTab.style.display = 'none';
-  document.getElementById('mgr-tab-people').style.display      = tab === 'people'      ? 'flex' : 'none';
-  if(tab === 'people')      renderPeople();
   if(tab === 'tasks') {
     // Reset to Active view
     const activeBtn = document.getElementById('task-view-active-btn');
@@ -1633,77 +1604,12 @@ function startMgrChecklist(key) {
   startChecklist(key);
 }
 
-// ─── PEOPLE TAB ──────────────────────────────────────────────────────────────
-const ROLE_ORDER = {owner:0, director:1, manager:2, associate:3};
-const POSITIONS  = ['Captain','Swarmer','Host','Barista','Bartender','Manager','Other'];
-
-function roleBadge(role) {
-  const cls = {owner:'role-badge-owner',director:'role-badge-director',manager:'role-badge-manager',associate:'role-badge-associate'}[role]||'role-badge-associate';
-  const lbl = {owner:'Owner',director:'Director',manager:'Manager',associate:'Associate'}[role]||role;
-  return `<span class="people-role-badge ${cls}">${lbl}</span>`;
-}
-
-function renderPeople() {
-  const sorted = [...users].sort((a,b) => (ROLE_ORDER[a.role]??9) - (ROLE_ORDER[b.role]??9) || a.name.localeCompare(b.name));
-  const mgrs   = sorted.filter(u => ['manager','owner','director'].includes(u.role));
-  const assocs = sorted.filter(u => u.role === 'associate');
-
-  const makeRows = (list) => list.map((u,i) => {
-    const taskCount = tasks.filter(t => t.claimedBy === u.id && !t.done).length;
-    const doneCount = tasks.filter(t => t.doneBy   === u.id).length;
-    const pts       = u.effortPts + u.deadlinePts;
-    const posLabel  = (u.positions||[]).join(', ') || u.position || '—';
-    return `<tr>
-      <td>
-        <div class="people-td-av">
-          <div class="people-av" style="${avatarStyle(u,i)}">${initials(u.name)}</div>
-          <span class="people-name">${u.name}</span>
-        </div>
-      </td>
-      <td>${roleBadge(u.role)}</td>
-      <td style="color:rgba(23,72,84,.6);font-size:12px;">${posLabel}</td>
-      <td style="white-space:nowrap;">
-        ${u.role==='associate'?`<span style="font-size:11px;color:rgba(23,72,84,.4);">${taskCount} active · ${doneCount} done · ${pts}pts</span>`:''}
-      </td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('people-body').innerHTML = `
-    <div style="padding:14px 16px 80px;">
-      <div style="background:rgba(248,154,28,.08);border:1.5px solid rgba(248,154,28,.3);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px;">🏢</span>
-        <div>
-          <div style="font-size:13px;font-weight:700;color:var(--teal);">Team is managed in the Portal</div>
-          <div style="font-size:12px;color:rgba(23,72,84,.55);margin-top:2px;">Add, edit or remove team members at <a href="https://rally-portal.netlify.app" target="_blank" style="color:var(--teal);font-weight:600;">rally-portal.netlify.app</a> → People tab</div>
-        </div>
-      </div>
-      <div style="background:#fff;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;">
-        <table class="people-table">
-          <thead><tr><th>Name</th><th>Role</th><th>Position(s)</th><th>Activity</th></tr></thead>
-          <tbody>
-            ${mgrs.length ? '<tr><td colspan="4" style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--olive);background:rgba(78,98,44,.05);">Managers</td></tr>' + makeRows(mgrs) : ''}
-            ${assocs.length ? '<tr><td colspan="4" style="padding:8px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,72,84,.4);background:rgba(23,72,84,.03);">Associates</td></tr>' + makeRows(assocs) : ''}
-            ${!sorted.length ? '<tr><td colspan="4" style="text-align:center;padding:32px;color:rgba(23,72,84,.35);">No team members yet — add them in the Portal</td></tr>' : ''}
-          </tbody>
-        </table>
-        <div class="people-stats">${users.length} team member${users.length!==1?'s':''} · ${assocs.length} associate${assocs.length!==1?'s':''} · ${mgrs.length} manager${mgrs.length!==1?'s':''}</div>
-      </div>
-    </div>`;
-}
-function addPerson(){}
-function editPerson(){}
-function cancelEditPerson(){}
-function savePerson(){}
-function deletePerson(){}
-
-
-
 async function renderScorecard() {
   const body = document.getElementById('scorecard-body');
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading scorecard...</div>';
 
-  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
 
   try {
     const res = await fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`,
@@ -1795,8 +1701,8 @@ let srAmLocked = false;  // AM section locked after AM saves
 let srAmEditMode = false; // Temporarily unlocked for edit
 let srPmEditMode = false; // PM temporarily unlocked for edit
 
-const SR_SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-const SR_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+const SR_SUPA = window.RALLY_SUPABASE_URL;
+const SR_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 const SR_HDRS = (extra={}) => ({
   'apikey': SR_KEY,
   'Authorization': `Bearer ${SR_KEY}`,
@@ -2058,6 +1964,35 @@ async function srSendEmail() {
       </div>
     </td>`;
 
+  // Week Over Week comparison — reuses the same last-week data already loaded for the in-app summary
+  const todayMetrics = { courts: amCourts+pmCourts, covers, food, bev, total, ppa };
+  const lwMetrics = srExtractMetrics(srCompData.lastWeek);
+  const fmtMetric = (v, decimals) => (v || v === 0) && v !== null ? '$'+v.toFixed(decimals) : '—';
+  const wowRowHtml = (label, key, curVal) => {
+    const lwVal = lwMetrics ? lwMetrics[key] : null;
+    const delta = lwMetrics ? srDelta(todayMetrics, lwMetrics, key, true) : '';
+    return `<tr>
+      <td style="padding:7px 0;font-size:12px;color:#666;">${label}</td>
+      <td style="padding:7px 0;font-size:13px;font-weight:600;color:#174854;text-align:right;">${key==='covers'?(curVal?curVal.toFixed(0):'—'):fmtMetric(curVal,2)}</td>
+      <td style="padding:7px 0;font-size:12px;color:#999;text-align:right;padding-left:14px;">${key==='covers'?(lwVal?lwVal.toFixed(0):'—'):fmtMetric(lwVal,2)}</td>
+      <td style="padding:7px 0;text-align:right;padding-left:14px;">${delta || '<span style="font-size:10px;color:#ccc;">—</span>'}</td>
+    </tr>`;
+  };
+  const wowHTML = lwMetrics ? `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td></td>
+        <td style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#aaa;text-align:right;">Today</td>
+        <td style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#aaa;text-align:right;padding-left:14px;">Last Wk</td>
+        <td style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#aaa;text-align:right;padding-left:14px;">Change</td>
+      </tr>
+      ${wowRowHtml('Covers', 'covers', covers)}
+      ${wowRowHtml('Food Sales', 'food', food)}
+      ${wowRowHtml('Bev Sales', 'bev', bev)}
+      ${wowRowHtml('Total Sales', 'total', total)}
+      ${wowRowHtml('PPA', 'ppa', ppa)}
+    </table>` : `<div style="font-size:12px;color:#999;">No data from last week to compare yet.</div>`;
+
   const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;">
@@ -2116,15 +2051,6 @@ async function srSendEmail() {
         <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#854F0B;margin-bottom:2px;">PM Shift</div>
         <div style="font-size:16px;font-weight:500;color:#174854;margin-bottom:16px;">${val(d.pm_manager_name)||'—'} &nbsp;·&nbsp; ${val(d.pm_shift_start)||''} – ${val(d.pm_shift_end)||''}</div>
 
-        <!-- PM Sales row -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;"><tr>
-          ${statCell('Covers', covers ? covers.toFixed(0) : '—', false)}
-          ${statCell('Food', food ? '$'+food.toFixed(0) : '—', false)}
-          ${statCell('Bev', bev ? '$'+bev.toFixed(0) : '—', false)}
-          ${statCell('Total', total ? '$'+total.toFixed(0) : '—', true)}
-          ${ppa ? statCell('PPA', '$'+ppa.toFixed(2), false) : ''}
-        </tr></table>
-
         <table cellpadding="0" cellspacing="0">
           ${row('Court reservations', val(d.pm_court_res))}
           ${row('Peak times', val(d.pm_peak_times))}
@@ -2140,6 +2066,14 @@ async function srSendEmail() {
         ${pmProgs ? '<div style="margin-top:12px;">'+pmProgs+'</div>' : ''}
       </td></tr>
     </table>
+  </td></tr>
+
+  <!-- Week Over Week -->
+  <tr><td style="padding:0 32px 24px;">
+    <div style="border-top:1px solid #e8e0d4;padding-top:20px;">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#174854;opacity:0.5;margin-bottom:12px;">Week Over Week</div>
+      ${wowHTML}
+    </div>
   </td></tr>
 
   <!-- Footer -->
@@ -2299,8 +2233,8 @@ let srTeamByPos = {}; // { Host: [{id,name},...], Bartender: [...], ... }
 
 async function loadSrTeam() {
   try {
-    const res = await fetch('https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role',
-      {headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs'}});
+    const res = await fetch(`${window.RALLY_SUPABASE_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role`,
+      {headers:{'apikey':window.RALLY_SUPABASE_ANON_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     const rows = await res.json();
     console.log('SR team loaded:', rows);
     srTeamByPos = {};
@@ -3248,7 +3182,7 @@ function renderMgr(){
       </div>
       ${active.length?active.map(t=>{const ds=dlStatus(t.deadline);const uc=ds==='overdue'||ds==='urgent'?'var(--coral)':ds==='warning'?'var(--amber)':'var(--teal)';return`<div class="team-task"><div class="team-tname" style="color:${uc}">${t.text}</div><div class="team-prog-bg"><div class="team-prog-fill" style="width:${t.progress}%"></div></div><div class="team-pct">${t.progress}%</div></div>`;}).join(''):'<div class="team-empty">No tasks claimed</div>'}
     </div>`;
-  }).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;">No associates added yet. Go to the People tab to add your team.</div>';
+  }).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;">No associates added yet. Add your team in <a href="/" target="_blank" style="color:var(--teal);font-weight:600;">the Portal</a>.</div>';
   const logHTML=compLog.length?compLog.slice(0,20).map(l=>{const m=Math.round((new Date()-l.time)/60000);return`<div class="log-row"><div class="log-task">${l.text}</div><div class="log-who">${l.who}</div><div class="log-pts">+${l.ePts+l.dPts}</div><div class="log-time">${m<1?'now':m+'m ago'}</div></div>`;}).join(''):'<div style="color:rgba(23,72,84,.4);font-size:13px;">No completions yet.</div>';
   // Show FAB when on manager screen
   const fab = document.getElementById('fab-add');
@@ -3273,7 +3207,7 @@ function renderMgr(){
     <div class="mgr-card">
       <div class="mgr-card-title" style="display:flex;justify-content:space-between;align-items:baseline;">
         Team Activity
-        <button class="btn-sm" style="border-color:rgba(23,72,84,.3);color:var(--teal);font-size:11px;" onclick="showMgrTab('people',document.querySelectorAll('#mgr-tabs .nav-tab')[2])">Manage People →</button>
+        <a class="btn-sm" href="/" target="_blank" style="border-color:rgba(23,72,84,.3);color:var(--teal);font-size:11px;text-decoration:none;">Manage People →</a>
       </div>
       ${teamHTML}
     </div>
@@ -3659,17 +3593,17 @@ const ALL_CHECKLISTS = {
   {"id":"mo_26","section":"Opening Duties","text":"If cleaners were in: take stools off bar tops and put chairs back under tables","type":"check"},
   {"id":"mo_27","section":"Opening Duties","text":"Fill lounges with water — fill jugs with ice and place on cart","type":"check"},
 
-  {"id":"mo_c1_01","section":"Court 1","text":"Turn on court light","type":"rate"},
-  {"id":"mo_c1_02","section":"Court 1","text":"No food below drink rail","type":"rate"},
-  {"id":"mo_c1_03","section":"Court 1","text":"No food on carpet","type":"rate"},
-  {"id":"mo_c1_04","section":"Court 1","text":"Pillows straight","type":"rate"},
-  {"id":"mo_c1_05","section":"Court 1","text":"No spills or stains on cushions","type":"rate"},
-  {"id":"mo_c1_06","section":"Court 1","text":"QR codes out","type":"rate"},
-  {"id":"mo_c1_07","section":"Court 1","text":"Marketing frames out on table and up to date","type":"rate"},
-  {"id":"mo_c1_08","section":"Court 1","text":"Water station set up (glass and plastic cups out)","type":"rate"},
-  {"id":"mo_c1_10","section":"Court 1","text":"Hand sanitizer out","type":"rate"},
-  {"id":"mo_c1_11","section":"Court 1","text":"Tablet plugged in","type":"rate"},
-  {"id":"mo_c1_12","section":"Court 1","text":"Drink and food menu on drink rail","type":"rate"},
+  {"id":"mo_c1_01","section":"Court 1 & 2","text":"Turn on court light","type":"rate"},
+  {"id":"mo_c1_02","section":"Court 1 & 2","text":"No food below drink rail","type":"rate"},
+  {"id":"mo_c1_03","section":"Court 1 & 2","text":"No food on carpet","type":"rate"},
+  {"id":"mo_c1_04","section":"Court 1 & 2","text":"Pillows straight","type":"rate"},
+  {"id":"mo_c1_05","section":"Court 1 & 2","text":"No spills or stains on cushions","type":"rate"},
+  {"id":"mo_c1_06","section":"Court 1 & 2","text":"QR codes out","type":"rate"},
+  {"id":"mo_c1_07","section":"Court 1 & 2","text":"Marketing frames out on table and up to date","type":"rate"},
+  {"id":"mo_c1_08","section":"Court 1 & 2","text":"Water station set up (glass and plastic cups out)","type":"rate"},
+  {"id":"mo_c1_10","section":"Court 1 & 2","text":"Hand sanitizer out","type":"rate"},
+  {"id":"mo_c1_11","section":"Court 1 & 2","text":"Tablet plugged in","type":"rate"},
+  {"id":"mo_c1_12","section":"Court 1 & 2","text":"Drink and food menu on drink rail","type":"rate"},
 
   {"id":"mo_ppw_01","section":"Ping Pong Wing","text":"Tables wiped down","type":"rate"},
   {"id":"mo_ppw_02","section":"Ping Pong Wing","text":"No drink rings","type":"rate"},
@@ -3749,6 +3683,10 @@ const ALL_CHECKLISTS = {
   {"id":"mo_caf_01","section":"Café","text":"Café clean","type":"rate"},
   {"id":"mo_caf_02","section":"Café","text":"No food","type":"rate"},
   {"id":"mo_caf_03","section":"Café","text":"No drink marks","type":"rate"},
+  {"id":"mo_caf_04","section":"Café","text":"Tables wiped down","type":"rate"},
+  {"id":"mo_caf_05","section":"Café","text":"Umbrellas out","type":"rate"},
+  {"id":"mo_caf_06","section":"Café","text":"QR codes out","type":"rate"},
+  {"id":"mo_caf_07","section":"Café","text":"Corn hole out","type":"rate"},
 
   {"id":"mo_28","section":"Outdoor Setup","text":"Set up outdoor area — put out cushions, wipe tables, remove TV covers, bring water out","type":"rate"},
   {"id":"mo_out_01","section":"Outdoor Setup","text":"Tables wiped down, no drink rings","type":"rate"},
@@ -3792,16 +3730,16 @@ const ALL_CHECKLISTS = {
 
   {"id":"mc_wt_hdr","section":"Closing Walkthrough","text":"Walk through every area below and check each item","type":"check"},
 
-  {"id":"mc_c1_01","section":"Court 1","text":"No food below drink rail","type":"check"},
-  {"id":"mc_c1_02","section":"Court 1","text":"No food on carpet","type":"check"},
-  {"id":"mc_c1_03","section":"Court 1","text":"Pillows straight","type":"check"},
-  {"id":"mc_c1_04","section":"Court 1","text":"No spills or stains on cushions","type":"check"},
-  {"id":"mc_c1_05","section":"Court 1","text":"QR codes out","type":"check"},
-  {"id":"mc_c1_06","section":"Court 1","text":"Marketing frames out and up to date","type":"check"},
-  {"id":"mc_c1_07","section":"Court 1","text":"Water station set up (glass and plastic cups out)","type":"check"},
-  {"id":"mc_c1_09","section":"Court 1","text":"Hand sanitizer out","type":"check"},
-  {"id":"mc_c1_10","section":"Court 1","text":"Tablet plugged in","type":"check"},
-  {"id":"mc_c1_11","section":"Court 1","text":"Drink and food menu on drink rail","type":"check"},
+  {"id":"mc_c1_01","section":"Court 1 & 2","text":"No food below drink rail","type":"check"},
+  {"id":"mc_c1_02","section":"Court 1 & 2","text":"No food on carpet","type":"check"},
+  {"id":"mc_c1_03","section":"Court 1 & 2","text":"Pillows straight","type":"check"},
+  {"id":"mc_c1_04","section":"Court 1 & 2","text":"No spills or stains on cushions","type":"check"},
+  {"id":"mc_c1_05","section":"Court 1 & 2","text":"QR codes out","type":"check"},
+  {"id":"mc_c1_06","section":"Court 1 & 2","text":"Marketing frames out and up to date","type":"check"},
+  {"id":"mc_c1_07","section":"Court 1 & 2","text":"Water station set up (glass and plastic cups out)","type":"check"},
+  {"id":"mc_c1_09","section":"Court 1 & 2","text":"Hand sanitizer out","type":"check"},
+  {"id":"mc_c1_10","section":"Court 1 & 2","text":"Tablet plugged in","type":"check"},
+  {"id":"mc_c1_11","section":"Court 1 & 2","text":"Drink and food menu on drink rail","type":"check"},
 
   {"id":"mc_ppw_01","section":"Ping Pong Wing","text":"Tables wiped down","type":"check"},
   {"id":"mc_ppw_02","section":"Ping Pong Wing","text":"No drink rings","type":"check"},
@@ -3889,9 +3827,12 @@ const ALL_CHECKLISTS = {
 
   {"id":"mc_tr_01","section":"Trash","text":"All trash cans empty","type":"check"},
 
-  {"id":"mc_caf_01","section":"Café","text":"Café clean","type":"check"},
-  {"id":"mc_caf_02","section":"Café","text":"No food","type":"check"},
-  {"id":"mc_caf_03","section":"Café","text":"No drink marks","type":"check"},
+  {"id":"mc_caf_01","section":"Café & Kitchen","text":"Café clean","type":"check"},
+  {"id":"mc_caf_02","section":"Café & Kitchen","text":"No food","type":"check"},
+  {"id":"mc_caf_03","section":"Café & Kitchen","text":"No drink marks","type":"check"},
+  {"id":"mc_caf_04","section":"Café & Kitchen","text":"Café kitchen clean of dirty dishes and food","type":"check"},
+  {"id":"mc_caf_05","section":"Café & Kitchen","text":"Floor wiped","type":"check"},
+  {"id":"mc_caf_06","section":"Café & Kitchen","text":"Turn light off","type":"check"},
 
   {"id":"mc_out_01","section":"Outdoor","text":"Tables wiped down, no drink rings","type":"check"},
   {"id":"mc_out_02","section":"Outdoor","text":"No food on floor or carpet","type":"check"},
@@ -4430,8 +4371,8 @@ async function loadClProgressCache() {
   try {
     const u = users.find(x => x.id === currentUser);
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
-    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+    const SUPA = window.RALLY_SUPABASE_URL;
+    const KEY  = window.RALLY_SUPABASE_ANON_KEY;
     // Fetch ALL today's records (signed off and in-progress)
     let url = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&select=shift,items,signed_off_at&order=created_at.desc`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
@@ -4540,8 +4481,8 @@ async function startChecklist(key) {
   try {
     const u = users.find(x => x.id === currentUser);
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
-    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+    const SUPA = window.RALLY_SUPABASE_URL;
+    const KEY  = window.RALLY_SUPABASE_ANON_KEY;
 
     // Fetch most recent record today (any status)
     let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&order=id.desc&limit=1`;
@@ -4778,17 +4719,17 @@ async function saveClProgress(signedOff = false) {
   try {
     // Try to update existing record for this shift+date+person first
     const existing = await fetch(
-      `https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
+      `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
       { headers: {
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs'
+        'apikey': window.RALLY_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`
       }}
     );
     const rows = await existing.json();
     const existingId = Array.isArray(rows) && rows[0] ? rows[0].id : null;
 
-    const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co/rest/v1/rally_checklist';
-    const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+    const SUPA = `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist`;
+    const KEY  = window.RALLY_SUPABASE_ANON_KEY;
     const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal' };
 
     if(existingId) {
@@ -4849,8 +4790,8 @@ const CLOSE_RATING_SCALE = [
 async function submitWalkthroughScore(closingManagerName, overallRating, closeNotes) {
   const score = calcWalkthroughScore(clState);
   if(!score) return;
-  const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-  const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
   const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
@@ -4917,8 +4858,8 @@ async function signOffChecklist() {
     try {
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
       const yStr = yesterday.toISOString().slice(0,10);
-      const SUPA = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-      const KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+      const SUPA = window.RALLY_SUPABASE_URL;
+      const KEY  = window.RALLY_SUPABASE_ANON_KEY;
       const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name&order=signed_off_at.desc&limit=1`,
         {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
       const rows = await res.json();
@@ -5033,7 +4974,7 @@ function goBackToHub() {
       const clTab = Array.from(tabs).find(t => t.textContent.includes('Checklists'));
       if(clTab) clTab.classList.add('active');
     }
-    ['tasks','completed','people'].forEach(t => {
+    ['tasks','completed'].forEach(t => {
       const el = document.getElementById('mgr-tab-'+t);
       if(el) el.style.display = 'none';
     });
@@ -5119,8 +5060,8 @@ function goBackToHub() {
 <script>
 // ─── CHECKLIST EDITOR ────────────────────────────────────────────────────────
 
-const CL_SUPA      = 'https://dndnkvxefjgcufllkkpj.supabase.co';
-const CL_SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
+const CL_SUPA      = window.RALLY_SUPABASE_URL;
+const CL_SUPA_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 const CL_HDRS      = { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${CL_SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 // Label map for display
