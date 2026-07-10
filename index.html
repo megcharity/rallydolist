@@ -1926,13 +1926,23 @@ async function srSendEmail() {
       if(d['am_ev'+i+'_well'])    amProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>Went well:</strong> ${d['am_ev'+i+'_well']}</div>`;
       if(d['am_ev'+i+'_improve']) amProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>Improve:</strong> ${d['am_ev'+i+'_improve']}</div>`;
       if(d['am_ev'+i+'_poc'])     amProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>POC feedback:</strong> ${d['am_ev'+i+'_poc']}</div>`;
-      if(d['am_ev'+i+'_followup_notes']) amProgs += `<div style="font-size:12px;color:#555;"><strong>Follow-up:</strong> ${d['am_ev'+i+'_followup_notes']}</div>`;
+      if(d['am_ev'+i+'_followup']) amProgs += `<div style="font-size:12px;color:#555;"><strong>Follow-up:</strong> ${d['am_ev'+i+'_followup']}</div>`;
       amProgs += `</div>`;
     }
-    if(d['am_ac'+i+'_name']) amProgs += `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 10px;border-radius:20px;background:#E1F5EE;color:#0F6E56;font-size:12px;">${d['am_ac'+i+'_name']}${d['am_ac'+i+'_attendance']?' · '+d['am_ac'+i+'_attendance']+' players':''}</span>`;
+    if(d['am_ac'+i+'_name']) {
+      amProgs += `<div style="margin-bottom:10px;padding:10px 12px;background:#f0f8f4;border-left:3px solid #9FE1CB;border-radius:0 6px 6px 0;">`;
+      amProgs += `<div style="font-size:13px;font-weight:700;color:#0F6E56;margin-bottom:4px;">⚡ ${d['am_ac'+i+'_name']}${d['am_ac'+i+'_attendance']?' &nbsp;·&nbsp; '+d['am_ac'+i+'_attendance']+' players':''}</div>`;
+      if(d['am_ac'+i+'_notes']) amProgs += `<div style="font-size:12px;color:#555;">${d['am_ac'+i+'_notes']}</div>`;
+      amProgs += `</div>`;
+    }
   }
   for(let i=1;i<=3;i++) {
-    if(d['am_pk_'+i+'_name']) amProgs += `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 10px;border-radius:20px;background:#E1F5EE;color:#0F6E56;font-size:12px;">Pickleball: ${d['am_pk_'+i+'_name']}${d['am_pk_'+i+'_players']?' · '+d['am_pk_'+i+'_players']+' players':''}</span>`;
+    if(d['am_pk_'+i+'_name']) {
+      amProgs += `<div style="margin-bottom:10px;padding:10px 12px;background:#f0f8f4;border-left:3px solid #9FE1CB;border-radius:0 6px 6px 0;">`;
+      amProgs += `<div style="font-size:13px;font-weight:700;color:#0F6E56;margin-bottom:4px;">🏓 ${d['am_pk_'+i+'_name']}${d['am_pk_'+i+'_players']?' &nbsp;·&nbsp; '+d['am_pk_'+i+'_players']+' players':''}</div>`;
+      if(d['am_pk_'+i+'_notes']) amProgs += `<div style="font-size:12px;color:#555;">${d['am_pk_'+i+'_notes']}</div>`;
+      amProgs += `</div>`;
+    }
   }
 
   // PM programs
@@ -1944,13 +1954,23 @@ async function srSendEmail() {
       if(d['pm_ev'+i+'_well'])    pmProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>Went well:</strong> ${d['pm_ev'+i+'_well']}</div>`;
       if(d['pm_ev'+i+'_improve']) pmProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>Improve:</strong> ${d['pm_ev'+i+'_improve']}</div>`;
       if(d['pm_ev'+i+'_poc'])     pmProgs += `<div style="font-size:12px;margin-bottom:2px;color:#555;"><strong>POC feedback:</strong> ${d['pm_ev'+i+'_poc']}</div>`;
-      if(d['pm_ev'+i+'_followup_notes']) pmProgs += `<div style="font-size:12px;color:#555;"><strong>Follow-up:</strong> ${d['pm_ev'+i+'_followup_notes']}</div>`;
+      if(d['pm_ev'+i+'_followup']) pmProgs += `<div style="font-size:12px;color:#555;"><strong>Follow-up:</strong> ${d['pm_ev'+i+'_followup']}</div>`;
       pmProgs += `</div>`;
     }
-    if(d['pm_ac'+i+'_name']) pmProgs += `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 10px;border-radius:20px;background:#faeeda;color:#854F0B;font-size:12px;">${d['pm_ac'+i+'_name']}${d['pm_ac'+i+'_attendance']?' · '+d['pm_ac'+i+'_attendance']+' players':''}</span>`;
+    if(d['pm_ac'+i+'_name']) {
+      pmProgs += `<div style="margin-bottom:10px;padding:10px 12px;background:#faf6ef;border-left:3px solid #FAC775;border-radius:0 6px 6px 0;">`;
+      pmProgs += `<div style="font-size:13px;font-weight:700;color:#854F0B;margin-bottom:4px;">⚡ ${d['pm_ac'+i+'_name']}${d['pm_ac'+i+'_attendance']?' &nbsp;·&nbsp; '+d['pm_ac'+i+'_attendance']+' players':''}</div>`;
+      if(d['pm_ac'+i+'_notes']) pmProgs += `<div style="font-size:12px;color:#555;">${d['pm_ac'+i+'_notes']}</div>`;
+      pmProgs += `</div>`;
+    }
   }
   for(let i=1;i<=3;i++) {
-    if(d['pm_pk_'+i+'_name']) pmProgs += `<span style="display:inline-block;margin:2px 4px 2px 0;padding:3px 10px;border-radius:20px;background:#faeeda;color:#854F0B;font-size:12px;">Pickleball: ${d['pm_pk_'+i+'_name']}${d['pm_pk_'+i+'_players']?' · '+d['pm_pk_'+i+'_players']+' players':''}</span>`;
+    if(d['pm_pk_'+i+'_name']) {
+      pmProgs += `<div style="margin-bottom:10px;padding:10px 12px;background:#faf6ef;border-left:3px solid #FAC775;border-radius:0 6px 6px 0;">`;
+      pmProgs += `<div style="font-size:13px;font-weight:700;color:#854F0B;margin-bottom:4px;">🏓 ${d['pm_pk_'+i+'_name']}${d['pm_pk_'+i+'_players']?' &nbsp;·&nbsp; '+d['pm_pk_'+i+'_players']+' players':''}</div>`;
+      if(d['pm_pk_'+i+'_notes']) pmProgs += `<div style="font-size:12px;color:#555;">${d['pm_pk_'+i+'_notes']}</div>`;
+      pmProgs += `</div>`;
+    }
   }
 
   const am86 = [d.am_eighty_food&&'Food: '+d.am_eighty_food, d.am_eighty_bar&&'Bar: '+d.am_eighty_bar].filter(Boolean).join(' · ');
