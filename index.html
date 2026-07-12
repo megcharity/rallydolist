@@ -823,6 +823,7 @@ const AVATAR_TEXT   = ['#1d4ed8','#be185d','#15803d','#b45309','#7c3aed','#c2410
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let users=[], tasks=[], compLog=[];
 let nextUid=1, nextTid=1, lastWeeklyReset=getMonday();
+let checklistStreak={current:0, record:0, lastDate:null}; // consecutive days both Opening & Closing are 100% with nothing flagged
 let currentUser=null, currentRole=null;
 let selectedRole=null, selectedName=null;
 let pinBuf='', pinEditId=null;
@@ -846,7 +847,7 @@ async function flushSave(){
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
-      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
+      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,checklistStreak,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
     });
   }catch(e){console.warn('Save fail',e);}
   isSaving=false;
@@ -913,6 +914,7 @@ async function loadData(){
       if(d.nextUid)nextUid=d.nextUid;
       if(d.nextTid)nextTid=d.nextTid;
       if(d.lastWeeklyReset)lastWeeklyReset=d.lastWeeklyReset;
+      if(d.checklistStreak)checklistStreak=d.checklistStreak;
       if(d.userPts) window._savedUserPts = d.userPts; // persist points across team reloads
     }
     // Always fetch live team from rally_team
@@ -933,6 +935,7 @@ setInterval(async()=>{
       const d=restoreDates(rows[0].data);
       tasks=d.tasks||tasks;compLog=d.compLog||compLog;
       nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
+      if(d.checklistStreak)checklistStreak=d.checklistStreak;
       // Only update userPts from server if we're not mid-session (preserve in-memory points)
       if(d.userPts && !saveTimer) {
         window._savedUserPts=d.userPts;
@@ -1629,6 +1632,22 @@ async function renderScorecard() {
     });
 
     let html = '<div style="padding:16px 16px 80px;">';
+
+    // Perfect checklist streak — both Opening & Closing 100%, nothing flagged.
+    // Duolingo-style: flame + big number side by side on a light card, bold
+    // "DAY STREAK" caption below, muted/grey flame when the streak is at 0.
+    {
+      const streakActive = checklistStreak.current > 0;
+      const flameColor = streakActive ? '#ff9600' : '#c9c2b4';
+      html += `<div style="background:#fff;border:2px solid ${streakActive?'#ff9600':'var(--border)'};border-radius:16px;padding:20px;text-align:center;margin-bottom:20px;">
+        <div style="display:inline-flex;align-items:center;gap:10px;">
+          <span style="font-size:44px;line-height:1;${streakActive?'':'filter:grayscale(1);opacity:.5;'}">🔥</span>
+          <span style="font-size:48px;font-weight:800;font-family:'Cormorant Garamond',serif;color:${flameColor};line-height:1;">${checklistStreak.current}</span>
+        </div>
+        <div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#174854;margin-top:8px;">Day Streak</div>
+        <div style="font-size:11px;color:rgba(23,72,84,.4);margin-top:3px;">Best: ${checklistStreak.record} day${checklistStreak.record===1?'':'s'}</div>
+      </div>`;
+    }
 
     // Summary cards per manager
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
@@ -3030,6 +3049,23 @@ const SR_RECIPIENTS = [
   { label: "Henrietta's Shift Review", value: "henrietta@rallysocialclub.com" },
   { label: "Rally Shift Review",        value: "shiftreview@rallysocialclub.com" },
 ];
+
+// ── Daily Checklist Report (Manager Opening/Closing summary email) ─────────
+// Sent automatically when Manager Closing is signed off. Comma-separated,
+// matching EmailJS's to_email format. Add/remove addresses here.
+// TEMP: scoped to just Meg while she confirms the flow this week — add
+// mmcconnell@rallypickleball.com and kdougherty@rallypickleball.com back in
+// (comma-separated) once ready to roll out to the full ops team.
+const OPS_TEAM_EMAILS = 'meg@rallypickleball.com';
+
+// EmailJS service/template for the daily checklist report.
+// IMPORTANT: template_0nxwpkt (used by srSendEmail) has its "To Email" field
+// hardcoded on EmailJS's dashboard — confirmed via direct API test that it
+// IGNORES to_email entirely. This feature needs a NEW template with "To Email"
+// set to {{to_email}} in the EmailJS dashboard. Until CL_REPORT_TEMPLATE_ID is
+// filled in, sendDailyChecklistReport() no-ops safely (see guard inside it).
+const CL_REPORT_SERVICE_ID  = 'service_yuz9zab'; // same EmailJS service as shift report
+const CL_REPORT_TEMPLATE_ID = 'PASTE_NEW_TEMPLATE_ID_HERE'; // TODO: create template, verify To Email = {{to_email}}, paste ID here
 
 function srShowResendPanel() {
   if(!srPastSnap) { showToast('No report loaded'); return; }
@@ -4523,6 +4559,30 @@ async function startChecklist(key) {
       }
     }
   } catch(e) { console.warn('Could not restore checklist progress', e); }
+
+  // Manager Opening closes for the day at 11am if not yet signed off — this
+  // is what makes "missed" unambiguous for the closing-time penalty flow.
+  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 11) {
+    lockOpeningChecklist();
+  }
+}
+
+function lockOpeningChecklist() {
+  const body = document.getElementById('cl-items-body');
+  if(body) body.innerHTML = `<div style="padding:40px 20px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:10px;">🔒</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:6px;">Morning checklist window has closed</div>
+    <div style="font-size:13px;color:rgba(23,72,84,.55);max-width:320px;margin:0 auto;">The Manager Opening checklist closes at 11am each day. It wasn't signed off in time today — this will be flagged when Closing is signed off.</div>
+  </div>`;
+  const signoffBtn = document.querySelector('.cl-signoff-btn');
+  if(signoffBtn) {
+    signoffBtn.textContent = '🔒 Closed for Today';
+    signoffBtn.disabled = true;
+    signoffBtn.style.opacity = '0.5';
+    signoffBtn.style.cursor = 'default';
+  }
+  const banner = document.getElementById('cl-signedoff-banner');
+  if(banner) banner.style.display = 'none';
 }
 
 function renderChecklist(signedOff = false) {
@@ -4711,7 +4771,7 @@ function autoSaveCl() {
   clSaveTimer = setTimeout(saveClProgress, 1500);
 }
 
-async function saveClProgress(signedOff = false) {
+async function saveClProgress(signedOff = false, extraFields = {}) {
   // Update local cache immediately
   if(currentChecklistKey) {
     const items = ALL_CHECKLISTS[currentChecklistKey] || [];
@@ -4729,11 +4789,14 @@ async function saveClProgress(signedOff = false) {
 
   if(!currentChecklistKey) return;
 
+  // extraFields (e.g. missed_opening_* penalty outcome) merge into the items
+  // jsonb blob as reserved keys alongside real checklist item IDs — no
+  // schema change needed, only used for manager_closing today.
   const payload = {
     shift:        currentChecklistKey,
     manager_name: personName,
     date:         getTodayStr(),
-    items:        clState,
+    items:        { ...clState, ...extraFields },
     signed_off_at: signedOff ? new Date().toISOString() : null
   };
   try {
@@ -4789,6 +4852,228 @@ function calcWalkthroughScore(clStateItems) {
     .filter(id => (clStateItems[id]||{}).rating === 'needs')
     .map(id => ({ id, issue: (clStateItems[id]||{}).issue || '' }));
   return { pts, maxPts, pct, grade, rated: ids.length, flagged };
+}
+
+// ── DAILY CHECKLIST REPORT (Opening + Closing summary email) ──────────────
+// Generic completion % + flagged-items calculator — works for any checklist
+// key regardless of item type mix (unlike calcWalkthroughScore above, which
+// is specifically the manager-grading feature and stays untouched).
+function calcChecklistCompletion(shiftKey, state) {
+  const items = ALL_CHECKLISTS[shiftKey] || [];
+  let done = 0;
+  const flagged = [];
+  items.forEach(item => {
+    const s = state[item.id] || {};
+    if (item.type === 'check') {
+      if (s.done) done++;
+      else flagged.push({ section: item.section, text: item.text });
+    } else if (item.type === 'rate') {
+      if (s.rating) done++;
+      if (s.rating === 'needs') flagged.push({ section: item.section, text: item.text, detail: s.issue || '' });
+    }
+  });
+  const total = items.length;
+  return { total, done, pct: total ? Math.round(done/total*100) : 0, flagged };
+}
+
+// Fetches the most recent SIGNED-OFF row for a given shift+date, regardless
+// of who submitted it (drops the manager_name filter used elsewhere, which
+// is for "restore my own in-progress work"). Explicitly filters
+// signed_off_at=not.is.null rather than relying on sort order alone, since
+// Postgres NULLS FIRST on a DESC sort would otherwise let an in-progress row
+// outrank a real signed-off one. Returns null if nothing was ever signed off.
+async function fetchSignedOffChecklistRow(shiftKey, dateStr) {
+  try {
+    const SUPA = window.RALLY_SUPABASE_URL, KEY = window.RALLY_SUPABASE_ANON_KEY;
+    const url = `${SUPA}/rest/v1/rally_checklist?date=eq.${dateStr}&shift=eq.${shiftKey}&signed_off_at=not.is.null&select=shift,manager_name,items,signed_off_at&order=signed_off_at.desc&limit=1`;
+    const res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
+    const rows = await res.json();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) { console.warn(`Could not fetch ${shiftKey} for ${dateStr}`, e); return null; }
+}
+
+// Builds the Daily Checklist Report email HTML. Visual language matches
+// srSendEmail()'s shift-report email — same navy/cream brand, same
+// statCell()-style boxes — so this reads as a sibling report. Opening uses
+// the mint AM accent, Closing the gold PM accent, same as the shift report.
+function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo) {
+  streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
+  const dateObj = new Date(dateStr + 'T12:00:00');
+  const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
+
+  const statCell = (label, value, warn) => `
+    <td style="text-align:center;padding:0 8px;">
+      <div style="background:${warn?'#c04020':'#f0e9da'};border-radius:8px;padding:12px 8px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:${warn?'rgba(251,246,237,0.75)':'#174854'};margin-bottom:4px;">${label}</div>
+        <div style="font-size:20px;font-weight:500;color:${warn?'#fbf6ed':'#174854'};">${value}</div>
+      </div>
+    </td>`;
+
+  const flaggedList = flagged => flagged.length ? `
+    <div style="margin-top:10px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#c87a00;margin-bottom:6px;">Flagged / Incomplete (${flagged.length})</div>
+      ${flagged.map(f => `<div style="font-size:12px;color:#555;margin-bottom:3px;">⚠️ <strong>${f.section}</strong> — ${f.text}${f.detail ? ' <span style="color:#888;">— '+f.detail+'</span>' : ''}</div>`).join('')}
+    </div>` : `<div style="font-size:12px;color:#4e622c;margin-top:8px;">✅ Nothing flagged</div>`;
+
+  function submittedSection(label, accent, labelColor, shiftKey, row, perfectEmoji) {
+    const calc = calcChecklistCompletion(shiftKey, row.items || {});
+    const isSectionPerfect = calc.flagged.length === 0;
+    return `
+      <tr><td style="padding:24px 32px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
+            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:2px;">${label}</div>
+            <div style="font-size:16px;font-weight:500;color:#174854;margin-bottom:4px;">${row.manager_name || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
+            <div style="font-size:13px;color:#666;">${calc.pct}% complete (${calc.done}/${calc.total} items)${isSectionPerfect ? ' '+perfectEmoji : ''}</div>
+            ${flaggedList(calc.flagged)}
+          </td></tr>
+        </table>
+      </td></tr>`;
+  }
+
+  function missingSection(label, accent, labelColor, penaltyNote) {
+    return `
+      <tr><td style="padding:24px 32px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
+            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:2px;">${label}</div>
+            <div style="font-size:15px;font-weight:700;color:#c04020;margin-bottom:4px;">⚠️ Not submitted</div>
+            <div style="font-size:13px;color:#666;">No ${label} checklist was signed off today.</div>
+            ${penaltyNote ? `<div style="font-size:13px;color:#c04020;margin-top:6px;">${penaltyNote}</div>` : ''}
+          </td></tr>
+        </table>
+      </td></tr>`;
+  }
+
+  const closingItems = closingRow.items || {};
+  let openingPenaltyNote = '';
+  if (closingItems.missed_opening_skipped) {
+    openingPenaltyNote = 'Marked N/A by closing manager.';
+  } else if (closingItems.missed_opening_manager) {
+    openingPenaltyNote = `${closingItems.missed_opening_manager} flagged — ${closingItems.missed_opening_pts||0} pts deducted.`;
+  }
+
+  const openingCalc = openingRow ? calcChecklistCompletion('manager_opening', openingRow.items || {}) : null;
+  const closingCalc = calcChecklistCompletion('manager_closing', closingItems);
+
+  const openingHtml = openingRow
+    ? submittedSection('Manager Opening', '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨')
+    : missingSection('Manager Opening', '#9FE1CB', '#0F6E56', openingPenaltyNote);
+  const closingHtml = submittedSection('Manager Closing', '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨');
+
+  // Celebrate a genuinely clean day — both checklists submitted, nothing
+  // flagged in either. Uses the same success green (#4e622c) the app
+  // already uses for "good"/A-grade states, so it stays on-brand. Anything
+  // short of perfect stays exactly as serious as the rest of the report.
+  // A new streak record upgrades this to a bigger celebration; a broken
+  // streak gets its own quieter, sadder note instead — never both at once.
+  const isPerfectDay = !!openingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
+  const streakLine = streakInfo.current > 1 ? ` &nbsp;·&nbsp; Day ${streakInfo.current} of the streak` : '';
+  let celebrationBanner = '';
+  if (streakInfo.isNewRecord) {
+    celebrationBanner = `
+  <tr><td style="background:#4e622c;padding:16px 32px;text-align:center;">
+    <div style="font-size:17px;font-weight:800;color:#fff;margin-bottom:2px;">🏆 New record! ${streakInfo.current}-day streak</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.85);">Every box checked, both checklists spotless — the best run yet!</div>
+  </td></tr>`;
+  } else if (isPerfectDay) {
+    celebrationBanner = `
+  <tr><td style="background:#4e622c;padding:14px 32px;text-align:center;">
+    <div style="font-size:15px;font-weight:700;color:#fff;">🎉 Clean sweep — every box checked, both checklists spotless!${streakLine}</div>
+  </td></tr>`;
+  } else if (streakInfo.streakBroken) {
+    celebrationBanner = `
+  <tr><td style="background:#8a8578;padding:14px 32px;text-align:center;">
+    <div style="font-size:14px;font-weight:700;color:#fff;">💔 Streak broken at ${streakInfo.brokenStreakLength} day${streakInfo.brokenStreakLength===1?'':'s'} — new streak starts tomorrow.</div>
+  </td></tr>`;
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0e8;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;">
+
+  <tr><td style="background:#174854;padding:28px 32px;text-align:center;">
+    <div style="font-size:11px;letter-spacing:0.18em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:6px;">Rally Social Club</div>
+    <div style="font-size:26px;font-weight:500;color:#fbf6ed;margin-bottom:4px;">Daily Checklist Report</div>
+    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${dayName}</div>
+  </td></tr>
+  ${celebrationBanner}
+  <tr><td style="background:#f0e9da;padding:18px 32px;border-bottom:1px solid #e0d8cc;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${statCell('Opening', openingCalc ? openingCalc.pct+'%' : '0%', !openingCalc)}
+      ${statCell('Closing', closingCalc.pct+'%', false)}
+    </tr></table>
+  </td></tr>
+
+  ${openingHtml}
+  <tr><td style="padding:0 32px;"><div style="border-top:1px solid #e8e0d4;"></div></td></tr>
+  ${closingHtml}
+
+  <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
+    <div style="font-size:11px;color:#999;">Rally Social Club &nbsp;·&nbsp; Charlotte, NC &nbsp;·&nbsp; Internal use only</div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function sendDailyChecklistReport() {
+  const dateStr = getTodayStr();
+  const [openingRow, closingRow] = await Promise.all([
+    fetchSignedOffChecklistRow('manager_opening', dateStr),
+    fetchSignedOffChecklistRow('manager_closing', dateStr),
+  ]);
+  if (!closingRow) {
+    console.warn('Daily checklist report: closing row not found right after sign-off — skipping.');
+    return;
+  }
+
+  // Update the streak once per calendar day. Only updates on the FIRST
+  // Closing sign-off seen for a given date — re-signing off the same day
+  // (e.g. correcting a mistake) must not double-count the streak.
+  const openingCalc = openingRow ? calcChecklistCompletion('manager_opening', openingRow.items || {}) : null;
+  const closingCalc = calcChecklistCompletion('manager_closing', closingRow.items || {});
+  const isPerfectToday = !!openingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
+  let isNewRecord = false, streakBroken = false, brokenStreakLength = 0;
+  if (checklistStreak.lastDate !== dateStr) {
+    if (isPerfectToday) {
+      checklistStreak.current += 1;
+      if (checklistStreak.current > checklistStreak.record) {
+        checklistStreak.record = checklistStreak.current;
+        isNewRecord = true;
+      }
+    } else {
+      if (checklistStreak.current > 0) { streakBroken = true; brokenStreakLength = checklistStreak.current; }
+      checklistStreak.current = 0;
+    }
+    checklistStreak.lastDate = dateStr;
+    saveData();
+  }
+
+  try {
+    if (CL_REPORT_TEMPLATE_ID === 'PASTE_NEW_TEMPLATE_ID_HERE') {
+      console.warn('Daily checklist report: EmailJS template not configured yet — skipping send.');
+      return;
+    }
+    const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
+    const html = buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo);
+    await emailjs.send(CL_REPORT_SERVICE_ID, CL_REPORT_TEMPLATE_ID, {
+      subject: `Daily Checklist Report - ${dateStr}`,
+      message: html,
+      to_email: OPS_TEAM_EMAILS,
+    });
+    console.log('Daily checklist report email sent ✓');
+  } catch (e) {
+    console.warn('Daily checklist report email failed', e);
+    showToast('⚠️ Daily report email failed — send manually if needed');
+  }
 }
 
 function gradeColor(grade) {
@@ -4858,6 +5143,56 @@ async function submitWalkthroughScore(closingManagerName, overallRating, closeNo
   }
 }
 
+// Shared modal for the missed-checklist points penalty. Used both directions:
+// Closing asking who was supposed to open (when Opening is missing that day),
+// and Opening asking who was supposed to close (when last night's Closing is
+// missing). Returns {cancelled: true} or {cancelled: false, extraFields}.
+async function promptMissedShiftPenalty(missedLabel, fieldPrefix) {
+  const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
+  const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:360px;max-width:92vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#174854;margin-bottom:12px;">${missedLabel} Missing</div>
+    <p style="font-size:13px;color:rgba(23,72,84,.6);margin-bottom:16px;">No ${missedLabel} checklist was signed off. Who was supposed to do it?</p>
+    <select id="missed-shift-picker" style="width:100%;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fbf6ed;margin-bottom:6px;">
+      <option value="">— Select who was supposed to do it —</option>
+      ${mgr_opts}
+      <option value="__skip__">Skip / Not applicable</option>
+    </select>
+    <p style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;margin-bottom:18px;">Naming someone deducts 50 points from their total. Choose Skip if there's a legitimate reason (holiday, closure, etc.) — no points deducted.</p>
+    <p id="missed-shift-err" style="font-size:11px;color:#e13228;min-height:14px;margin-bottom:6px;"></p>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="missed-shift-confirm" style="flex:1;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Continue</button>
+      <button id="missed-shift-cancel" style="padding:12px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  const result = await new Promise(resolve => {
+    document.getElementById('missed-shift-confirm').onclick = () => {
+      const picked = document.getElementById('missed-shift-picker').value;
+      if(!picked) { document.getElementById('missed-shift-err').textContent = 'Please select someone, or choose Skip.'; return; }
+      overlay.remove();
+      resolve(picked);
+    };
+    document.getElementById('missed-shift-cancel').onclick = () => { overlay.remove(); resolve('cancel'); };
+  });
+
+  if(result === 'cancel') return { cancelled: true };
+
+  if(result === '__skip__') {
+    return { cancelled: false, extraFields: { [`${fieldPrefix}_skipped`]: true } };
+  }
+  const mgr = users.find(u => u.name === result && u.role === 'manager');
+  if(mgr) {
+    mgr.effortPts = Math.max(0, (mgr.effortPts||0) - 50);
+    saveData();
+  }
+  return { cancelled: false, extraFields: { [`${fieldPrefix}_manager`]: result, [`${fieldPrefix}_pts`]: 50 } };
+}
+
 async function signOffChecklist() {
   const items = ALL_CHECKLISTS[currentChecklistKey] || [];
   let done = 0;
@@ -4870,6 +5205,28 @@ async function signOffChecklist() {
 
   // For manager opening — show closer picker before signing off
   if(currentChecklistKey === 'manager_opening') {
+    // Check whether last night's Closing was ever signed off — if not, this
+    // takes priority over the normal "who closed / rate the close" flow
+    // below, since there's nothing to rate if closing never happened.
+    const ydayForClosingCheck = new Date(); ydayForClosingCheck.setDate(ydayForClosingCheck.getDate()-1);
+    const yStrForClosingCheck = ydayForClosingCheck.toISOString().slice(0,10);
+    const yesterdayClosingRow = await fetchSignedOffChecklistRow('manager_closing', yStrForClosingCheck);
+
+    if(!yesterdayClosingRow) {
+      const res = await promptMissedShiftPenalty('Manager Closing (last night)', 'missed_closing');
+      if(res.cancelled) return;
+      const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
+      if(!confirm(msg)) return;
+      await saveClProgress(true, res.extraFields);
+      showToast('Checklist signed off! ✅');
+      currentChecklistKey = null; clState = {};
+      if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
+        showScreen('s-mgr');
+        showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
+      } else { showScreen('s-cl-hub'); }
+      return;
+    }
+
     const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
     const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
 
@@ -4966,6 +5323,33 @@ async function signOffChecklist() {
         showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
       } else { showScreen('s-cl-hub'); }
     });
+    return;
+  }
+
+  // For manager closing — check whether Opening was signed off today; if not,
+  // ask the closing manager who was supposed to open and apply a points
+  // penalty (or let them mark it Skip/N/A for a legitimate no-opener day).
+  // Gated strictly on the literal key so no other checklist type is affected.
+  if(currentChecklistKey === 'manager_closing') {
+    const openingRow = await fetchSignedOffChecklistRow('manager_opening', getTodayStr());
+    let extraFields = {};
+
+    if(!openingRow) {
+      const res = await promptMissedShiftPenalty('Manager Opening', 'missed_opening');
+      if(res.cancelled) return;
+      extraFields = res.extraFields;
+    }
+
+    const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
+    if(!confirm(msg)) return;
+    await saveClProgress(true, extraFields);
+    sendDailyChecklistReport().catch(e => console.warn('Daily checklist report failed', e));
+    showToast('Checklist signed off! ✅');
+    currentChecklistKey = null; clState = {};
+    if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
+      showScreen('s-mgr');
+      showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
+    } else { showScreen('s-cl-hub'); }
     return;
   }
 
