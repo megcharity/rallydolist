@@ -1826,9 +1826,15 @@ async function srUpdateSummary() {
   });
 }
 
+// The date of the report currently loaded in srData — NOT necessarily
+// "today". When continuing a previous day's incomplete report past
+// midnight, srData.date stays whatever it was loaded as, so saves/emails
+// keep targeting the correct row instead of silently re-dating it.
+function srReportDate() { return srData.date || getTodayStr(); }
+
 async function srSave(lockAM = false) {
   const u = users.find(x => x.id === currentUser);
-  const today = getTodayStr();
+  const reportDate = srReportDate();
   if(lockAM) {
     srData.am_locked    = true;
     srData.am_locked_by = u ? u.name : 'Manager';
@@ -1837,12 +1843,12 @@ async function srSave(lockAM = false) {
   }
   const managerName = u ? u.name : (srData.am_locked_by || 'Manager');
   srData._manager = managerName; // store inside data jsonb
-  const payload = { date: today, data: srData };
+  const payload = { date: reportDate, data: srData };
   const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${SR_KEY}`, 'Content-Type':'application/json' };
   try {
-    // If we don't have an ID, check if today's record already exists (another manager may have created it)
+    // If we don't have an ID, check if a record for this report's date already exists (another manager may have created it)
     if(!srRecordId) {
-      const chk = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&select=id&order=id.desc&limit=1`,
+      const chk = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${reportDate}&select=id&order=id.desc&limit=1`,
         {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
       const existing = await chk.json();
       if(Array.isArray(existing) && existing[0]) srRecordId = existing[0].id;
@@ -1896,9 +1902,9 @@ async function srSubmitPM() {
   try { await srSendEmail(); } catch(e) { console.warn('Email send failed', e); }
 }
 
-async function srSendEmail() {
+async function srSendEmail(dateOverride) {
   const d = srData;
-  const date = getTodayStr();
+  const date = dateOverride || srReportDate();
   const dateObj = new Date(date + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
 
@@ -2176,18 +2182,28 @@ async function srRerender() {
   const panel = document.getElementById('mgr-tab-shiftreport');
   if(!panel) return;
   const u = users.find(x => x.id === currentUser);
-  const d = new Date();
-  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const displayDate = srReportDate();
+  const dObj = new Date(displayDate + 'T12:00:00');
+  const dayName = dObj.toLocaleDateString('en-US',{weekday:'long'});
   const amLocked  = srAmLocked && !srAmEditMode || srIsArchived();
   const pmDone    = !!srData.pm_submitted;
-  panel.innerHTML = buildSrHTML(u ? u.name : '', getTodayStr(), dayName, amLocked, pmDone);
+  panel.innerHTML = buildSrHTML(u ? u.name : '', displayDate, dayName, amLocked, pmDone);
   await srLoadCompData();
   srUpdateSummary();
 }
 
-// Check if the loaded report is from a previous day (not today) — show as read-only archive
+// Read-only archive = a genuinely finished past-day report (PM was
+// submitted). A past-day report that's still incomplete is NOT archived —
+// it stays fully editable so a manager can continue it the next morning
+// (see renderShiftReportForm's yesterday fallback).
 function srIsArchived() {
-  return srData.date && srData.date !== getTodayStr();
+  return !!(srData.date && srData.date !== getTodayStr() && srData.pm_submitted);
+}
+
+// True only for a past-day report that's being kept open to finish —
+// distinct from both "today, in progress" and "archived read-only".
+function srIsContinuing() {
+  return !!(srData.date && srData.date !== getTodayStr() && !srData.pm_submitted);
 }
 
 async function renderShiftReportForm() {
@@ -2214,18 +2230,43 @@ async function renderShiftReportForm() {
       // Found today's report — load it normally
       srRecordId = rows[0].id;
       srData     = rows[0].data || {};
+      srData.date = rows[0].date;
       srAmLocked = !!srData.am_locked;
       srAmEditMode = false;
       srPmEditMode = false;
       console.log('SR found today: id='+srRecordId+' am_locked='+srAmLocked);
     } else {
-      // No report for today — start completely fresh. Never carry over previous day's data.
-      srRecordId   = null;
-      srData       = {};
-      srAmLocked   = false;
-      srAmEditMode = false;
-      srPmEditMode = false;
-      console.log('SR: no record for today, starting fresh blank form');
+      // No report for today — check yesterday before starting fresh. An
+      // incomplete yesterday report (PM never submitted) stays open and
+      // editable so it can be finished; a completed one shows read-only
+      // via the existing archived state. Only looks back one day, matching
+      // "wasn't filled out the night before" — not an open-ended search.
+      const yest = new Date(); yest.setDate(yest.getDate()-1);
+      const yStr = yest.getFullYear()+'-'+String(yest.getMonth()+1).padStart(2,'0')+'-'+String(yest.getDate()).padStart(2,'0');
+      let yRows = [];
+      try {
+        const yRes = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${yStr}&order=id.desc&limit=1`,
+          {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
+        if(yRes.ok) yRows = await yRes.json();
+      } catch(e) { console.warn('SR yesterday check failed', e); }
+
+      if(Array.isArray(yRows) && yRows[0]) {
+        srRecordId = yRows[0].id;
+        srData     = yRows[0].data || {};
+        srData.date = yRows[0].date;
+        srAmLocked = !!srData.am_locked;
+        srAmEditMode = false;
+        srPmEditMode = false;
+        console.log('SR: showing yesterday ('+yRows[0].date+'), pm_submitted='+(!!srData.pm_submitted));
+      } else {
+        // Nothing for today or yesterday — start completely fresh.
+        srRecordId   = null;
+        srData       = {};
+        srAmLocked   = false;
+        srAmEditMode = false;
+        srPmEditMode = false;
+        console.log('SR: no record for today or yesterday, starting fresh blank form');
+      }
     }
   } catch(e) {
     console.warn('SR load failed', e);
@@ -2233,13 +2274,14 @@ async function renderShiftReportForm() {
     return;
   }
 
-  const d = new Date();
-  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const displayDate = srReportDate();
+  const dObj = new Date(displayDate + 'T12:00:00');
+  const dayName = dObj.toLocaleDateString('en-US',{weekday:'long'});
   const isArchived = srIsArchived();
   const pmSubmitted = !!srData.pm_submitted;
   const amLocked = (srAmLocked && !srAmEditMode) || isArchived;
 
-  panel.innerHTML = buildSrHTML(u.name, today, dayName, amLocked, pmSubmitted);
+  panel.innerHTML = buildSrHTML(u.name, displayDate, dayName, amLocked, pmSubmitted);
   await srLoadCompData();
   srUpdateSummary();
 }
@@ -2536,8 +2578,7 @@ function srSetCount(key, val) {
 
 function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
   const isArchived = srIsArchived();
-  const d = new Date();
-  const dayName2 = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const isContinuing = srIsContinuing();
 
   // Helper: editable input
   const inp = (key, placeholder='', type='text', locked=false) => locked
@@ -2692,17 +2733,17 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
     </div>`;
 
   // ── SUBMIT / FOOTER BAR ───────────────────────────────────────
+  const startNewBtn = `<button onclick="srStartNewReport()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">+ Start Today's Report</button>`;
   const submitBar = isArchived
-    ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
-        <button onclick="srStartNewReport()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">+ Start Today's Report</button>
-      </div>`
+    ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">${startNewBtn}</div>`
     : !pmSubmitted
-      ? `<div style="padding:16px 0 80px;display:flex;justify-content:flex-end;">
+      ? `<div style="padding:16px 0 80px;display:flex;justify-content:${isContinuing?'space-between':'flex-end'};align-items:center;gap:12px;">
+          ${isContinuing ? `<button onclick="srStartNewReport()" style="padding:11px 20px;background:#fff;color:#174854;border:1.5px solid rgba(23,72,84,.25);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Skip, start today's instead</button>` : ''}
           <button onclick="srSubmitPM()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Submit Full Report ✅</button>
         </div>`
       : `<div style="padding:16px 0 80px;display:flex;justify-content:space-between;align-items:center;">
           <div style="color:#4e622c;font-size:13px;font-weight:600;">✅ This report was submitted on ${srData.pm_submitted_at ? new Date(srData.pm_submitted_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'today'}</div>
-          <button onclick="srStartNewReport()" style="padding:11px 28px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">+ Start Today's Report</button>
+          ${startNewBtn}
         </div>`;
 
   return `
@@ -2716,6 +2757,7 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
         <button onclick="srTogglePastReports()" id="sr-past-btn" style="padding:6px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;transition:all .2s;" onmouseover="this.style.borderColor='#174854'" onmouseout="this.style.borderColor='rgba(23,72,84,.2)'">📅 Past Reports</button>
       </div>
     </div>
+    ${isContinuing ? `<div style="margin:10px 16px 0;padding:9px 14px;background:rgba(200,122,0,.1);border:1px solid rgba(200,122,0,.3);border-radius:8px;font-size:12px;color:#c87a00;font-weight:600;">⏳ Continuing an unfinished report from ${dayName}, ${today} — it wasn't completed that night. Still editable, or start a fresh one below.</div>` : ''}
     <div id="sr-past-panel" style="display:none;"></div>
     <div id="sr-current-form">
     <div class="sr-form" style="padding:14px;">
@@ -3120,15 +3162,12 @@ async function srDoResend() {
     const prevData = srData;
     const prevDate = srPastDate;
     srData = srPastSnap;
-    const realGetTodayStr = window.getTodayStr;
-    window.getTodayStr = () => prevDate || realGetTodayStr();
 
     for(const email of checked) {
       srEmailRecipient = email;
-      await srSendEmail();
+      await srSendEmail(prevDate);
     }
 
-    window.getTodayStr = realGetTodayStr;
     srData = prevData;
     srEmailRecipient = null;
 
