@@ -1568,7 +1568,12 @@ async function renderMgrClHub() {
   if(dom === 1) subParts.push('1st of month');
   if(dow === 1) subParts.push('Weekly tasks due');
 
-  let html = '<div class="cl-hub-title">Manager Checklists</div><div class="cl-hub-sub">' + subParts.join(' · ') + '</div>';
+  let html = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">'
+    + '<div><div class="cl-hub-title">Manager Checklists</div><div class="cl-hub-sub">' + subParts.join(' · ') + '</div></div>'
+    + '<button onclick="clHubTogglePast()" id="cl-hub-past-btn" style="padding:6px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#174854;white-space:nowrap;">📅 Past Checklists</button>'
+    + '</div>'
+    + '<div id="cl-hub-past-panel" style="display:none;"><div id="past-cl-body"></div></div>'
+    + '<div id="cl-hub-current">';
 
   const daily = list.filter(c => c.type === 'daily');
   const weekly = list.filter(c => c.type === 'weekly');
@@ -1598,7 +1603,27 @@ async function renderMgrClHub() {
   if(weekly.length)  { html += '<div class="cl-section-head">Weekly</div>';  weekly.forEach(cl  => { html += renderCard(cl); }); }
   if(monthly.length) { html += '<div class="cl-section-head">Monthly</div>'; monthly.forEach(cl => { html += renderCard(cl); }); }
 
+  html += '</div>'; // close cl-hub-current
   body.innerHTML = html;
+}
+
+let clHubPastOpen = false;
+function clHubTogglePast() {
+  clHubPastOpen = !clHubPastOpen;
+  const panel = document.getElementById('cl-hub-past-panel');
+  const current = document.getElementById('cl-hub-current');
+  const btn = document.getElementById('cl-hub-past-btn');
+  if(!panel || !current) return;
+  if(clHubPastOpen) {
+    panel.style.display = 'block';
+    current.style.display = 'none';
+    if(btn) { btn.textContent = '✕ Close'; btn.style.background = 'rgba(23,72,84,.07)'; }
+    renderPastChecklists();
+  } else {
+    panel.style.display = 'none';
+    current.style.display = 'block';
+    if(btn) { btn.textContent = '📅 Past Checklists'; btn.style.background = '#fff'; }
+  }
 }
 
 function startMgrChecklist(key) {
@@ -4943,57 +4968,174 @@ async function fetchSignedOffChecklistRow(shiftKey, dateStr) {
   } catch (e) { console.warn(`Could not fetch ${shiftKey} for ${dateStr}`, e); return null; }
 }
 
-// Builds the Daily Checklist Report email HTML. Visual language matches
-// srSendEmail()'s shift-report email — same navy/cream brand, same
-// statCell()-style boxes — so this reads as a sibling report. Opening uses
-// the mint AM accent, Closing the gold PM accent, same as the shift report.
-function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo) {
+// Fetches the walkthrough grade (rally_manager_scores) for a given shift_date.
+// submitWalkthroughScore() always writes shift_date = "yesterday" relative to
+// whenever the Opening walkthrough is submitted — so a grade for the close on
+// date X is recorded the following morning, during date X+1's Opening
+// sign-off. By the time the Daily Checklist Report fires (at Closing on date
+// X+1), that grade already exists and is the most recent Scorecard data
+// available — it just belongs to the close from the night before, not the
+// close happening that night. Returns null if no grade was ever recorded.
+async function fetchLatestManagerScore(shiftDateStr) {
+  try {
+    const SUPA = window.RALLY_SUPABASE_URL, KEY = window.RALLY_SUPABASE_ANON_KEY;
+    const url = `${SUPA}/rest/v1/rally_manager_scores?shift_date=eq.${shiftDateStr}&select=*&order=created_at.desc&limit=1`;
+    const res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
+    const rows = await res.json();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) { console.warn(`Could not fetch manager score for ${shiftDateStr}`, e); return null; }
+}
+
+// ── PAST CHECKLISTS (view Manager Opening/Closing by date) ────────────────
+function renderPastChecklists() {
+  const body = document.getElementById('past-cl-body');
+  if(!body) return;
+  const today = getTodayStr();
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const defaultDate = yest.getFullYear()+'-'+String(yest.getMonth()+1).padStart(2,'0')+'-'+String(yest.getDate()).padStart(2,'0');
+
+  body.innerHTML = `<style>.pastcl-details summary::-webkit-details-marker{display:none;}.pastcl-details summary::marker{content:'';}</style>
+  <div style="padding:16px 16px 80px;">
+    <div style="font-family:Cormorant Garamond,serif;font-size:18px;font-weight:500;color:#174854;margin-bottom:6px;">View a Past Day's Checklists</div>
+    <div style="font-size:12px;color:rgba(23,72,84,.45);margin-bottom:14px;">Select a date to see that day's Manager Opening and Closing checklists.</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <input type="date" id="past-cl-picker" value="${defaultDate}" max="${today}"
+        style="flex:1;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fff;outline:none;cursor:pointer;"
+        onchange="loadPastChecklistsForDate(this.value)">
+      <button onclick="loadPastChecklistsForDate(document.getElementById('past-cl-picker').value)" style="padding:10px 20px;background:#174854;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;">View →</button>
+    </div>
+    <div id="past-cl-results" style="margin-top:20px;"></div>
+  </div>`;
+
+  loadPastChecklistsForDate(defaultDate);
+}
+
+async function loadPastChecklistsForDate(dateStr) {
+  const results = document.getElementById('past-cl-results');
+  if(!results) return;
+  results.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">Loading…</div>';
+
+  const [openingRow, closingRow] = await Promise.all([
+    fetchSignedOffChecklistRow('manager_opening', dateStr),
+    fetchSignedOffChecklistRow('manager_closing', dateStr),
+  ]);
+
+  results.innerHTML =
+    renderReadOnlyChecklistSection('Manager Opening', 'manager_opening', openingRow, '#9FE1CB', '#0F6E56') +
+    renderReadOnlyChecklistSection('Manager Closing', 'manager_closing', closingRow, '#FAC775', '#854F0B');
+}
+
+function renderReadOnlyClItem(item, state) {
+  const s = state[item.id] || {};
+  const isDone = item.type === 'check' ? !!s.done : s.rating === 'good';
+  const isFlagged = s.rating === 'needs';
+  const badge = item.type === 'check'
+    ? (isDone ? `<span style="color:var(--olive);">✓</span>` : `<span style="color:rgba(23,72,84,.25);">○</span>`)
+    : (isDone ? `<span style="color:var(--olive);">✓ Good</span>` : isFlagged ? `<span style="color:#c87a00;">⚠️ Needs Work</span>` : `<span style="color:rgba(23,72,84,.25);">—</span>`);
+  return `<div class="cl-item" style="padding:8px 0;border-bottom:1px solid rgba(23,72,84,.06);">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+      <div style="font-size:13px;color:${isDone?'rgba(23,72,84,.4)':'var(--teal)'};${isDone && item.type==='check'?'text-decoration:line-through;':''}">${item.text}</div>
+      <div style="font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;">${badge}</div>
+    </div>
+    ${s.issue ? `<div style="font-size:12px;color:#c87a00;font-style:italic;margin-top:3px;">"${s.issue}"</div>` : ''}
+  </div>`;
+}
+
+function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor) {
+  if(!row) {
+    return `<div style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;padding:16px;margin-bottom:16px;border-left:4px solid ${accent};">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
+      <div style="font-size:14px;color:#c04020;font-weight:600;">⚠️ Not submitted that day</div>
+    </div>`;
+  }
+  const calc = calcChecklistCompletion(shiftKey, row.items || {});
+  const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
+
+  const sections = {};
+  (ALL_CHECKLISTS[shiftKey] || []).forEach(item => {
+    if(!sections[item.section]) sections[item.section] = [];
+    sections[item.section].push(item);
+  });
+  const itemsHtml = Object.entries(sections).map(([sec, secItems]) => `
+    <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:14px 0 4px;">${sec}</div>
+    ${secItems.map(item => renderReadOnlyClItem(item, row.items || {})).join('')}
+  `).join('');
+
+  return `<details class="pastcl-details" style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;margin-bottom:16px;border-left:4px solid ${accent};overflow:hidden;">
+    <summary style="padding:16px;cursor:pointer;list-style:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
+          <div style="font-size:14px;font-weight:500;color:#174854;">${row.manager_name || '—'} · signed off ${fmtTime(row.signed_off_at)}</div>
+        </div>
+        <div style="font-size:20px;font-weight:800;font-family:Cormorant Garamond,serif;color:${calc.pct===100?'var(--olive)':'#174854'};">${calc.pct}%</div>
+      </div>
+    </summary>
+    <div style="padding:0 16px 16px;">${itemsHtml}</div>
+  </details>`;
+}
+
+// Builds the Daily Checklist Report email HTML. Shares the shift report's
+// card/cream layout but uses a sage header (vs. the shift report's navy) so
+// the two are visually distinct at a glance. Opening uses the mint AM
+// accent, Closing the gold PM accent, same as the shift report.
+function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo, walkthroughScore) {
   streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
   const dateObj = new Date(dateStr + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
   const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
 
   // Persistent streak badge — same mascot treatment as the in-app Duolingo-
-  // style Scorecard card, so it's recognizable, but sized to sit alongside
-  // the Opening/Closing statCells rather than as its own full section.
-  // Uses vertical-align instead of flexbox for email-client compatibility
-  // (Outlook and others render flexbox unreliably in HTML email).
-  const streakStatCell = () => {
+  // style Scorecard card. Given the full stat band to itself (the Opening/
+  // Closing % cells were removed — a check-type item always reads 100% once
+  // ticked, so that % was never a meaningful quality signal, just noise).
+  const streakHero = () => {
     const active = streakInfo.current > 0;
+    const recordLine = streakInfo.record > 0
+      ? `<div style="font-size:12px;color:#8a7b5c;margin-top:6px;">Best: ${streakInfo.record} day${streakInfo.record===1?'':'s'}</div>`
+      : '';
     return `
-    <td style="text-align:center;padding:0 8px;">
-      <div style="background:${active?'#fff7ec':'#f0e9da'};border:${active?'1.5px solid #ff9600':'none'};border-radius:8px;padding:${active?'10.5px 8px':'12px 8px'};">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#174854;margin-bottom:4px;">Streak</div>
-        <div style="font-size:20px;font-weight:500;color:${active?'#ff9600':'#174854'};"><img src="${STREAK_MASCOT_B64}" style="width:18px;height:auto;vertical-align:middle;margin-right:3px;${active?'':'filter:grayscale(1);opacity:.4;'}" alt="">${streakInfo.current}</div>
-      </div>
-    </td>`;
+    <tr><td style="background:${active?'#fff7ec':'#f0e9da'};padding:22px 32px;text-align:center;border-bottom:1px solid #e0d8cc;">
+      <img src="${STREAK_MASCOT_B64}" style="width:46px;height:auto;vertical-align:middle;margin-right:12px;${active?'':'filter:grayscale(1);opacity:.4;'}" alt="">
+      <span style="font-size:40px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;line-height:1;">${streakInfo.current}</span>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#174854;margin-top:6px;">Day Streak</div>
+      ${recordLine}
+    </td></tr>`;
   };
-
-  const statCell = (label, value, warn) => `
-    <td style="text-align:center;padding:0 8px;">
-      <div style="background:${warn?'#c04020':'#f0e9da'};border-radius:8px;padding:12px 8px;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:${warn?'rgba(251,246,237,0.75)':'#174854'};margin-bottom:4px;">${label}</div>
-        <div style="font-size:20px;font-weight:500;color:${warn?'#fbf6ed':'#174854'};">${value}</div>
-      </div>
-    </td>`;
 
   const flaggedList = flagged => flagged.length ? `
     <div style="margin-top:10px;">
-      <div style="font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#c87a00;margin-bottom:6px;">Flagged / Incomplete (${flagged.length})</div>
-      ${flagged.map(f => `<div style="font-size:12px;color:#555;margin-bottom:3px;">⚠️ <strong>${f.section}</strong> — ${f.text}${f.detail ? ' <span style="color:#888;">— '+f.detail+'</span>' : ''}</div>`).join('')}
-    </div>` : `<div style="font-size:12px;color:#4e622c;margin-top:8px;">✅ Nothing flagged</div>`;
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#c87a00;margin-bottom:6px;">Flagged / Incomplete (${flagged.length})</div>
+      ${flagged.map(f => `<div style="font-size:14px;color:#555;margin-bottom:4px;">⚠️ <strong>${f.section}</strong> — ${f.text}${f.detail ? ' <span style="color:#888;">— '+f.detail+'</span>' : ''}</div>`).join('')}
+    </div>` : `<div style="font-size:14px;color:#4e622c;margin-top:8px;">✅ Nothing flagged</div>`;
 
-  function submittedSection(label, accent, labelColor, shiftKey, row, perfectEmoji) {
+  // Grade badge for the Manager Opening section — shows the Scorecard grade
+  // recorded THIS MORNING during the Arrival Walkthrough, which grades LAST
+  // NIGHT's close (not tonight's, which hasn't happened yet at send time).
+  // Labeled explicitly as "last night's close" so it doesn't read as if it's
+  // grading the close this same report is about.
+  const walkthroughBadge = () => {
+    if (!walkthroughScore) return '';
+    const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === walkthroughScore.overall_rating) || null;
+    return `
+      <div style="margin-top:12px;padding:10px 12px;background:${gradeBg(walkthroughScore.grade)};border-radius:8px;">
+        <span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:#fff;color:${gradeColor(walkthroughScore.grade)};font-weight:800;font-size:15px;line-height:30px;text-align:center;vertical-align:middle;margin-right:10px;">${walkthroughScore.grade}</span>
+        <span style="font-size:13px;color:#174854;vertical-align:middle;">Last night's close, graded this morning: <strong>${walkthroughScore.graded_manager}</strong> · ${walkthroughScore.pct}%${ratingMeta ? ` · ${ratingMeta.emoji} ${ratingMeta.label}` : ''}</span>
+      </div>`;
+  };
+
+  function submittedSection(label, accent, labelColor, shiftKey, row, perfectEmoji, extraHtml) {
     const calc = calcChecklistCompletion(shiftKey, row.items || {});
     const isSectionPerfect = calc.flagged.length === 0;
     return `
       <tr><td style="padding:24px 32px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
-            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:2px;">${label}</div>
-            <div style="font-size:16px;font-weight:500;color:#174854;margin-bottom:4px;">${row.manager_name || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
-            <div style="font-size:13px;color:#666;">${calc.pct}% complete (${calc.done}/${calc.total} items)${isSectionPerfect ? ' '+perfectEmoji : ''}</div>
+            <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label}</div>
+            <div style="font-size:18px;font-weight:500;color:#174854;margin-bottom:5px;">${row.manager_name || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
+            <div style="font-size:14px;color:#666;">${calc.pct}% complete (${calc.done}/${calc.total} items)${isSectionPerfect ? ' '+perfectEmoji : ''}</div>
             ${flaggedList(calc.flagged)}
+            ${extraHtml || ''}
           </td></tr>
         </table>
       </td></tr>`;
@@ -5004,10 +5146,10 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
       <tr><td style="padding:24px 32px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
-            <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:2px;">${label}</div>
-            <div style="font-size:15px;font-weight:700;color:#c04020;margin-bottom:4px;">⚠️ Not submitted</div>
-            <div style="font-size:13px;color:#666;">No ${label} checklist was signed off today.</div>
-            ${penaltyNote ? `<div style="font-size:13px;color:#c04020;margin-top:6px;">${penaltyNote}</div>` : ''}
+            <div style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label}</div>
+            <div style="font-size:16px;font-weight:700;color:#c04020;margin-bottom:5px;">⚠️ Not submitted</div>
+            <div style="font-size:14px;color:#666;">No ${label} checklist was signed off today.</div>
+            ${penaltyNote ? `<div style="font-size:14px;color:#c04020;margin-top:6px;">${penaltyNote}</div>` : ''}
           </td></tr>
         </table>
       </td></tr>`;
@@ -5025,7 +5167,7 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
   const closingCalc = calcChecklistCompletion('manager_closing', closingItems);
 
   const openingHtml = openingRow
-    ? submittedSection('Manager Opening', '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨')
+    ? submittedSection('Manager Opening', '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨', walkthroughBadge())
     : missingSection('Manager Opening', '#9FE1CB', '#0F6E56', openingPenaltyNote);
   const closingHtml = submittedSection('Manager Closing', '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨');
 
@@ -5063,19 +5205,13 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;">
 
-  <tr><td style="background:#174854;padding:28px 32px;text-align:center;">
-    <div style="font-size:11px;letter-spacing:0.18em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:6px;">Rally Social Club</div>
-    <div style="font-size:26px;font-weight:500;color:#fbf6ed;margin-bottom:4px;">Daily Checklist Report</div>
-    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${dayName}</div>
+  <tr><td style="background:#cee4cf;padding:16px 32px;text-align:center;">
+    <div style="font-size:10px;letter-spacing:0.18em;color:rgba(23,72,84,0.55);text-transform:uppercase;margin-bottom:4px;">Rally Social Club</div>
+    <div style="font-size:18px;font-weight:600;color:#174854;margin-bottom:2px;">Daily Checklist Report</div>
+    <div style="font-size:12px;color:rgba(23,72,84,0.65);">${dayName}</div>
   </td></tr>
   ${celebrationBanner}
-  <tr><td style="background:#f0e9da;padding:18px 32px;border-bottom:1px solid #e0d8cc;">
-    <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      ${statCell('Opening', openingCalc ? openingCalc.pct+'%' : '0%', !openingCalc)}
-      ${statCell('Closing', closingCalc.pct+'%', false)}
-      ${streakStatCell()}
-    </tr></table>
-  </td></tr>
+  ${streakHero()}
 
   ${openingHtml}
   <tr><td style="padding:0 32px;"><div style="border-top:1px solid #e8e0d4;"></div></td></tr>
@@ -5094,9 +5230,12 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
 
 async function sendDailyChecklistReport() {
   const dateStr = getTodayStr();
-  const [openingRow, closingRow] = await Promise.all([
+  const prevDateObj = new Date(dateStr + 'T12:00:00'); prevDateObj.setDate(prevDateObj.getDate() - 1);
+  const prevDateStr = prevDateObj.toISOString().slice(0, 10);
+  const [openingRow, closingRow, walkthroughScore] = await Promise.all([
     fetchSignedOffChecklistRow('manager_opening', dateStr),
     fetchSignedOffChecklistRow('manager_closing', dateStr),
+    fetchLatestManagerScore(prevDateStr),
   ]);
   if (!closingRow) {
     console.warn('Daily checklist report: closing row not found right after sign-off — skipping.');
@@ -5131,7 +5270,7 @@ async function sendDailyChecklistReport() {
       return;
     }
     const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
-    const html = buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo);
+    const html = buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo, walkthroughScore);
     await emailjs.send(CL_REPORT_SERVICE_ID, CL_REPORT_TEMPLATE_ID, {
       subject: `Daily Checklist Report - ${dateStr}`,
       message: html,
@@ -5411,8 +5550,11 @@ async function signOffChecklist() {
     const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
     if(!confirm(msg)) return;
     await saveClProgress(true, extraFields);
-    sendDailyChecklistReport().catch(e => console.warn('Daily checklist report failed', e));
     showToast('Checklist signed off! ✅');
+    // Awaited (not fire-and-forget) — a manager closing the tab or
+    // backgrounding the app right after tapping Sign Off would otherwise
+    // silently kill the report mid-flight with no error shown anywhere.
+    try { await sendDailyChecklistReport(); } catch(e) { console.warn('Daily checklist report failed', e); }
     currentChecklistKey = null; clState = {};
     if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
       showScreen('s-mgr');
