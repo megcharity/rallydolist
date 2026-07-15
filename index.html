@@ -2025,6 +2025,29 @@ async function srSendEmail(dateOverride) {
     }
   }
 
+  // Incidents — flagged styling (red accent) so they can't be missed while
+  // skimming the report, unlike the routine green/gold programming blocks.
+  // Deliberately minimal: just the flag plus whatever the manager wrote in
+  // Additional Notes. Everything else (contact info, description, witness
+  // details, injury/police/medical specifics) stays in the app only — no
+  // reason to put a guest's phone number or a written incident narrative in
+  // a plaintext email that isn't access-controlled the way the app is.
+  const buildIncidentHtml = (pfx, i) => {
+    const loc = d[pfx+'_inc'+i+'_location'], desc = d[pfx+'_inc'+i+'_desc'];
+    if(!loc && !desc) return '';
+    const notes = d[pfx+'_inc'+i+'_notes'];
+    let h = `<div style="margin-bottom:10px;padding:12px;background:rgba(192,64,32,.06);border-left:3px solid #c04020;border-radius:0 6px 6px 0;">`;
+    h += `<div style="font-size:13px;font-weight:700;color:#c04020;margin-bottom:4px;">🚨 Incident reported</div>`;
+    h += `<div style="font-size:12px;color:#555;">${notes || 'See full details in the app.'}</div>`;
+    return h + `</div>`;
+  };
+  let amIncidents = '';
+  let pmIncidents = '';
+  for(let i=1;i<=5;i++) {
+    amIncidents += buildIncidentHtml('am', i);
+    pmIncidents += buildIncidentHtml('pm', i);
+  }
+
   const am86 = [d.am_eighty_food&&'Food: '+d.am_eighty_food, d.am_eighty_bar&&'Bar: '+d.am_eighty_bar].filter(Boolean).join(' · ');
   const pm86 = [d.pm_eighty_food&&'Food: '+d.pm_eighty_food, d.pm_eighty_bar&&'Bar: '+d.pm_eighty_bar].filter(Boolean).join(' · ');
 
@@ -2098,6 +2121,7 @@ async function srSendEmail(dateOverride) {
       <tr><td style="border-left:3px solid #9FE1CB;padding-left:14px;padding-bottom:20px;">
         <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#0F6E56;margin-bottom:2px;">AM Shift</div>
         <div style="font-size:16px;font-weight:500;color:#174854;margin-bottom:16px;">${val(d.am_manager_name)||'—'} &nbsp;·&nbsp; ${val(d.am_shift_start)||''} – ${val(d.am_shift_end)||''}</div>
+        ${amIncidents ? '<div style="margin-bottom:14px;">'+amIncidents+'</div>' : ''}
         <table cellpadding="0" cellspacing="0">
           ${row('Court reservations', val(d.am_court_res))}
           ${row('Peak times', val(d.am_peak_times))}
@@ -2122,6 +2146,7 @@ async function srSendEmail(dateOverride) {
       <tr><td style="border-left:3px solid #FAC775;padding-left:14px;">
         <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#854F0B;margin-bottom:2px;">PM Shift</div>
         <div style="font-size:16px;font-weight:500;color:#174854;margin-bottom:16px;">${val(d.pm_manager_name)||'—'} &nbsp;·&nbsp; ${val(d.pm_shift_start)||''} – ${val(d.pm_shift_end)||''}</div>
+        ${pmIncidents ? '<div style="margin-bottom:14px;">'+pmIncidents+'</div>' : ''}
 
         <table cellpadding="0" cellspacing="0">
           ${row('Court reservations', val(d.pm_court_res))}
@@ -2477,8 +2502,10 @@ function srProgramSection(pfx, locked) {
   var hasEvents = srGet(pfx+'_prog_events') === 'true';
   var hasActiv  = srGet(pfx+'_prog_activ')  === 'true';
   var hasPickle = srGet(pfx+'_prog_pickle')  === 'true';
+  var hasIncidents = srGet(pfx+'_prog_incidents') === 'true';
   var numEvents = parseInt(srGet(pfx+'_prog_event_count')) || 0;
   var numActiv  = parseInt(srGet(pfx+'_prog_activ_count')) || 0;
+  var numIncidents = parseInt(srGet(pfx+'_prog_incidents_count')) || 0;
 
   var html = '';
 
@@ -2488,6 +2515,7 @@ function srProgramSection(pfx, locked) {
     html += srProgToggle(pfx,'events','🎉 Events',hasEvents);
     html += srProgToggle(pfx,'activ','⚡ Activations',hasActiv);
     html += srProgToggle(pfx,'pickle','🏓 Pickleball Programming',hasPickle);
+    html += srProgToggle(pfx,'incidents','🚨 Incidents',hasIncidents);
     html += '</div>';
   }
 
@@ -2549,7 +2577,26 @@ function srProgramSection(pfx, locked) {
     }
   }
 
-  if(!hasEvents && !hasActiv && !hasPickle && locked) {
+  // Incidents
+  if(hasIncidents) {
+    if(!locked) {
+      html += '<div class="sr-prog-block">';
+      html += '<div class="sr-label" style="margin-top:0;">How many incidents?&nbsp;';
+      html += '<select class="sr-inp" style="width:80px;display:inline-block;" onchange="srSetCount(\''+pfx+'_prog_incidents_count\',this.value)">';
+      [0,1,2,3,4,5].forEach(function(n) {
+        html += '<option value="'+n+'"'+(numIncidents===n?' selected':'')+'>'+n+'</option>';
+      });
+      html += '</select></div>';
+      for(var i=1;i<=numIncidents;i++) html += srIncidentBlock(pfx,i,false);
+      html += '<button onclick="srSave(false);showToast(\'Incidents saved ✓\')" style="margin-top:10px;padding:6px 16px;border:1.5px solid rgba(192,64,32,.3);border-radius:7px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#c04020;">Save Incidents ✓</button>';
+      html += '</div>';
+    } else {
+      html += '<div class="sr-label" style="color:#c04020;">🚨 Incidents ('+numIncidents+')</div>';
+      for(var i=1;i<=numIncidents;i++) html += srIncidentBlock(pfx,i,true);
+    }
+  }
+
+  if(!hasEvents && !hasActiv && !hasPickle && !hasIncidents && locked) {
     html = '<div style="color:rgba(23,72,84,.35);font-size:13px;">None</div>';
   }
 
@@ -2578,6 +2625,115 @@ function srPickleBlock(pfx, i, locked) {
     html += '</div>';
   }
   return html;
+}
+
+// Shows/hides a conditional detail field on an incident card (e.g. injury
+// description only matters if "Was anyone injured?" is Yes) without
+// re-rendering the whole block, which would lose focus/cursor position in
+// whatever field the manager is currently typing in.
+function srToggleIncDetail(pfx, i, field, show) {
+  var el = document.getElementById(pfx+'-inc'+i+'-'+field+'-detail');
+  if(el) el.style.display = show ? 'block' : 'none';
+}
+
+function srIncidentBlock(pfx, i, locked) {
+  var name   = srGet(pfx+'_inc'+i+'_name');
+  var phone  = srGet(pfx+'_inc'+i+'_phone');
+  var email  = srGet(pfx+'_inc'+i+'_email');
+  var date   = srGet(pfx+'_inc'+i+'_date');
+  var time   = srGet(pfx+'_inc'+i+'_time');
+  var loc    = srGet(pfx+'_inc'+i+'_location');
+  var desc   = srGet(pfx+'_inc'+i+'_desc');
+  var inj    = srGet(pfx+'_inc'+i+'_injuries');
+  var injDesc = srGet(pfx+'_inc'+i+'_injuries_desc');
+  var wit    = srGet(pfx+'_inc'+i+'_witnesses');
+  var witInfo = srGet(pfx+'_inc'+i+'_witnesses_info');
+  var police = srGet(pfx+'_inc'+i+'_police');
+  var policeReport = srGet(pfx+'_inc'+i+'_police_report');
+  var medical = srGet(pfx+'_inc'+i+'_medical');
+  var medicalLoc = srGet(pfx+'_inc'+i+'_medical_loc');
+  var notes  = srGet(pfx+'_inc'+i+'_notes');
+
+  if(locked) {
+    if(!name && !loc && !desc) return '';
+    var h = '<div style="margin:6px 0 10px;padding:12px;background:rgba(192,64,32,.05);border-left:3px solid #c04020;border-radius:0 8px 8px 0;">';
+    h += '<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#c04020;">🚨 Incident '+i+(name?' — '+name:'')+(loc?' · '+loc:'')+'</div>';
+    if(date || time) h += '<div style="font-size:12px;color:rgba(23,72,84,.6);margin-bottom:4px;">'+[date,time].filter(Boolean).join(' at ')+'</div>';
+    if(desc) h += '<div style="font-size:12px;color:#555;margin-bottom:4px;">'+desc+'</div>';
+    if(inj) h += '<div style="font-size:12px;color:#c04020;margin-bottom:2px;"><strong>Injuries:</strong> '+inj+(injDesc?' — '+injDesc:'')+'</div>';
+    if(wit) h += '<div style="font-size:12px;color:#555;margin-bottom:2px;"><strong>Witnesses:</strong> '+wit+(witInfo?' — '+witInfo:'')+'</div>';
+    var pmParts = [];
+    if(police) pmParts.push('Police notified: '+police+(policeReport?' (report filed: '+policeReport+')':''));
+    if(medical) pmParts.push('Medical treatment: '+medical+(medicalLoc?' — '+medicalLoc:''));
+    if(pmParts.length) h += '<div style="font-size:12px;color:#555;margin-bottom:2px;">'+pmParts.join(' &nbsp;·&nbsp; ')+'</div>';
+    if(notes) h += '<div style="font-size:12px;color:#555;margin-top:4px;"><strong>Notes:</strong> '+notes+'</div>';
+    return h + '</div>';
+  }
+
+  var injShow = inj === 'Yes';
+  var witShow = wit === 'Yes';
+  var medShow = medical === 'Yes';
+
+  var h = '<div class="sr-event-block" style="margin-top:10px;border-color:rgba(192,64,32,.25);">';
+  h += '<div class="sr-event-title" style="color:#c04020;">🚨 INCIDENT '+i+'</div>';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:8px 0 4px;">Person Involved</div>';
+  h += '<div class="sr-row2">';
+  h += '<div><div class="sr-label" style="margin-top:0;">Full Name</div><input class="sr-inp" placeholder="Full name" value="'+name.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_inc'+i+'_name\',this.value)"></div>';
+  h += '<div><div class="sr-label" style="margin-top:0;">Phone</div><input class="sr-inp" placeholder="Phone" value="'+phone.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_inc'+i+'_phone\',this.value)"></div>';
+  h += '</div>';
+  h += '<div class="sr-label">Email</div><input class="sr-inp" type="email" placeholder="Email" value="'+email.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_inc'+i+'_email\',this.value)">';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:12px 0 4px;">The Incident</div>';
+  h += '<div class="sr-row2">';
+  h += '<div><div class="sr-label" style="margin-top:0;">Date</div><input class="sr-inp" type="date" value="'+date+'" onchange="srSet(\''+pfx+'_inc'+i+'_date\',this.value)"></div>';
+  h += '<div><div class="sr-label" style="margin-top:0;">Time</div><input class="sr-inp" type="time" value="'+time+'" onchange="srSet(\''+pfx+'_inc'+i+'_time\',this.value)"></div>';
+  h += '</div>';
+  h += '<div class="sr-label">Location</div><input class="sr-inp" placeholder="Where did it happen?" value="'+loc.replace(/"/g,'&quot;')+'" oninput="srSet(\''+pfx+'_inc'+i+'_location\',this.value)">';
+  h += '<div class="sr-label">Describe the Incident</div><textarea class="sr-ta" rows="3" placeholder="What happened…" oninput="srSet(\''+pfx+'_inc'+i+'_desc\',this.value)">'+desc+'</textarea>';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:12px 0 4px;">Injuries</div>';
+  h += '<div class="sr-label" style="margin-top:0;">Was anyone injured?</div>';
+  h += '<select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_injuries\',this.value);srToggleIncDetail(\''+pfx+'\','+i+',\'injuries\',this.value===\'Yes\')">';
+  h += '<option value="">-</option><option'+(inj==='Yes'?' selected':'')+'>Yes</option><option'+(inj==='No'?' selected':'')+'>No</option>';
+  h += '</select>';
+  h += '<div id="'+pfx+'-inc'+i+'-injuries-detail" style="display:'+(injShow?'block':'none')+';margin-top:6px;">';
+  h += '<div class="sr-label" style="margin-top:0;">Describe the injuries</div><textarea class="sr-ta" rows="2" placeholder="Injury details…" oninput="srSet(\''+pfx+'_inc'+i+'_injuries_desc\',this.value)">'+injDesc+'</textarea>';
+  h += '</div>';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:12px 0 4px;">Witnesses</div>';
+  h += '<div class="sr-label" style="margin-top:0;">Were there witnesses?</div>';
+  h += '<select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_witnesses\',this.value);srToggleIncDetail(\''+pfx+'\','+i+',\'witnesses\',this.value===\'Yes\')">';
+  h += '<option value="">-</option><option'+(wit==='Yes'?' selected':'')+'>Yes</option><option'+(wit==='No'?' selected':'')+'>No</option>';
+  h += '</select>';
+  h += '<div id="'+pfx+'-inc'+i+'-witnesses-detail" style="display:'+(witShow?'block':'none')+';margin-top:6px;">';
+  h += '<div class="sr-label" style="margin-top:0;">Witness names &amp; contact info</div><textarea class="sr-ta" rows="2" placeholder="Names and contact info…" oninput="srSet(\''+pfx+'_inc'+i+'_witnesses_info\',this.value)">'+witInfo+'</textarea>';
+  h += '</div>';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:12px 0 4px;">Police / Medical</div>';
+  h += '<div class="sr-row2">';
+  h += '<div><div class="sr-label" style="margin-top:0;">Police Notified?</div><select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_police\',this.value)"><option value="">-</option><option'+(police==='Yes'?' selected':'')+'>Yes</option><option'+(police==='No'?' selected':'')+'>No</option></select></div>';
+  h += '<div><div class="sr-label" style="margin-top:0;">Report Filed?</div><select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_police_report\',this.value)"><option value="">-</option><option'+(policeReport==='Yes'?' selected':'')+'>Yes</option><option'+(policeReport==='No'?' selected':'')+'>No</option></select></div>';
+  h += '</div>';
+  h += '<div class="sr-label">Medical Treatment Provided?</div>';
+  h += '<select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_medical\',this.value);srToggleIncDetail(\''+pfx+'\','+i+',\'medical\',this.value===\'Yes\')">';
+  h += '<option value="">-</option>';
+  ['Yes','No','Refused'].forEach(function(v){ h += '<option'+(medical===v?' selected':'')+'>'+v+'</option>'; });
+  h += '</select>';
+  h += '<div id="'+pfx+'-inc'+i+'-medical-detail" style="display:'+(medShow?'block':'none')+';margin-top:6px;">';
+  h += '<div class="sr-label" style="margin-top:0;">Where was treatment provided?</div>';
+  h += '<select class="sr-inp" onchange="srSet(\''+pfx+'_inc'+i+'_medical_loc\',this.value)">';
+  h += '<option value="">-</option>';
+  ['On site','Hospital','Other'].forEach(function(v){ h += '<option'+(medicalLoc===v?' selected':'')+'>'+v+'</option>'; });
+  h += '</select>';
+  h += '</div>';
+
+  h += '<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:12px 0 4px;">Additional Notes</div>';
+  h += '<div class="sr-label" style="margin-top:0;">Anything else? (insurance info, follow-up needed, etc.)</div>';
+  h += '<textarea class="sr-ta" rows="2" placeholder="Additional notes…" oninput="srSet(\''+pfx+'_inc'+i+'_notes\',this.value)">'+notes+'</textarea>';
+
+  h += '</div>';
+  return h;
 }
 
 function srProgToggle(pfx, type, label, active) {
