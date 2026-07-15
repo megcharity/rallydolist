@@ -413,6 +413,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-item.item-done{opacity:.55;background:rgba(78,98,44,.04);border-color:rgba(78,98,44,.3);}
 .cl-item.item-flagged{border-color:rgba(248,154,28,.5);background:rgba(248,154,28,.03);}
 .cl-item.item-poor{border-color:rgba(245,134,100,.6);background:rgba(245,134,100,.04);}
+.cl-item.item-na{opacity:.65;background:rgba(138,123,92,.05);border-color:rgba(138,123,92,.35);border-style:dashed;}
+.cl-item.item-na .cl-item-text{color:rgba(23,72,84,.45);font-style:italic;}
 .cl-item-row{display:flex;align-items:flex-start;gap:10px;cursor:pointer;}
 .cl-item-check{width:22px;height:22px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .2s;}
 .cl-item.item-done .cl-item-check{background:var(--olive);border-color:var(--olive);}
@@ -4520,7 +4522,7 @@ async function loadClProgressCache() {
       let done = 0;
       items.forEach(i => {
         const s = r.items[i.id] || {};
-        if(i.type === 'check' && s.done) done++;
+        if(i.type === 'check' && (s.done || s.na)) done++;
         if(i.type === 'rate' && s.rating) done++;
       });
       clProgressCache[r.shift] = {
@@ -4694,7 +4696,7 @@ function renderChecklist(signedOff = false) {
   let html = '';
   Object.entries(sections).forEach(([sec, secItems]) => {
     const secId = sec.replace(/[^a-z0-9]/gi,'_');
-    const allDone = secItems.every(i => i.type === 'check' ? !!(clState[i.id]||{}).done : !!(clState[i.id]||{}).rating);
+    const allDone = secItems.every(i => i.type === 'check' ? !!((clState[i.id]||{}).done || (clState[i.id]||{}).na) : !!(clState[i.id]||{}).rating);
     html += `<div class="cl-section-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <button onclick="checkAllSection('${secId}')" style="flex-shrink:0;padding:4px 12px;border-radius:6px;border:1.5px solid ${allDone?'var(--olive)':'rgba(23,72,84,.2)'};background:${allDone?'rgba(78,98,44,.1)':'#fff'};font-size:11px;font-weight:700;color:${allDone?'var(--olive)':'rgba(23,72,84,.45)'};cursor:pointer;font-family:inherit;transition:all .15s;" id="cl-checkall-${secId}">${allDone?'✓ All Done':'Check All'}</button>
       <span>${sec} <span class="cl-section-badge">${secItems.length}</span></span>
@@ -4719,20 +4721,30 @@ function renderChecklist(signedOff = false) {
 
 function renderClItem(item) {
   const s = clState[item.id] || {};
+  const isNA = item.type === 'check' ? !!s.na : false;
   const isDone = item.type === 'check' ? !!s.done : s.rating === 'good';
   const isFlagged = s.rating === 'needs';
-  const cls = isDone ? 'item-done' : isFlagged ? 'item-flagged' : '';
+  const cls = isDone ? 'item-done' : isNA ? 'item-na' : isFlagged ? 'item-flagged' : '';
   const showDetail = s.rating === 'needs' || s.rating === 'poor';
 
   if(item.type === 'check') {
     const isWeekly = currentChecklistKey && currentChecklistKey.includes('weekly');
     return `<div class="cl-item ${cls}" id="clitem-${item.id}">
-      <button class="cl-item-row" onclick="toggleClItem('${item.id}')" style="width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:0;font:inherit;display:flex;align-items:flex-start;gap:10px;">
-        <div class="cl-item-check"><span class="cl-item-tick">✓</span></div>
-        <div class="cl-item-text">${item.text}</div>
-        ${item.link ? `<a href="${item.link}" target="_blank" class="cl-ref-link" onclick="event.stopPropagation()">Ref ↗</a>` : ''}
-      </button>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <button class="cl-item-row" onclick="toggleClItem('${item.id}')" style="flex:1;text-align:left;background:none;border:none;cursor:pointer;padding:0;font:inherit;display:flex;align-items:flex-start;gap:10px;">
+          <div class="cl-item-check"><span class="cl-item-tick">✓</span></div>
+          <div class="cl-item-text">${item.text}</div>
+          ${item.link ? `<a href="${item.link}" target="_blank" class="cl-ref-link" onclick="event.stopPropagation()">Ref ↗</a>` : ''}
+        </button>
+        <button onclick="toggleClNA('${item.id}')" style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid ${isNA?'#8a7b5c':'rgba(23,72,84,.2)'};background:${isNA?'rgba(138,123,92,.15)':'#fff'};cursor:pointer;font-size:11px;font-weight:700;color:${isNA?'#8a7b5c':'rgba(23,72,84,.45)'};white-space:nowrap;font-family:inherit;">
+          ${isNA?'N/A ✓':'N/A'}
+        </button>
+      </div>
       ${isWeekly ? `<button onclick="createTaskFromChecklist('${item.id}')" style="margin-top:6px;margin-left:36px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(23,72,84,.2);background:#fff;font-size:12px;font-weight:600;color:rgba(23,72,84,.5);cursor:pointer;font-family:inherit;">+ Create Task</button>` : ''}
+      <div class="cl-detail ${isNA?'open':''}" id="cldetail-${item.id}">
+        <label>Why doesn't this apply?</label>
+        <textarea placeholder="e.g. no team to review lineup with today..." onchange="saveClNote('${item.id}','naNote',this.value)">${s.naNote||''}</textarea>
+      </div>
     </div>`;
   }
 
@@ -4762,6 +4774,21 @@ function renderClItem(item) {
 function toggleClItem(id) {
   if(!clState[id]) clState[id] = {};
   clState[id].done = !clState[id].done;
+  if(clState[id].done) clState[id].na = false;
+  refreshClItem(id);
+  updateClProgress();
+  autoSaveCl();
+}
+
+// N/A lets a manager mark a check-type item as not applicable today (e.g.
+// "review lineup with the team" when no team is on shift to review with),
+// with a required-feeling note explaining why. Counts as complete for
+// completion % / streak purposes — an N/A day shouldn't cost the streak —
+// but stays visually distinct (dashed, muted) from a genuinely completed item.
+function toggleClNA(id) {
+  if(!clState[id]) clState[id] = {};
+  clState[id].na = !clState[id].na;
+  if(clState[id].na) clState[id].done = false;
   refreshClItem(id);
   updateClProgress();
   autoSaveCl();
@@ -4780,11 +4807,12 @@ function checkAllSection(secId) {
   if(!secItems.length) return;
 
   // If all already done, uncheck all; otherwise check all
-  const allDone = secItems.every(i => i.type === 'check' ? !!(clState[i.id]||{}).done : !!(clState[i.id]||{}).rating);
+  const allDone = secItems.every(i => i.type === 'check' ? !!((clState[i.id]||{}).done || (clState[i.id]||{}).na) : !!(clState[i.id]||{}).rating);
   secItems.forEach(item => {
     if(!clState[item.id]) clState[item.id] = {};
     if(item.type === 'check') {
       clState[item.id].done = !allDone;
+      if(clState[item.id].done) clState[item.id].na = false;
     } else {
       clState[item.id].rating = allDone ? '' : 'good';
     }
@@ -4831,7 +4859,7 @@ function updateClProgress() {
   let done = 0;
   items.forEach(i => {
     const s = clState[i.id] || {};
-    if(i.type === 'check' && s.done) done++;
+    if(i.type === 'check' && (s.done || s.na)) done++;
     if(i.type === 'rate' && s.rating) done++;
   });
   const pct = items.length ? Math.round(done/items.length*100) : 0;
@@ -4854,7 +4882,7 @@ async function saveClProgress(signedOff = false, extraFields = {}) {
     let done = 0;
     items.forEach(i => {
       const s = clState[i.id] || {};
-      if(i.type === 'check' && s.done) done++;
+      if(i.type === 'check' && (s.done || s.na)) done++;
       if(i.type === 'rate' && s.rating) done++;
     });
     clProgressCache[currentChecklistKey] = { done, total: items.length, pct: items.length ? Math.round(done/items.length*100) : 0 };
@@ -4938,18 +4966,23 @@ function calcChecklistCompletion(shiftKey, state) {
   const items = ALL_CHECKLISTS[shiftKey] || [];
   let done = 0;
   const flagged = [];
+  const naNotes = [];
   items.forEach(item => {
     const s = state[item.id] || {};
     if (item.type === 'check') {
-      if (s.done) done++;
+      // N/A counts as complete (a legitimately inapplicable item shouldn't
+      // read as incomplete or cost the streak) but is tracked separately so
+      // it can still be surfaced as context, not silently hidden.
+      if (s.done || s.na) done++;
       else flagged.push({ section: item.section, text: item.text });
+      if (s.na) naNotes.push({ section: item.section, text: item.text, note: s.naNote || '' });
     } else if (item.type === 'rate') {
       if (s.rating) done++;
       if (s.rating === 'needs') flagged.push({ section: item.section, text: item.text, detail: s.issue || '' });
     }
   });
   const total = items.length;
-  return { total, done, pct: total ? Math.round(done/total*100) : 0, flagged };
+  return { total, done, pct: total ? Math.round(done/total*100) : 0, flagged, naNotes };
 }
 
 // Fetches the most recent SIGNED-OFF row for a given shift+date, regardless
@@ -5027,17 +5060,19 @@ async function loadPastChecklistsForDate(dateStr) {
 
 function renderReadOnlyClItem(item, state) {
   const s = state[item.id] || {};
+  const isNA = item.type === 'check' ? !!s.na : false;
   const isDone = item.type === 'check' ? !!s.done : s.rating === 'good';
   const isFlagged = s.rating === 'needs';
   const badge = item.type === 'check'
-    ? (isDone ? `<span style="color:var(--olive);">✓</span>` : `<span style="color:rgba(23,72,84,.25);">○</span>`)
+    ? (isDone ? `<span style="color:var(--olive);">✓</span>` : isNA ? `<span style="color:#8a7b5c;">N/A</span>` : `<span style="color:rgba(23,72,84,.25);">○</span>`)
     : (isDone ? `<span style="color:var(--olive);">✓ Good</span>` : isFlagged ? `<span style="color:#c87a00;">⚠️ Needs Work</span>` : `<span style="color:rgba(23,72,84,.25);">—</span>`);
   return `<div class="cl-item" style="padding:8px 0;border-bottom:1px solid rgba(23,72,84,.06);">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-      <div style="font-size:13px;color:${isDone?'rgba(23,72,84,.4)':'var(--teal)'};${isDone && item.type==='check'?'text-decoration:line-through;':''}">${item.text}</div>
+      <div style="font-size:13px;color:${isDone||isNA?'rgba(23,72,84,.4)':'var(--teal)'};${(isDone||isNA) && item.type==='check'?'text-decoration:line-through;':''}${isNA?'font-style:italic;':''}">${item.text}</div>
       <div style="font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;">${badge}</div>
     </div>
     ${s.issue ? `<div style="font-size:12px;color:#c87a00;font-style:italic;margin-top:3px;">"${s.issue}"</div>` : ''}
+    ${s.naNote ? `<div style="font-size:12px;color:#8a7b5c;font-style:italic;margin-top:3px;">"${s.naNote}"</div>` : ''}
   </div>`;
 }
 
@@ -5109,6 +5144,12 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
       ${flagged.map(f => `<div style="font-size:14px;color:#555;margin-bottom:4px;">⚠️ <strong>${f.section}</strong> — ${f.text}${f.detail ? ' <span style="color:#888;">— '+f.detail+'</span>' : ''}</div>`).join('')}
     </div>` : `<div style="font-size:14px;color:#4e622c;margin-top:8px;">✅ Nothing flagged</div>`;
 
+  const naList = naNotes => naNotes.length ? `
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#8a7b5c;margin-bottom:6px;">Marked N/A (${naNotes.length})</div>
+      ${naNotes.map(n => `<div style="font-size:14px;color:#555;margin-bottom:4px;">➖ <strong>${n.section}</strong> — ${n.text}${n.note ? ` <span style="color:#888;font-style:italic;">— "${n.note}"</span>` : ''}</div>`).join('')}
+    </div>` : '';
+
   // Grade badge for the Manager Opening section — shows the Scorecard grade
   // recorded THIS MORNING during the Arrival Walkthrough, which grades LAST
   // NIGHT's close (not tonight's, which hasn't happened yet at send time).
@@ -5135,6 +5176,7 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
             <div style="font-size:18px;font-weight:500;color:#174854;margin-bottom:5px;">${row.manager_name || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
             <div style="font-size:14px;color:#666;">${calc.pct}% complete (${calc.done}/${calc.total} items)${isSectionPerfect ? ' '+perfectEmoji : ''}</div>
             ${flaggedList(calc.flagged)}
+            ${naList(calc.naNotes)}
             ${extraHtml || ''}
           </td></tr>
         </table>
@@ -5405,7 +5447,7 @@ async function signOffChecklist() {
   let done = 0;
   items.forEach(i => {
     const s = clState[i.id] || {};
-    if(i.type==='check'&&s.done) done++;
+    if(i.type==='check'&&(s.done||s.na)) done++;
     if(i.type==='rate'&&s.rating) done++;
   });
   const incomplete = items.length - done;
