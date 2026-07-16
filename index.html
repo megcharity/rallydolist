@@ -4411,6 +4411,12 @@ const ALL_CHECKLISTS = {
 
 let currentPosition = null;
 let currentChecklistKey = null;
+// Set only when filling out a missed checklist for a past date (currently
+// just yesterday's Manager Closing, via the Past Checklists viewer) — null
+// means "today", the normal case. Read through clTargetDate(), never
+// directly, so every normal flow keeps working exactly as before.
+let currentClDate = null;
+function clTargetDate() { return currentClDate || getTodayStr(); }
 let clState = {};  // {itemId: {done, rating, issue, fixed, fixNote}}
 let clProgressCache = {}; // {key: {done, total, pct}} — loaded from Supabase for hub display
 let clLogs = [];
@@ -4780,15 +4786,15 @@ async function startChecklist(key) {
   renderChecklist();
   showScreen('s-checklist');
 
-  // Fetch today's most recent record — signed off OR in progress
+  // Fetch the target date's most recent record — signed off OR in progress.
+  // clTargetDate() is today unless startBackfillChecklist() set currentClDate.
   try {
     const u = users.find(x => x.id === currentUser);
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
     const SUPA = window.RALLY_SUPABASE_URL;
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
 
-    // Fetch most recent record today (any status)
-    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&order=id.desc&limit=1`;
+    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${clTargetDate()}&order=id.desc&limit=1`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
 
     const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
@@ -4800,7 +4806,7 @@ async function startChecklist(key) {
       renderChecklist(isSignedOff);
       updateClProgress();
       if(isSignedOff) {
-        showToast('Already signed off today ✓');
+        showToast('Already signed off ✓');
       } else {
         showToast('Progress restored ✓');
       }
@@ -4809,9 +4815,28 @@ async function startChecklist(key) {
 
   // Manager Opening closes for the day at 11am if not yet signed off — this
   // is what makes "missed" unambiguous for the closing-time penalty flow.
-  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 11) {
+  // Only applies to today's Opening — a backfilled checklist (currentClDate
+  // set) is never manager_opening today, so this never fires for one.
+  if(key === 'manager_opening' && !isSignedOff && clTargetDate() === getTodayStr() && new Date().getHours() >= 11) {
     lockOpeningChecklist();
   }
+}
+
+// Entry point for filling out a missed Closing checklist from the Past
+// Checklists viewer — the one gap the existing missed-shift penalty flows
+// don't cover (a manager who never touched the checklist at all, so
+// neither "did opening happen" nor "did closing happen" ever got asked).
+// Hard-capped to exactly yesterday: any further back and the operational
+// value of a same-week backfill drops fast while the risk of stale/
+// fabricated-feeling data goes up, so the UI only ever offers this button
+// for yesterday — this check is a second, defensive gate in case that
+// ever changes without updating both places.
+function startBackfillChecklist(shiftKey, dateStr) {
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yStr = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  if(dateStr !== yStr) { showToast('Can only fill out yesterday’s missed checklist'); return; }
+  currentClDate = dateStr;
+  startChecklist(shiftKey);
 }
 
 function lockOpeningChecklist() {
@@ -4853,7 +4878,8 @@ function renderChecklist(signedOff = false) {
   };
   const u = users.find(x => x.id === currentUser);
   document.getElementById('cl-screen-title').textContent = labels[key] || 'Checklist';
-  document.getElementById('cl-screen-user').textContent = u ? u.name : '';
+  const backfillNote = currentClDate ? ` · Backfilling ${currentClDate}` : '';
+  document.getElementById('cl-screen-user').textContent = (u ? u.name : '') + backfillNote;
 
   // Group by section
   const sections = {};
@@ -5068,14 +5094,14 @@ async function saveClProgress(signedOff = false, extraFields = {}) {
   const payload = {
     shift:        currentChecklistKey,
     manager_name: personName,
-    date:         getTodayStr(),
+    date:         clTargetDate(),
     items:        { ...clState, ...extraFields },
     signed_off_at: signedOff ? new Date().toISOString() : null
   };
   try {
     // Try to update existing record for this shift+date+person first
     const existing = await fetch(
-      `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
+      `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${clTargetDate()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
       { headers: {
         'apikey': window.RALLY_SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`
@@ -5223,8 +5249,8 @@ async function loadPastChecklistsForDate(dateStr) {
   ]);
 
   results.innerHTML =
-    renderReadOnlyChecklistSection('Manager Opening', 'manager_opening', openingRow, '#9FE1CB', '#0F6E56') +
-    renderReadOnlyChecklistSection('Manager Closing', 'manager_closing', closingRow, '#FAC775', '#854F0B');
+    renderReadOnlyChecklistSection('Manager Opening', 'manager_opening', openingRow, '#9FE1CB', '#0F6E56', dateStr) +
+    renderReadOnlyChecklistSection('Manager Closing', 'manager_closing', closingRow, '#FAC775', '#854F0B', dateStr);
 }
 
 function renderReadOnlyClItem(item, state) {
@@ -5245,11 +5271,19 @@ function renderReadOnlyClItem(item, state) {
   </div>`;
 }
 
-function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor) {
+function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor, dateStr) {
   if(!row) {
+    // Only Manager Closing can be backfilled, and only for exactly
+    // yesterday — a manager forgetting entirely is the one gap the missed-
+    // opening/closing penalty flows don't already cover (those only fire
+    // when the *other* shift is signed off and notices the gap).
+    const y = new Date(); y.setDate(y.getDate()-1);
+    const yStr = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+    const canBackfill = shiftKey === 'manager_closing' && dateStr === yStr;
     return `<div style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;padding:16px;margin-bottom:16px;border-left:4px solid ${accent};">
       <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
-      <div style="font-size:14px;color:#c04020;font-weight:600;">⚠️ Not submitted that day</div>
+      <div style="font-size:14px;color:#c04020;font-weight:600;margin-bottom:${canBackfill?'10px':'0'};">⚠️ Not submitted that day</div>
+      ${canBackfill ? `<button onclick="startBackfillChecklist('manager_closing','${dateStr}')" style="padding:8px 16px;border:1.5px solid #c04020;border-radius:7px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#c04020;">Fill Out Closing Checklist →</button>` : ''}
     </div>`;
   }
   const calc = calcChecklistCompletion(shiftKey, row.items || {});
@@ -5665,7 +5699,7 @@ async function signOffChecklist() {
       if(!confirm(msg)) return;
       await saveClProgress(true, res.extraFields);
       showToast('Checklist signed off! ✅');
-      currentChecklistKey = null; clState = {};
+      currentChecklistKey = null; clState = {}; currentClDate = null;
       if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
         showScreen('s-mgr');
         showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5763,7 +5797,7 @@ async function signOffChecklist() {
     }).then(async result => {
       if(result === 'cancel') return;
       showToast('Checklist signed off! ✅');
-      currentChecklistKey = null; clState = {};
+      currentChecklistKey = null; clState = {}; currentClDate = null;
       if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
         showScreen('s-mgr');
         showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5772,12 +5806,14 @@ async function signOffChecklist() {
     return;
   }
 
-  // For manager closing — check whether Opening was signed off today; if not,
+  // For manager closing — check whether Opening was signed off for the
+  // target date (today, unless backfilling a missed past day); if not,
   // ask the closing manager who was supposed to open and apply a points
   // penalty (or let them mark it Skip/N/A for a legitimate no-opener day).
   // Gated strictly on the literal key so no other checklist type is affected.
   if(currentChecklistKey === 'manager_closing') {
-    const openingRow = await fetchSignedOffChecklistRow('manager_opening', getTodayStr());
+    const isBackfill = clTargetDate() !== getTodayStr();
+    const openingRow = await fetchSignedOffChecklistRow('manager_opening', clTargetDate());
     let extraFields = {};
 
     if(!openingRow) {
@@ -5789,13 +5825,20 @@ async function signOffChecklist() {
     const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
     if(!confirm(msg)) return;
     await saveClProgress(true, extraFields);
-    showToast('Checklist signed off! ✅');
-    // Awaited so the toast/navigation don't cut off the fetch(...,
-    // {keepalive:true}) send below — but keepalive means even if the
-    // manager closes the tab right after this resolves (or the resolve
-    // itself races a close), the browser still finishes delivering it.
-    try { await sendDailyChecklistReport(); } catch(e) { console.warn('Daily checklist report failed', e); }
-    currentChecklistKey = null; clState = {};
+    showToast(isBackfill ? `Checklist for ${clTargetDate()} signed off! ✅` : 'Checklist signed off! ✅');
+    // sendDailyChecklistReport() is hardcoded to "today" throughout (streak
+    // calc, which row it fetches) — running it here for a backfilled past
+    // date would send a report for the wrong day and could corrupt the
+    // streak. Skip it for backfills; the missed-day report already went out
+    // (or didn't) on its actual date, and today's report is unaffected.
+    if(!isBackfill) {
+      // Awaited so the toast/navigation don't cut off the fetch(...,
+      // {keepalive:true}) send below — but keepalive means even if the
+      // manager closes the tab right after this resolves (or the resolve
+      // itself races a close), the browser still finishes delivering it.
+      try { await sendDailyChecklistReport(); } catch(e) { console.warn('Daily checklist report failed', e); }
+    }
+    currentChecklistKey = null; clState = {}; currentClDate = null;
     if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
       showScreen('s-mgr');
       showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5807,7 +5850,7 @@ async function signOffChecklist() {
   if(!confirm(msg)) return;
   await saveClProgress(true);
   showToast('Checklist signed off! ✅');
-  currentChecklistKey = null; clState = {};
+  currentChecklistKey = null; clState = {}; currentClDate = null;
   if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
     showScreen('s-mgr');
     showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5816,7 +5859,7 @@ async function signOffChecklist() {
 
 function goBackToHub() {
   autoSaveCl();
-  currentChecklistKey = null;
+  currentChecklistKey = null; currentClDate = null;
   // Managers (no currentUser) came from s-mgr, associates from s-cl-hub
   if(currentRole === 'manager' && !currentUser) {
     showScreen('s-mgr');
