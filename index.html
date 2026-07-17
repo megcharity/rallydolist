@@ -4020,14 +4020,6 @@ const ALL_CHECKLISTS = {
 // ── MANAGER CLOSING (expanded from SOPs) ─────────────────────
 "manager_closing": [
 
-  {"id":"mc_arr_01","section":"When You Arrive","text":"Do a full venue cleanliness walkthrough","type":"check"},
-  {"id":"mc_arr_02","section":"When You Arrive","text":"Check paper goods par levels (toilet paper, hand towels, napkins, bar napkins, straws)","type":"check"},
-  {"id":"mc_arr_03","section":"When You Arrive","text":"Review lineup sheet","type":"check"},
-  {"id":"mc_arr_04","section":"When You Arrive","text":"Touch base with opening manager — get briefed on the day","type":"check"},
-  {"id":"mc_arr_05","section":"When You Arrive","text":"Review upcoming events for tonight","type":"check"},
-  {"id":"mc_arr_06","section":"When You Arrive","text":"Review lineup sheet and create floor plan for your shift","type":"check"},
-  {"id":"mc_arr_07","section":"When You Arrive","text":"Check host desk is organized and PC is on","type":"check"},
-
   {"id":"mc_wt_hdr","section":"Closing Walkthrough","text":"Walk through every area below and check each item","type":"check"},
 
   {"id":"mc_c1_01","section":"Court 1 & 2","text":"No food below drink rail","type":"check"},
@@ -4411,12 +4403,6 @@ const ALL_CHECKLISTS = {
 
 let currentPosition = null;
 let currentChecklistKey = null;
-// Set only when filling out a missed checklist for a past date (currently
-// just yesterday's Manager Closing, via the Past Checklists viewer) — null
-// means "today", the normal case. Read through clTargetDate(), never
-// directly, so every normal flow keeps working exactly as before.
-let currentClDate = null;
-function clTargetDate() { return currentClDate || getTodayStr(); }
 let clState = {};  // {itemId: {done, rating, issue, fixed, fixNote}}
 let clProgressCache = {}; // {key: {done, total, pct}} — loaded from Supabase for hub display
 let clLogs = [];
@@ -4786,15 +4772,15 @@ async function startChecklist(key) {
   renderChecklist();
   showScreen('s-checklist');
 
-  // Fetch the target date's most recent record — signed off OR in progress.
-  // clTargetDate() is today unless startBackfillChecklist() set currentClDate.
+  // Fetch today's most recent record — signed off OR in progress
   try {
     const u = users.find(x => x.id === currentUser);
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
     const SUPA = window.RALLY_SUPABASE_URL;
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
 
-    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${clTargetDate()}&order=id.desc&limit=1`;
+    // Fetch most recent record today (any status)
+    let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&order=id.desc&limit=1`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
 
     const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
@@ -4806,7 +4792,7 @@ async function startChecklist(key) {
       renderChecklist(isSignedOff);
       updateClProgress();
       if(isSignedOff) {
-        showToast('Already signed off ✓');
+        showToast('Already signed off today ✓');
       } else {
         showToast('Progress restored ✓');
       }
@@ -4815,28 +4801,9 @@ async function startChecklist(key) {
 
   // Manager Opening closes for the day at 11am if not yet signed off — this
   // is what makes "missed" unambiguous for the closing-time penalty flow.
-  // Only applies to today's Opening — a backfilled checklist (currentClDate
-  // set) is never manager_opening today, so this never fires for one.
-  if(key === 'manager_opening' && !isSignedOff && clTargetDate() === getTodayStr() && new Date().getHours() >= 11) {
+  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 11) {
     lockOpeningChecklist();
   }
-}
-
-// Entry point for filling out a missed Closing checklist from the Past
-// Checklists viewer — the one gap the existing missed-shift penalty flows
-// don't cover (a manager who never touched the checklist at all, so
-// neither "did opening happen" nor "did closing happen" ever got asked).
-// Hard-capped to exactly yesterday: any further back and the operational
-// value of a same-week backfill drops fast while the risk of stale/
-// fabricated-feeling data goes up, so the UI only ever offers this button
-// for yesterday — this check is a second, defensive gate in case that
-// ever changes without updating both places.
-function startBackfillChecklist(shiftKey, dateStr) {
-  const y = new Date(); y.setDate(y.getDate()-1);
-  const yStr = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
-  if(dateStr !== yStr) { showToast('Can only fill out yesterday’s missed checklist'); return; }
-  currentClDate = dateStr;
-  startChecklist(shiftKey);
 }
 
 function lockOpeningChecklist() {
@@ -4878,8 +4845,7 @@ function renderChecklist(signedOff = false) {
   };
   const u = users.find(x => x.id === currentUser);
   document.getElementById('cl-screen-title').textContent = labels[key] || 'Checklist';
-  const backfillNote = currentClDate ? ` · Backfilling ${currentClDate}` : '';
-  document.getElementById('cl-screen-user').textContent = (u ? u.name : '') + backfillNote;
+  document.getElementById('cl-screen-user').textContent = u ? u.name : '';
 
   // Group by section
   const sections = {};
@@ -5094,14 +5060,14 @@ async function saveClProgress(signedOff = false, extraFields = {}) {
   const payload = {
     shift:        currentChecklistKey,
     manager_name: personName,
-    date:         clTargetDate(),
+    date:         getTodayStr(),
     items:        { ...clState, ...extraFields },
     signed_off_at: signedOff ? new Date().toISOString() : null
   };
   try {
     // Try to update existing record for this shift+date+person first
     const existing = await fetch(
-      `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${clTargetDate()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
+      `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
       { headers: {
         'apikey': window.RALLY_SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`
@@ -5196,24 +5162,6 @@ async function fetchSignedOffChecklistRow(shiftKey, dateStr) {
   } catch (e) { console.warn(`Could not fetch ${shiftKey} for ${dateStr}`, e); return null; }
 }
 
-// Fetches the walkthrough grade (rally_manager_scores) for a given shift_date.
-// submitWalkthroughScore() always writes shift_date = "yesterday" relative to
-// whenever the Opening walkthrough is submitted — so a grade for the close on
-// date X is recorded the following morning, during date X+1's Opening
-// sign-off. By the time the Daily Checklist Report fires (at Closing on date
-// X+1), that grade already exists and is the most recent Scorecard data
-// available — it just belongs to the close from the night before, not the
-// close happening that night. Returns null if no grade was ever recorded.
-async function fetchLatestManagerScore(shiftDateStr) {
-  try {
-    const SUPA = window.RALLY_SUPABASE_URL, KEY = window.RALLY_SUPABASE_ANON_KEY;
-    const url = `${SUPA}/rest/v1/rally_manager_scores?shift_date=eq.${shiftDateStr}&select=*&order=created_at.desc&limit=1`;
-    const res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
-    const rows = await res.json();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
-  } catch (e) { console.warn(`Could not fetch manager score for ${shiftDateStr}`, e); return null; }
-}
-
 // ── PAST CHECKLISTS (view Manager Opening/Closing by date) ────────────────
 function renderPastChecklists() {
   const body = document.getElementById('past-cl-body');
@@ -5249,8 +5197,8 @@ async function loadPastChecklistsForDate(dateStr) {
   ]);
 
   results.innerHTML =
-    renderReadOnlyChecklistSection('Manager Opening', 'manager_opening', openingRow, '#9FE1CB', '#0F6E56', dateStr) +
-    renderReadOnlyChecklistSection('Manager Closing', 'manager_closing', closingRow, '#FAC775', '#854F0B', dateStr);
+    renderReadOnlyChecklistSection('Manager Opening', 'manager_opening', openingRow, '#9FE1CB', '#0F6E56') +
+    renderReadOnlyChecklistSection('Manager Closing', 'manager_closing', closingRow, '#FAC775', '#854F0B');
 }
 
 function renderReadOnlyClItem(item, state) {
@@ -5271,19 +5219,11 @@ function renderReadOnlyClItem(item, state) {
   </div>`;
 }
 
-function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor, dateStr) {
+function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor) {
   if(!row) {
-    // Only Manager Closing can be backfilled, and only for exactly
-    // yesterday — a manager forgetting entirely is the one gap the missed-
-    // opening/closing penalty flows don't already cover (those only fire
-    // when the *other* shift is signed off and notices the gap).
-    const y = new Date(); y.setDate(y.getDate()-1);
-    const yStr = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
-    const canBackfill = shiftKey === 'manager_closing' && dateStr === yStr;
     return `<div style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;padding:16px;margin-bottom:16px;border-left:4px solid ${accent};">
       <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
-      <div style="font-size:14px;color:#c04020;font-weight:600;margin-bottom:${canBackfill?'10px':'0'};">⚠️ Not submitted that day</div>
-      ${canBackfill ? `<button onclick="startBackfillChecklist('manager_closing','${dateStr}')" style="padding:8px 16px;border:1.5px solid #c04020;border-radius:7px;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#c04020;">Fill Out Closing Checklist →</button>` : ''}
+      <div style="font-size:14px;color:#c04020;font-weight:600;">⚠️ Not submitted that day</div>
     </div>`;
   }
   const calc = calcChecklistCompletion(shiftKey, row.items || {});
@@ -5299,12 +5239,18 @@ function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor
     ${secItems.map(item => renderReadOnlyClItem(item, row.items || {})).join('')}
   `).join('');
 
+  // Prefer the explicit MOD name (asked at Closing sign-off) over
+  // manager_name, which just records whoever was logged in when the
+  // checklist was submitted — see submittedSection() in
+  // buildDailyChecklistReportHTML for the same logic applied to the email.
+  const displayName = (row.items && row.items.mod_name) || row.manager_name;
+
   return `<details class="pastcl-details" style="background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;margin-bottom:16px;border-left:4px solid ${accent};overflow:hidden;">
     <summary style="padding:16px;cursor:pointer;list-style:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
-          <div style="font-size:14px;font-weight:500;color:#174854;">${row.manager_name || '—'} · signed off ${fmtTime(row.signed_off_at)}</div>
+          <div style="font-size:14px;font-weight:500;color:#174854;">${displayName || '—'} · signed off ${fmtTime(row.signed_off_at)}</div>
         </div>
         <div style="font-size:20px;font-weight:800;font-family:Cormorant Garamond,serif;color:${calc.pct===100?'var(--olive)':'#174854'};">${calc.pct}%</div>
       </div>
@@ -5318,10 +5264,31 @@ function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor
 // card/cream layout but uses a sage header (vs. the shift report's navy) so
 // the two are visually distinct at a glance. Opening uses the mint AM
 // accent, Closing the gold PM accent, same as the shift report.
-function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo, walkthroughScore) {
+// Fetches the walkthrough grade (rally_manager_scores) for a given shift_date.
+// Returns null if no grade was ever recorded.
+async function fetchLatestManagerScore(shiftDateStr) {
+  try {
+    const SUPA = window.RALLY_SUPABASE_URL, KEY = window.RALLY_SUPABASE_ANON_KEY;
+    const url = `${SUPA}/rest/v1/rally_manager_scores?shift_date=eq.${shiftDateStr}&select=*&order=created_at.desc&limit=1`;
+    const res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
+    const rows = await res.json();
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) { console.warn(`Could not fetch manager score for ${shiftDateStr}`, e); return null; }
+}
+
+// dateStr = the Opening date this report is generated for (always "today,"
+// since this only ever fires from Opening's own sign-off now). closingRow
+// is always the PREVIOUS night's close, not the same date — a report sent
+// this morning pairs last night's close with this morning's open, since
+// that's the actual operational pairing (and it's the earliest point both
+// pieces of data plus the walkthrough grade all definitely exist). Each
+// section gets its own short date label since Opening and Closing now
+// legitimately refer to two different calendar dates.
+function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields) {
   streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
   const dateObj = new Date(dateStr + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  const fmtShortDate = ds => new Date(ds + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
   const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
 
   // Persistent streak badge — same mascot treatment as the in-app Duolingo-
@@ -5354,30 +5321,55 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
       ${naNotes.map(n => `<div style="font-size:16px;color:#555;margin-bottom:4px;">➖ <strong>${n.section}</strong> — ${n.text}${n.note ? ` <span style="color:#888;font-style:italic;">— "${n.note}"</span>` : ''}</div>`).join('')}
     </div>` : '';
 
-  // Grade badge for the Manager Opening section — shows the Scorecard grade
-  // recorded THIS MORNING during the Arrival Walkthrough, which grades LAST
-  // NIGHT's close (not tonight's, which hasn't happened yet at send time).
-  // Labeled explicitly as "last night's close" so it doesn't read as if it's
-  // grading the close this same report is about.
+  // Grade badge for the Manager Opening section — the walkthrough-condition
+  // grade this morning's opener gave the Closing section directly below
+  // (same night now, not a different one — see the function comment above).
+  // Complements Closing's own completion %: this is "was it actually left
+  // clean," not "did they check every box."
   const walkthroughBadge = () => {
     if (!walkthroughScore) return '';
     const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === walkthroughScore.overall_rating) || null;
     return `
       <div style="margin-top:12px;padding:10px 12px;background:${gradeBg(walkthroughScore.grade)};border-radius:8px;">
         <span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:#fff;color:${gradeColor(walkthroughScore.grade)};font-weight:800;font-size:15px;line-height:30px;text-align:center;vertical-align:middle;margin-right:10px;">${walkthroughScore.grade}</span>
-        <span style="font-size:15px;color:#174854;vertical-align:middle;">Last night's close, graded this morning: <strong>${walkthroughScore.graded_manager}</strong> · ${walkthroughScore.pct}%${ratingMeta ? ` · ${ratingMeta.emoji} ${ratingMeta.label}` : ''}</span>
+        <span style="font-size:15px;color:#174854;vertical-align:middle;">Walkthrough grade: <strong>${walkthroughScore.graded_manager}</strong> · ${walkthroughScore.pct}%${ratingMeta ? ` · ${ratingMeta.emoji} ${ratingMeta.label}` : ''}</span>
       </div>`;
   };
 
-  function submittedSection(label, accent, labelColor, shiftKey, row, perfectEmoji, extraHtml) {
+
+  function submittedSection(label, dateSubLabel, accent, labelColor, shiftKey, row, perfectEmoji, extraHtml) {
     const calc = calcChecklistCompletion(shiftKey, row.items || {});
     const isSectionPerfect = calc.flagged.length === 0;
+    // Prefer the explicit MOD name (Closing sign-off asks "who was the MOD?"
+    // separately from login identity) over manager_name, which just records
+    // whoever happened to be logged in when the checklist was submitted —
+    // not necessarily who actually worked the shift. Falls back to
+    // manager_name for Opening rows (no MOD field there) or older rows from
+    // before this existed.
+    const displayName = (row.items && row.items.mod_name) || row.manager_name;
+    // A row can exist (signed off) but be entirely empty — e.g. a manager
+    // consciously acknowledging the shift wasn't done rather than leaving no
+    // record at all. Name them and say so plainly instead of dumping every
+    // single item as "flagged," which reads as noise once nothing was done.
+    if (calc.done === 0) {
+      return `
+        <tr><td style="padding:24px 32px 0;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
+              <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label} &nbsp;·&nbsp; ${dateSubLabel}</div>
+              <div style="font-size:18px;font-weight:700;color:#c04020;margin-bottom:5px;">⚠️ ${displayName || 'Manager'} did not complete the checklist</div>
+              <div style="font-size:16px;color:#666;">Signed off ${fmtTime(row.signed_off_at)} with nothing filled in.</div>
+              ${extraHtml || ''}
+            </td></tr>
+          </table>
+        </td></tr>`;
+    }
     return `
       <tr><td style="padding:24px 32px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
-            <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label}</div>
-            <div style="font-size:19px;font-weight:500;color:#174854;margin-bottom:5px;">${row.manager_name || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
+            <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label} &nbsp;·&nbsp; ${dateSubLabel}</div>
+            <div style="font-size:19px;font-weight:500;color:#174854;margin-bottom:5px;">${displayName || '—'} &nbsp;·&nbsp; signed off ${fmtTime(row.signed_off_at)}</div>
             <div style="font-size:16px;color:#666;">${calc.pct}% complete (${calc.done}/${calc.total} items)${isSectionPerfect ? ' '+perfectEmoji : ''}</div>
             ${flaggedList(calc.flagged)}
             ${naList(calc.naNotes)}
@@ -5387,21 +5379,21 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
       </td></tr>`;
   }
 
-  function missingSection(label, accent, labelColor, penaltyNote) {
+  function missingSection(label, dateSubLabel, accent, labelColor, penaltyNote) {
     return `
       <tr><td style="padding:24px 32px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr><td style="border-left:3px solid ${accent};padding-left:14px;padding-bottom:20px;">
-            <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label}</div>
+            <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:${labelColor};margin-bottom:3px;">${label} &nbsp;·&nbsp; ${dateSubLabel}</div>
             <div style="font-size:18px;font-weight:700;color:#c04020;margin-bottom:5px;">⚠️ Not submitted</div>
-            <div style="font-size:16px;color:#666;">No ${label} checklist was signed off today.</div>
+            <div style="font-size:16px;color:#666;">No ${label} checklist was signed off that day.</div>
             ${penaltyNote ? `<div style="font-size:16px;color:#c04020;margin-top:6px;">${penaltyNote}</div>` : ''}
           </td></tr>
         </table>
       </td></tr>`;
   }
 
-  const closingItems = closingRow.items || {};
+  const closingItems = (closingRow && closingRow.items) || {};
   let openingPenaltyNote = '';
   if (closingItems.missed_opening_skipped) {
     openingPenaltyNote = 'Marked N/A by closing manager.';
@@ -5409,13 +5401,29 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
     openingPenaltyNote = `${closingItems.missed_opening_manager} flagged — ${closingItems.missed_opening_pts||0} pts deducted.`;
   }
 
+  // Closing's own penalty outcome lives on the FOLLOWING morning's Opening
+  // row (that's where promptMissedShiftPenalty's result actually gets
+  // saved, since there's no Closing row to attach it to when Closing was
+  // never submitted at all) — passed in explicitly rather than read off
+  // closingRow, which is null in exactly this case.
+  let closingPenaltyNote = '';
+  if (closingPenaltyExtraFields) {
+    if (closingPenaltyExtraFields.missed_closing_skipped) {
+      closingPenaltyNote = 'Marked N/A by opening manager.';
+    } else if (closingPenaltyExtraFields.missed_closing_manager) {
+      closingPenaltyNote = `${closingPenaltyExtraFields.missed_closing_manager} flagged — ${closingPenaltyExtraFields.missed_closing_pts||0} pts deducted.`;
+    }
+  }
+
   const openingCalc = openingRow ? calcChecklistCompletion('manager_opening', openingRow.items || {}) : null;
-  const closingCalc = calcChecklistCompletion('manager_closing', closingItems);
+  const closingCalc = closingRow ? calcChecklistCompletion('manager_closing', closingItems) : null;
 
   const openingHtml = openingRow
-    ? submittedSection('Manager Opening', '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨', walkthroughBadge())
-    : missingSection('Manager Opening', '#9FE1CB', '#0F6E56', openingPenaltyNote);
-  const closingHtml = submittedSection('Manager Closing', '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨');
+    ? submittedSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨', walkthroughBadge())
+    : missingSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', openingPenaltyNote);
+  const closingHtml = closingRow
+    ? submittedSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨')
+    : missingSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', closingPenaltyNote);
 
   // Celebrate a genuinely clean day — both checklists submitted, nothing
   // flagged in either. Uses the same success green (#4e622c) the app
@@ -5423,7 +5431,7 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
   // short of perfect stays exactly as serious as the rest of the report.
   // A new streak record upgrades this to a bigger celebration; a broken
   // streak gets its own quieter, sadder note instead — never both at once.
-  const isPerfectDay = !!openingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
+  const isPerfectDay = !!openingRow && !!closingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
   const streakLine = streakInfo.current > 1 ? ` &nbsp;·&nbsp; Day ${streakInfo.current} of the streak` : '';
   let celebrationBanner = '';
   if (streakInfo.isNewRecord) {
@@ -5474,26 +5482,35 @@ function buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakIn
 </html>`;
 }
 
-async function sendDailyChecklistReport() {
-  const dateStr = getTodayStr();
+// Fires only from Manager Opening's own sign-off now (never Closing's —
+// see signOffChecklist()). dateStr is the Opening date ("today"); the
+// report always pairs it with the PREVIOUS night's Closing, since that's
+// the actual operational cycle and the earliest point both the closing
+// data and its walkthrough grade are guaranteed to exist. closingRow
+// legitimately comes back null whenever last night's Closing was never
+// submitted at all — that's an expected, common outcome here, not an
+// error, so (unlike the old closing-triggered version of this function)
+// there's no "closing row not found, something went wrong" guard.
+// closingPenaltyExtraFields: the promptMissedShiftPenalty() result when
+// Closing was confirmed missing, so the report can show who was flagged
+// (see buildDailyChecklistReportHTML for why this can't just be read off
+// closingRow).
+async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
+  dateStr = dateStr || getTodayStr();
   const prevDateObj = new Date(dateStr + 'T12:00:00'); prevDateObj.setDate(prevDateObj.getDate() - 1);
-  const prevDateStr = prevDateObj.toISOString().slice(0, 10);
+  const closingDateStr = prevDateObj.toISOString().slice(0, 10);
   const [openingRow, closingRow, walkthroughScore] = await Promise.all([
     fetchSignedOffChecklistRow('manager_opening', dateStr),
-    fetchSignedOffChecklistRow('manager_closing', dateStr),
-    fetchLatestManagerScore(prevDateStr),
+    fetchSignedOffChecklistRow('manager_closing', closingDateStr),
+    fetchLatestManagerScore(closingDateStr),
   ]);
-  if (!closingRow) {
-    console.warn('Daily checklist report: closing row not found right after sign-off — skipping.');
-    return;
-  }
 
   // Update the streak once per calendar day. Only updates on the FIRST
-  // Closing sign-off seen for a given date — re-signing off the same day
-  // (e.g. correcting a mistake) must not double-count the streak.
+  // time we process a given date — re-processing the same day (e.g.
+  // correcting a mistake, or a retry) must not double-count the streak.
   const openingCalc = openingRow ? calcChecklistCompletion('manager_opening', openingRow.items || {}) : null;
-  const closingCalc = calcChecklistCompletion('manager_closing', closingRow.items || {});
-  const isPerfectToday = !!openingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
+  const closingCalc = closingRow ? calcChecklistCompletion('manager_closing', closingRow.items || {}) : null;
+  const isPerfectToday = !!openingRow && !!closingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
   let isNewRecord = false, streakBroken = false, brokenStreakLength = 0;
   if (checklistStreak.lastDate !== dateStr) {
     if (isPerfectToday) {
@@ -5515,7 +5532,7 @@ async function sendDailyChecklistReport() {
     return;
   }
   const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
-  const html = buildDailyChecklistReportHTML(dateStr, openingRow, closingRow, streakInfo, walkthroughScore);
+  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields);
 
   // Sent via a raw fetch(..., {keepalive:true}) instead of emailjs.send() —
   // a manager tapping Sign Off and immediately backgrounding the app/closing
@@ -5627,6 +5644,44 @@ async function submitWalkthroughScore(closingManagerName, overallRating, closeNo
 // Closing asking who was supposed to open (when Opening is missing that day),
 // and Opening asking who was supposed to close (when last night's Closing is
 // missing). Returns {cancelled: true} or {cancelled: false, extraFields}.
+// Asked every time Manager Closing is signed off. manager_name (on the
+// checklist row) just records whoever is logged into the app at submit
+// time — not necessarily who actually worked as MOD that night (someone
+// else may be submitting on their behalf, or acknowledging a shift that
+// never got done at all). This captures the real answer explicitly instead
+// of assuming submitter === MOD.
+async function promptClosingMOD() {
+  const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
+  const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:24px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:#174854;margin-bottom:12px;">Who was the MOD?</div>
+    <p style="font-size:13px;color:rgba(23,72,84,.6);margin-bottom:16px;">Who was the Manager on Duty for tonight's close? This may not be whoever is submitting this checklist.</p>
+    <select id="closing-mod-picker" style="width:100%;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:14px;font-family:inherit;color:#174854;background:#fbf6ed;margin-bottom:6px;">
+      <option value="">— Select MOD —</option>
+      ${mgr_opts}
+    </select>
+    <p id="closing-mod-err" style="font-size:11px;color:#e13228;min-height:14px;margin-top:4px;margin-bottom:12px;"></p>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="closing-mod-confirm" style="flex:1;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Continue</button>
+      <button id="closing-mod-cancel" style="padding:12px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+
+  return new Promise(resolve => {
+    document.getElementById('closing-mod-confirm').onclick = () => {
+      const picked = document.getElementById('closing-mod-picker').value;
+      if(!picked) { document.getElementById('closing-mod-err').textContent = 'Please select who was the MOD.'; return; }
+      overlay.remove();
+      resolve({ cancelled: false, modName: picked });
+    };
+    document.getElementById('closing-mod-cancel').onclick = () => { overlay.remove(); resolve({ cancelled: true }); };
+  });
+}
+
 async function promptMissedShiftPenalty(missedLabel, fieldPrefix) {
   const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
   const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
@@ -5699,7 +5754,12 @@ async function signOffChecklist() {
       if(!confirm(msg)) return;
       await saveClProgress(true, res.extraFields);
       showToast('Checklist signed off! ✅');
-      currentChecklistKey = null; clState = {}; currentClDate = null;
+      // This is the one deterministic moment we can be sure last night's
+      // Closing is truly missing (not just not-yet-done) — the opening
+      // manager just confirmed it. Send today's report now, pairing that
+      // confirmed-missing Closing with the Opening that was just signed off.
+      try { await sendDailyChecklistReport(getTodayStr(), res.extraFields); } catch(e) { console.warn('Daily checklist report failed', e); }
+      currentChecklistKey = null; clState = {};
       if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
         showScreen('s-mgr');
         showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5710,17 +5770,23 @@ async function signOffChecklist() {
     const mgrs = users.filter(u => u.role === 'manager').map(u => u.name);
     const mgr_opts = mgrs.map(n => `<option value="${n}">${n}</option>`).join('');
 
-    // Try to auto-detect who closed last night from rally_checklist
+    // Try to auto-detect who closed last night from rally_checklist. Prefer
+    // mod_name (the explicit "who was the MOD?" answer asked at Closing
+    // sign-off) over manager_name, which only records whoever was logged
+    // into the app when the checklist was submitted — not necessarily who
+    // actually worked as MOD. Falls back to manager_name for rows from
+    // before the MOD field existed.
     let autoCloser = '';
     try {
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
       const yStr = yesterday.toISOString().slice(0,10);
       const SUPA = window.RALLY_SUPABASE_URL;
       const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-      const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name&order=signed_off_at.desc&limit=1`,
+      const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name,items&order=signed_off_at.desc&limit=1`,
         {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
       const rows = await res.json();
-      if(Array.isArray(rows) && rows[0]?.manager_name) autoCloser = rows[0].manager_name;
+      const row = Array.isArray(rows) && rows[0];
+      if(row) autoCloser = (row.items && row.items.mod_name) || row.manager_name || '';
     } catch(e) {}
 
     const ratingButtons = CLOSE_RATING_SCALE.map(r => `
@@ -5797,7 +5863,11 @@ async function signOffChecklist() {
     }).then(async result => {
       if(result === 'cancel') return;
       showToast('Checklist signed off! ✅');
-      currentChecklistKey = null; clState = {}; currentClDate = null;
+      // Opening sign-off is now the only trigger for the Daily Checklist
+      // Report — it always pairs last night's Closing (just rated above)
+      // with this morning's Opening (just signed off).
+      try { await sendDailyChecklistReport(getTodayStr()); } catch(e) { console.warn('Daily checklist report failed', e); }
+      currentChecklistKey = null; clState = {};
       if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
         showScreen('s-mgr');
         showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5806,39 +5876,32 @@ async function signOffChecklist() {
     return;
   }
 
-  // For manager closing — check whether Opening was signed off for the
-  // target date (today, unless backfilling a missed past day); if not,
+  // For manager closing — check whether Opening was signed off today; if not,
   // ask the closing manager who was supposed to open and apply a points
   // penalty (or let them mark it Skip/N/A for a legitimate no-opener day).
   // Gated strictly on the literal key so no other checklist type is affected.
   if(currentChecklistKey === 'manager_closing') {
-    const isBackfill = clTargetDate() !== getTodayStr();
-    const openingRow = await fetchSignedOffChecklistRow('manager_opening', clTargetDate());
-    let extraFields = {};
+    const modRes = await promptClosingMOD();
+    if(modRes.cancelled) return;
+
+    const openingRow = await fetchSignedOffChecklistRow('manager_opening', getTodayStr());
+    let extraFields = { mod_name: modRes.modName };
 
     if(!openingRow) {
       const res = await promptMissedShiftPenalty('Manager Opening', 'missed_opening');
       if(res.cancelled) return;
-      extraFields = res.extraFields;
+      extraFields = { ...extraFields, ...res.extraFields };
     }
 
     const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
     if(!confirm(msg)) return;
     await saveClProgress(true, extraFields);
-    showToast(isBackfill ? `Checklist for ${clTargetDate()} signed off! ✅` : 'Checklist signed off! ✅');
-    // sendDailyChecklistReport() is hardcoded to "today" throughout (streak
-    // calc, which row it fetches) — running it here for a backfilled past
-    // date would send a report for the wrong day and could corrupt the
-    // streak. Skip it for backfills; the missed-day report already went out
-    // (or didn't) on its actual date, and today's report is unaffected.
-    if(!isBackfill) {
-      // Awaited so the toast/navigation don't cut off the fetch(...,
-      // {keepalive:true}) send below — but keepalive means even if the
-      // manager closes the tab right after this resolves (or the resolve
-      // itself races a close), the browser still finishes delivering it.
-      try { await sendDailyChecklistReport(); } catch(e) { console.warn('Daily checklist report failed', e); }
-    }
-    currentChecklistKey = null; clState = {}; currentClDate = null;
+    showToast('Checklist signed off! ✅');
+    // The Daily Checklist Report no longer sends from here — it only fires
+    // from Manager Opening's own sign-off now (see signOffChecklist()'s
+    // manager_opening branch), which pairs this close with tomorrow
+    // morning's open. Sending from both points would double-send.
+    currentChecklistKey = null; clState = {};
     if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
       showScreen('s-mgr');
       showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5850,7 +5913,7 @@ async function signOffChecklist() {
   if(!confirm(msg)) return;
   await saveClProgress(true);
   showToast('Checklist signed off! ✅');
-  currentChecklistKey = null; clState = {}; currentClDate = null;
+  currentChecklistKey = null; clState = {};
   if(currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director') {
     showScreen('s-mgr');
     showMgrTab('checklists', Array.from(document.querySelectorAll('#mgr-tabs .nav-tab')).find(t=>t.textContent.includes('Checklists')));
@@ -5859,7 +5922,7 @@ async function signOffChecklist() {
 
 function goBackToHub() {
   autoSaveCl();
-  currentChecklistKey = null; currentClDate = null;
+  currentChecklistKey = null;
   // Managers (no currentUser) came from s-mgr, associates from s-cl-hub
   if(currentRole === 'manager' && !currentUser) {
     showScreen('s-mgr');
