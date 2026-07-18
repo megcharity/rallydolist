@@ -4799,9 +4799,9 @@ async function startChecklist(key) {
     }
   } catch(e) { console.warn('Could not restore checklist progress', e); }
 
-  // Manager Opening closes for the day at 11am if not yet signed off — this
+  // Manager Opening closes for the day at 1pm if not yet signed off — this
   // is what makes "missed" unambiguous for the closing-time penalty flow.
-  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 11) {
+  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 13) {
     lockOpeningChecklist();
   }
 }
@@ -4811,7 +4811,7 @@ function lockOpeningChecklist() {
   if(body) body.innerHTML = `<div style="padding:40px 20px;text-align:center;">
     <div style="font-size:32px;margin-bottom:10px;">🔒</div>
     <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:6px;">Morning checklist window has closed</div>
-    <div style="font-size:13px;color:rgba(23,72,84,.55);max-width:320px;margin:0 auto;">The Manager Opening checklist closes at 11am each day. It wasn't signed off in time today — this will be flagged when Closing is signed off.</div>
+    <div style="font-size:13px;color:rgba(23,72,84,.55);max-width:320px;margin:0 auto;">The Manager Opening checklist closes at 1pm each day. It wasn't signed off in time today — this will be flagged when Closing is signed off.</div>
   </div>`;
   const signoffBtn = document.querySelector('.cl-signoff-btn');
   if(signoffBtn) {
