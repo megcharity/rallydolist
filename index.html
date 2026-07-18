@@ -5304,7 +5304,7 @@ async function fetchLatestManagerScore(shiftDateStr) {
 // pieces of data plus the walkthrough grade all definitely exist). Each
 // section gets its own short date label since Opening and Closing now
 // legitimately refer to two different calendar dates.
-function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreakInfo) {
+function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks) {
   streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
   const dateObj = new Date(dateStr + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -5356,19 +5356,27 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
       </div>`;
   };
 
-  // Personal streak badge for the Manager Closing section — how many
-  // consecutive shifts THIS manager has personally run clean, independent
-  // of the team streak above (which needs both Opening & Closing clean the
-  // same day, regardless of who worked). Same mascot treatment, condensed.
-  const personalStreakBadge = () => {
-    if (!personalStreakInfo) return '';
-    const active = personalStreakInfo.current > 0;
+  // Personal streaks footer — small badges for EVERY manager with a streak
+  // record, not just whoever closed tonight (see the section near the
+  // bottom of this template). Sorted by current streak descending so an
+  // active streak stands out, ties broken alphabetically.
+  const personalStreaksFooter = () => {
+    const entries = Object.entries(personalStreaks || {});
+    if (!entries.length) return '';
+    entries.sort((a, b) => (b[1].current - a[1].current) || a[0].localeCompare(b[0]));
+    const badges = entries.map(([name, ps]) => {
+      const active = ps.current > 0;
+      return `
+        <span style="display:inline-block;margin:4px;padding:8px 12px;background:${active?'#fff7ec':'#f0e9da'};border-radius:20px;${active?'border:1px solid #ff9600;':''}">
+          <img src="${STREAK_MASCOT_B64}" style="width:16px;height:auto;vertical-align:middle;margin-right:6px;${active?'':'filter:grayscale(1);opacity:.4;'}" alt="">
+          <span style="font-size:13px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${name} ${ps.current}</span>
+        </span>`;
+    }).join('');
     return `
-      <div style="margin-top:12px;padding:10px 12px;background:${active?'#fff7ec':'#f0e9da'};border-radius:8px;${active?'border:1px solid #ff9600;':''}">
-        <img src="${STREAK_MASCOT_B64}" style="width:22px;height:auto;vertical-align:middle;margin-right:8px;${active?'':'filter:grayscale(1);opacity:.4;'}" alt="">
-        <span style="font-size:15px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${personalStreakInfo.name}: ${personalStreakInfo.current} shift streak</span>
-        <span style="font-size:13px;color:#8a7b5c;vertical-align:middle;"> &nbsp;·&nbsp; Best: ${personalStreakInfo.record} &nbsp;·&nbsp; ${personalStreakInfo.totalPerfect} perfect close${personalStreakInfo.totalPerfect===1?'':'s'} total</span>
-      </div>`;
+    <tr><td style="padding:20px 32px;border-top:1px solid #e0d8cc;text-align:center;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#174854;margin-bottom:10px;">Personal Streaks</div>
+      ${badges}
+    </td></tr>`;
   };
 
   function submittedSection(label, dateSubLabel, accent, labelColor, shiftKey, row, perfectEmoji, extraHtml) {
@@ -5457,8 +5465,8 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
     ? submittedSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨', walkthroughBadge())
     : missingSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', openingPenaltyNote);
   const closingHtml = closingRow
-    ? submittedSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨', personalStreakBadge())
-    : missingSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', closingPenaltyNote, personalStreakBadge());
+    ? submittedSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨')
+    : missingSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', closingPenaltyNote);
 
   // Celebrate a genuinely clean day — both checklists submitted, nothing
   // flagged in either. Uses the same success green (#4e622c) the app
@@ -5505,6 +5513,7 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
   ${openingHtml}
   <tr><td style="padding:0 32px;"><div style="border-top:1px solid #e8e0d4;"></div></td></tr>
   ${closingHtml}
+  ${personalStreaksFooter()}
 
   <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
     <div style="font-size:12px;color:#999;">Rally Social Club &nbsp;·&nbsp; Charlotte, NC &nbsp;·&nbsp; Internal use only</div>
@@ -5562,27 +5571,28 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
     saveData();
   }
 
-  // Personal streak for whoever actually ran Closing — separate from the
-  // team streak above. Credits/breaks against mod_name (the real MOD),
-  // falling back to manager_name for older rows without it, or to
+  // Update the personal streak for whoever actually ran Closing — separate
+  // from the team streak above. Credits/breaks against mod_name (the real
+  // MOD), falling back to manager_name for older rows without it, or to
   // missed_closing_manager when Closing was confirmed missing entirely (the
   // person flagged in that penalty flow). A Skip/N/A missed-closing day has
   // no one to attribute to, so no personal streak is touched. Keyed to
   // closingDateStr (not dateStr) since it's evaluating last night's shift,
-  // not today's.
-  let personalStreakInfo = null;
+  // not today's. The report itself shows EVERY manager's personal streak
+  // (see personalStreaksFooter in buildDailyChecklistReportHTML), not just
+  // tonight's closer, so no need to build a single-person summary here —
+  // just make sure personalStreaks itself is up to date before it's passed in.
   const closingManagerName = closingRow
     ? ((closingRow.items && closingRow.items.mod_name) || closingRow.manager_name)
     : (closingPenaltyExtraFields && !closingPenaltyExtraFields.missed_closing_skipped ? closingPenaltyExtraFields.missed_closing_manager : null);
   if (closingManagerName) {
     const closingWasPerfect = !!closingRow && !!closingCalc && closingCalc.flagged.length === 0;
     const ps = personalStreaks[closingManagerName] || { current: 0, record: 0, lastDate: null, totalPerfect: 0 };
-    let psIsNewRecord = false;
     if (ps.lastDate !== closingDateStr) {
       if (closingWasPerfect) {
         ps.current += 1;
         ps.totalPerfect += 1;
-        if (ps.current > ps.record) { ps.record = ps.current; psIsNewRecord = true; }
+        if (ps.current > ps.record) ps.record = ps.current;
       } else {
         ps.current = 0;
       }
@@ -5590,7 +5600,6 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
       personalStreaks[closingManagerName] = ps;
       saveData();
     }
-    personalStreakInfo = { name: closingManagerName, current: ps.current, record: ps.record, totalPerfect: ps.totalPerfect, isNewRecord: psIsNewRecord };
   }
 
   if (CL_REPORT_TEMPLATE_ID === 'PASTE_NEW_TEMPLATE_ID_HERE') {
@@ -5598,7 +5607,7 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
     return;
   }
   const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
-  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreakInfo);
+  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks);
 
   // Sent via a raw fetch(..., {keepalive:true}) instead of emailjs.send() —
   // a manager tapping Sign Off and immediately backgrounding the app/closing
