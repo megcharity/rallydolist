@@ -826,6 +826,12 @@ const AVATAR_TEXT   = ['#1d4ed8','#be185d','#15803d','#b45309','#7c3aed','#c2410
 let users=[], tasks=[], compLog=[];
 let nextUid=1, nextTid=1, lastWeeklyReset=getMonday();
 let checklistStreak={current:0, record:0, lastDate:null}; // consecutive days both Opening & Closing are 100% with nothing flagged
+// Per-manager streak, keyed by name: {current, record, lastDate, totalPerfect}.
+// Tracks consecutive CLOSING shifts a manager themselves ran clean (matched
+// by mod_name, falling back to manager_name for older rows) — separate from
+// the team-wide checklistStreak above, which requires both Opening & Closing
+// clean on the same day regardless of who worked.
+let personalStreaks={};
 let currentUser=null, currentRole=null;
 let selectedRole=null, selectedName=null;
 let pinBuf='', pinEditId=null;
@@ -849,7 +855,7 @@ async function flushSave(){
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
-      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,checklistStreak,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
+      body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,checklistStreak,personalStreaks,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
     });
   }catch(e){console.warn('Save fail',e);}
   isSaving=false;
@@ -917,6 +923,7 @@ async function loadData(){
       if(d.nextTid)nextTid=d.nextTid;
       if(d.lastWeeklyReset)lastWeeklyReset=d.lastWeeklyReset;
       if(d.checklistStreak)checklistStreak=d.checklistStreak;
+      if(d.personalStreaks)personalStreaks=d.personalStreaks;
       if(d.userPts) window._savedUserPts = d.userPts; // persist points across team reloads
     }
     // Always fetch live team from rally_team
@@ -938,6 +945,7 @@ setInterval(async()=>{
       tasks=d.tasks||tasks;compLog=d.compLog||compLog;
       nextUid=d.nextUid||nextUid;nextTid=d.nextTid||nextTid;
       if(d.checklistStreak)checklistStreak=d.checklistStreak;
+      if(d.personalStreaks)personalStreaks=d.personalStreaks;
       // Only update userPts from server if we're not mid-session (preserve in-memory points)
       if(d.userPts && !saveTimer) {
         window._savedUserPts=d.userPts;
@@ -1681,10 +1689,22 @@ async function renderScorecard() {
     Object.entries(byManager).forEach(([mgr, scores]) => {
       const avg = Math.round(scores.reduce((s,r) => s+(r.pct||r.score||0), 0) / scores.length);
       const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : 'D';
+      // Personal streak — consecutive Closing shifts THIS manager personally
+      // ran clean (see sendDailyChecklistReport()), separate from the team
+      // streak card above. Only shown once they have a record for it.
+      const ps = personalStreaks[mgr];
+      const psActive = ps && ps.current > 0;
+      const psHtml = ps ? `
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <img src="${STREAK_MASCOT_B64}" style="width:28px;height:auto;${psActive?'':'filter:grayscale(1);opacity:.4;'}">
+          <span style="font-size:14px;font-weight:700;color:${psActive?'#ff9600':'rgba(23,72,84,.35)'};">${ps.current} shift streak</span>
+        </div>
+        <div style="font-size:11px;color:rgba(23,72,84,.4);margin-top:5px;">Best: ${ps.record} &middot; ${ps.totalPerfect||0} perfect close${(ps.totalPerfect||0)===1?'':'s'} total</div>` : '';
       html += `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:16px;text-align:center;">
         <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">${mgr}</div>
         <div style="font-size:48px;font-weight:800;color:${gradeColor(grade)};line-height:1;font-family:'Cormorant Garamond',serif;">${grade}</div>
         <div style="font-size:12px;color:rgba(23,72,84,.4);margin-top:4px;">${avg}% avg · ${scores.length} shift${scores.length!==1?'s':''}</div>
+        ${psHtml}
       </div>`;
     });
     html += '</div>';
@@ -5284,7 +5304,7 @@ async function fetchLatestManagerScore(shiftDateStr) {
 // pieces of data plus the walkthrough grade all definitely exist). Each
 // section gets its own short date label since Opening and Closing now
 // legitimately refer to two different calendar dates.
-function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields) {
+function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreakInfo) {
   streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
   const dateObj = new Date(dateStr + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -5336,6 +5356,20 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
       </div>`;
   };
 
+  // Personal streak badge for the Manager Closing section — how many
+  // consecutive shifts THIS manager has personally run clean, independent
+  // of the team streak above (which needs both Opening & Closing clean the
+  // same day, regardless of who worked). Same mascot treatment, condensed.
+  const personalStreakBadge = () => {
+    if (!personalStreakInfo) return '';
+    const active = personalStreakInfo.current > 0;
+    return `
+      <div style="margin-top:12px;padding:10px 12px;background:${active?'#fff7ec':'#f0e9da'};border-radius:8px;${active?'border:1px solid #ff9600;':''}">
+        <img src="${STREAK_MASCOT_B64}" style="width:22px;height:auto;vertical-align:middle;margin-right:8px;${active?'':'filter:grayscale(1);opacity:.4;'}" alt="">
+        <span style="font-size:15px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${personalStreakInfo.name}: ${personalStreakInfo.current} shift streak</span>
+        <span style="font-size:13px;color:#8a7b5c;vertical-align:middle;"> &nbsp;·&nbsp; Best: ${personalStreakInfo.record} &nbsp;·&nbsp; ${personalStreakInfo.totalPerfect} perfect close${personalStreakInfo.totalPerfect===1?'':'s'} total</span>
+      </div>`;
+  };
 
   function submittedSection(label, dateSubLabel, accent, labelColor, shiftKey, row, perfectEmoji, extraHtml) {
     const calc = calcChecklistCompletion(shiftKey, row.items || {});
@@ -5379,7 +5413,7 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
       </td></tr>`;
   }
 
-  function missingSection(label, dateSubLabel, accent, labelColor, penaltyNote) {
+  function missingSection(label, dateSubLabel, accent, labelColor, penaltyNote, extraHtml) {
     return `
       <tr><td style="padding:24px 32px 0;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -5388,6 +5422,7 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
             <div style="font-size:18px;font-weight:700;color:#c04020;margin-bottom:5px;">⚠️ Not submitted</div>
             <div style="font-size:16px;color:#666;">No ${label} checklist was signed off that day.</div>
             ${penaltyNote ? `<div style="font-size:16px;color:#c04020;margin-top:6px;">${penaltyNote}</div>` : ''}
+            ${extraHtml || ''}
           </td></tr>
         </table>
       </td></tr>`;
@@ -5422,8 +5457,8 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
     ? submittedSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', 'manager_opening', openingRow, '🌅✨', walkthroughBadge())
     : missingSection('Manager Opening', fmtShortDate(dateStr), '#9FE1CB', '#0F6E56', openingPenaltyNote);
   const closingHtml = closingRow
-    ? submittedSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨')
-    : missingSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', closingPenaltyNote);
+    ? submittedSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', 'manager_closing', closingRow, '🌙✨', personalStreakBadge())
+    : missingSection('Manager Closing', fmtShortDate(closingDateStr), '#FAC775', '#854F0B', closingPenaltyNote, personalStreakBadge());
 
   // Celebrate a genuinely clean day — both checklists submitted, nothing
   // flagged in either. Uses the same success green (#4e622c) the app
@@ -5527,12 +5562,43 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
     saveData();
   }
 
+  // Personal streak for whoever actually ran Closing — separate from the
+  // team streak above. Credits/breaks against mod_name (the real MOD),
+  // falling back to manager_name for older rows without it, or to
+  // missed_closing_manager when Closing was confirmed missing entirely (the
+  // person flagged in that penalty flow). A Skip/N/A missed-closing day has
+  // no one to attribute to, so no personal streak is touched. Keyed to
+  // closingDateStr (not dateStr) since it's evaluating last night's shift,
+  // not today's.
+  let personalStreakInfo = null;
+  const closingManagerName = closingRow
+    ? ((closingRow.items && closingRow.items.mod_name) || closingRow.manager_name)
+    : (closingPenaltyExtraFields && !closingPenaltyExtraFields.missed_closing_skipped ? closingPenaltyExtraFields.missed_closing_manager : null);
+  if (closingManagerName) {
+    const closingWasPerfect = !!closingRow && !!closingCalc && closingCalc.flagged.length === 0;
+    const ps = personalStreaks[closingManagerName] || { current: 0, record: 0, lastDate: null, totalPerfect: 0 };
+    let psIsNewRecord = false;
+    if (ps.lastDate !== closingDateStr) {
+      if (closingWasPerfect) {
+        ps.current += 1;
+        ps.totalPerfect += 1;
+        if (ps.current > ps.record) { ps.record = ps.current; psIsNewRecord = true; }
+      } else {
+        ps.current = 0;
+      }
+      ps.lastDate = closingDateStr;
+      personalStreaks[closingManagerName] = ps;
+      saveData();
+    }
+    personalStreakInfo = { name: closingManagerName, current: ps.current, record: ps.record, totalPerfect: ps.totalPerfect, isNewRecord: psIsNewRecord };
+  }
+
   if (CL_REPORT_TEMPLATE_ID === 'PASTE_NEW_TEMPLATE_ID_HERE') {
     console.warn('Daily checklist report: EmailJS template not configured yet — skipping send.');
     return;
   }
   const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
-  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields);
+  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreakInfo);
 
   // Sent via a raw fetch(..., {keepalive:true}) instead of emailjs.send() —
   // a manager tapping Sign Off and immediately backgrounding the app/closing
