@@ -5373,24 +5373,38 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
 
   // Personal streaks footer — small badges for EVERY manager with a streak
   // record, not just whoever closed tonight (see the section near the
-  // bottom of this template). Sorted by current streak descending so an
-  // active streak stands out, ties broken alphabetically. Uses a 🔥 emoji
-  // instead of the mascot image here (unlike the single inline hero above)
-  // — this repeats once per manager, and most email clients (Gmail
-  // included) hide externally-hosted images until the recipient clicks
-  // "Display images below," so the mascot was invisible on first view for
-  // every real send. An emoji is plain text: it renders instantly with no
-  // image request at all, and stays free regardless of roster size.
+  // bottom of this template). A manager whose streak just broke shouldn't
+  // read as having no streak at all — a bare "0" erases a run they may
+  // have just had (e.g. a 3-shift streak broken by a single miss). So a
+  // broken streak (current === 0) falls back to showing their record
+  // instead, clearly labeled "best" so it's not mistaken for an active
+  // streak. Sorted with active streaks first (current desc), then
+  // best-streak fallbacks (record desc), ties broken alphabetically. Uses
+  // a 🔥 emoji instead of the mascot image here (unlike the single
+  // inline hero above) — this repeats once per manager, and most email
+  // clients (Gmail included) hide externally-hosted images until the
+  // recipient clicks "Display images below," so the mascot was invisible
+  // on first view for every real send. An emoji is plain text: it renders
+  // instantly with no image request at all, and stays free regardless of
+  // roster size.
   const personalStreaksFooter = () => {
     const entries = Object.entries(personalStreaks || {});
     if (!entries.length) return '';
-    entries.sort((a, b) => (b[1].current - a[1].current) || a[0].localeCompare(b[0]));
+    entries.sort((a, b) => {
+      const aActive = a[1].current > 0, bActive = b[1].current > 0;
+      if (aActive !== bActive) return aActive ? -1 : 1;
+      if (aActive) return b[1].current - a[1].current || a[0].localeCompare(b[0]);
+      return b[1].record - a[1].record || a[0].localeCompare(b[0]);
+    });
     const badges = entries.map(([name, ps]) => {
       const active = ps.current > 0;
+      const showBest = !active && ps.record > 0;
+      const num = active ? ps.current : (showBest ? ps.record : 0);
+      const label = showBest ? `${name} best ${num}` : `${name} ${num}`;
       return `
         <span style="display:inline-block;margin:4px;padding:9px 14px;background:${active?'#fff7ec':'#f0e9da'};border-radius:22px;${active?'border:1px solid #ff9600;':''}">
           <span style="font-size:18px;vertical-align:middle;margin-right:6px;${active?'':'opacity:.35;'}">🔥</span>
-          <span style="font-size:16px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${name} ${ps.current}</span>
+          <span style="font-size:16px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${label}</span>
         </span>`;
     }).join('');
     return `
