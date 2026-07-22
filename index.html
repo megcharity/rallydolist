@@ -5311,6 +5311,29 @@ async function fetchLatestManagerScore(shiftDateStr) {
   } catch (e) { console.warn(`Could not fetch manager score for ${shiftDateStr}`, e); return null; }
 }
 
+// Per-manager letter grade, averaged across their last 60 walkthrough scores —
+// same source data and thresholds as the Scorecard tab's per-manager cards
+// (renderScorecard()), reused here so the Daily Checklist Report's grades
+// always agree with what the Scorecard tab shows.
+async function fetchManagerGrades() {
+  try {
+    const SUPA = window.RALLY_SUPABASE_URL, KEY = window.RALLY_SUPABASE_ANON_KEY;
+    const url = `${SUPA}/rest/v1/rally_manager_scores?select=graded_manager,pct&order=shift_date.desc&limit=60`;
+    const res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return {};
+    const byManager = {};
+    rows.forEach(r => { (byManager[r.graded_manager] = byManager[r.graded_manager] || []).push(r.pct || 0); });
+    const grades = {};
+    Object.entries(byManager).forEach(([mgr, pcts]) => {
+      const avg = Math.round(pcts.reduce((s, p) => s + p, 0) / pcts.length);
+      const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : 'D';
+      grades[mgr] = { grade, avg, count: pcts.length };
+    });
+    return grades;
+  } catch (e) { console.warn('Could not fetch manager grades', e); return {}; }
+}
+
 // dateStr = the Opening date this report is generated for (always "today,"
 // since this only ever fires from Opening's own sign-off now). closingRow
 // is always the PREVIOUS night's close, not the same date — a report sent
@@ -5319,7 +5342,7 @@ async function fetchLatestManagerScore(shiftDateStr) {
 // pieces of data plus the walkthrough grade all definitely exist). Each
 // section gets its own short date label since Opening and Closing now
 // legitimately refer to two different calendar dates.
-function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks) {
+function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks, managerGrades) {
   streakInfo = streakInfo || { current: 0, record: 0, isNewRecord: false, streakBroken: false, brokenStreakLength: 0 };
   const dateObj = new Date(dateStr + 'T12:00:00');
   const dayName = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
@@ -5364,53 +5387,80 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
   const walkthroughBadge = () => {
     if (!walkthroughScore) return '';
     const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === walkthroughScore.overall_rating) || null;
+    // walkthroughScore.notes is the free-text "Anything the closer should
+    // know…" field from the Sign Off Opening picker — was being saved to
+    // rally_manager_scores.notes but never actually rendered anywhere in
+    // this email, so notes silently never reached anyone reading the report.
+    const notesLine = walkthroughScore.notes ? `
+        <div style="font-size:13px;color:#555;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06);">📝 ${walkthroughScore.notes}</div>` : '';
     return `
       <div style="margin-top:12px;padding:10px 12px;background:${gradeBg(walkthroughScore.grade)};border-radius:8px;">
         <span style="display:inline-block;width:30px;height:30px;border-radius:50%;background:#fff;color:${gradeColor(walkthroughScore.grade)};font-weight:800;font-size:15px;line-height:30px;text-align:center;vertical-align:middle;margin-right:10px;">${walkthroughScore.grade}</span>
         <span style="font-size:15px;color:#174854;vertical-align:middle;">Walkthrough grade: <strong>${walkthroughScore.graded_manager}</strong> · ${walkthroughScore.pct}%${ratingMeta ? ` · ${ratingMeta.emoji} ${ratingMeta.label}` : ''}</span>
+        ${notesLine}
       </div>`;
   };
 
   // Personal streaks footer — small badges for EVERY manager with a streak
   // record, not just whoever closed tonight (see the section near the
-  // bottom of this template). A manager whose streak just broke shouldn't
-  // read as having no streak at all — a bare "0" erases a run they may
-  // have just had (e.g. a 3-shift streak broken by a single miss). So a
-  // broken streak (current === 0) falls back to showing their record
-  // instead, clearly labeled "best" so it's not mistaken for an active
-  // streak. Sorted with active streaks first (current desc), then
-  // best-streak fallbacks (record desc), ties broken alphabetically. Uses
-  // a 🔥 emoji instead of the mascot image here (unlike the single
-  // inline hero above) — this repeats once per manager, and most email
-  // clients (Gmail included) hide externally-hosted images until the
-  // recipient clicks "Display images below," so the mascot was invisible
-  // on first view for every real send. An emoji is plain text: it renders
-  // instantly with no image request at all, and stays free regardless of
-  // roster size.
+  // bottom of this template). Always shows BOTH current and best/record —
+  // a bare current-only "0" erases a run a manager may have just had (e.g.
+  // a 3-shift streak broken by a single miss), so best stays visible next
+  // to it at all times rather than only surfacing as a fallback. Sorted by
+  // current streak descending (ties by record, then alphabetical) so an
+  // active streak stands out at the top. Uses a 🔥 emoji instead of the
+  // mascot image here (unlike the single inline hero above) — this
+  // repeats once per manager, and most email clients (Gmail included)
+  // hide externally-hosted images until the recipient clicks "Display
+  // images below," so the mascot was invisible on first view for every
+  // real send. An emoji is plain text: it renders instantly with no image
+  // request at all, and stays free regardless of roster size.
+  // "Meg Charity" -> "Meg C." — keeps badges compact regardless of name length.
+  const shortName = fullName => {
+    const parts = (fullName || '').trim().split(/\s+/);
+    return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : fullName;
+  };
+
+  // Matches the Scorecard tab's per-manager card design (renderScorecard())
+  // exactly — same card shape, big serif grade letter, "avg · shifts"
+  // subtitle, divider, then the streak line. Google Fonts aren't loadable
+  // in most email clients, so 'Cormorant Garamond' falls back to Georgia's
+  // serif, which reads close enough to the in-app look.
   const personalStreaksFooter = () => {
-    const entries = Object.entries(personalStreaks || {});
-    if (!entries.length) return '';
+    // Union of everyone with a streak record AND everyone who's ever been
+    // graded — a manager can have a walkthrough grade (picked from the
+    // "who closed?" dropdown at Opening sign-off) without ever having
+    // actually submitted a Closing checklist themselves, so they'd
+    // otherwise never appear here at all (e.g. Murphy).
+    const names = new Set([...Object.keys(personalStreaks || {}), ...Object.keys(managerGrades || {})]);
+    if (!names.size) return '';
+    const entries = Array.from(names).map(name => [name, personalStreaks[name] || null, (managerGrades || {})[name] || null]);
     entries.sort((a, b) => {
-      const aActive = a[1].current > 0, bActive = b[1].current > 0;
-      if (aActive !== bActive) return aActive ? -1 : 1;
-      if (aActive) return b[1].current - a[1].current || a[0].localeCompare(b[0]);
-      return b[1].record - a[1].record || a[0].localeCompare(b[0]);
+      const aCur = a[1] ? a[1].current : -1, bCur = b[1] ? b[1].current : -1;
+      const aRec = a[1] ? a[1].record : -1, bRec = b[1] ? b[1].record : -1;
+      return (bCur - aCur) || (bRec - aRec) || a[0].localeCompare(b[0]);
     });
-    const badges = entries.map(([name, ps]) => {
-      const active = ps.current > 0;
-      const showBest = !active && ps.record > 0;
-      const num = active ? ps.current : (showBest ? ps.record : 0);
-      const label = showBest ? `${name} best ${num}` : `${name} ${num}`;
-      return `
-        <span style="display:inline-block;margin:4px;padding:9px 14px;background:${active?'#fff7ec':'#f0e9da'};border-radius:22px;${active?'border:1px solid #ff9600;':''}">
+    const cards = entries.map(([name, ps, gr]) => {
+      const active = !!ps && ps.current > 0;
+      const gradeLine = gr ? `<div style="font-size:48px;font-weight:500;color:${gradeColor(gr.grade)};line-height:1;font-family:'Cormorant Garamond',Georgia,serif;">${gr.grade}</div>
+        <div style="font-size:12px;color:rgba(23,72,84,.4);margin-top:4px;">${gr.avg}% avg &middot; ${gr.count} shift${gr.count===1?'':'s'}</div>` : '';
+      const streakLine = ps ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid #e8e0d4;">
           <span style="font-size:18px;vertical-align:middle;margin-right:6px;${active?'':'opacity:.35;'}">🔥</span>
-          <span style="font-size:16px;font-weight:700;color:${active?'#ff9600':'#174854'};vertical-align:middle;">${label}</span>
-        </span>`;
+          <span style="font-size:15px;font-weight:700;color:${active?'#ff9600':'rgba(23,72,84,.35)'};vertical-align:middle;">${ps.current} shift streak</span>
+          <div style="font-size:11px;color:rgba(23,72,84,.4);margin-top:5px;">Best: ${ps.record} &middot; ${ps.totalPerfect||0} perfect close${(ps.totalPerfect||0)===1?'':'s'} total</div>
+        </div>` : '';
+      return `
+      <div style="display:inline-block;vertical-align:top;width:130px;margin:5px;padding:16px 10px;background:#fff;border:1.5px solid #e0d8cc;border-radius:10px;text-align:center;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin-bottom:8px;">${shortName(name)}</div>
+        ${gradeLine}
+        ${streakLine}
+      </div>`;
     }).join('');
     return `
-    <tr><td style="padding:20px 32px;border-top:1px solid #e0d8cc;text-align:center;">
-      <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#174854;margin-bottom:10px;">Personal Streaks</div>
-      ${badges}
+    <tr><td style="padding:20px 24px;border-top:1px solid #e0d8cc;text-align:center;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#174854;margin-bottom:12px;">Team Scorecard</div>
+      ${cards}
     </td></tr>`;
   };
 
@@ -5578,10 +5628,11 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
   dateStr = dateStr || getTodayStr();
   const prevDateObj = new Date(dateStr + 'T12:00:00'); prevDateObj.setDate(prevDateObj.getDate() - 1);
   const closingDateStr = prevDateObj.toISOString().slice(0, 10);
-  const [openingRow, closingRow, walkthroughScore] = await Promise.all([
+  const [openingRow, closingRow, walkthroughScore, managerGrades] = await Promise.all([
     fetchSignedOffChecklistRow('manager_opening', dateStr),
     fetchSignedOffChecklistRow('manager_closing', closingDateStr),
     fetchLatestManagerScore(closingDateStr),
+    fetchManagerGrades(),
   ]);
 
   // Update the streak once per calendar day. Only updates on the FIRST
@@ -5642,7 +5693,7 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
     return;
   }
   const streakInfo = { current: checklistStreak.current, record: checklistStreak.record, isNewRecord, streakBroken, brokenStreakLength };
-  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks);
+  const html = buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, closingRow, streakInfo, walkthroughScore, closingPenaltyExtraFields, personalStreaks, managerGrades);
 
   // Sent via a raw fetch() rather than emailjs.send() so the request shape
   // is fully under our control. This used to pass keepalive:true (to
