@@ -5672,7 +5672,28 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
     ? ((closingRow.items && closingRow.items.mod_name) || closingRow.manager_name)
     : (closingPenaltyExtraFields && !closingPenaltyExtraFields.missed_closing_skipped ? closingPenaltyExtraFields.missed_closing_manager : null);
   if (closingManagerName) {
-    const closingWasPerfect = !!closingRow && !!closingCalc && closingCalc.flagged.length === 0;
+    // Personal streaks are judged on the walkthrough grade (the Opening
+    // manager's next-morning inspection), not literal checklist box-checking
+    // — those are two independent signals that can genuinely diverge (a
+    // manager can do all the real work and just miss tapping one checkbox).
+    // Confirmed via two real incidents (Kevin, then Murphy) where a single
+    // unchecked box broke a streak despite a clean/perfect walkthrough.
+    // "Kept the streak alive" = an A grade (90%+), matching the same A–D
+    // scale already shown on the Scorecard tab and the walkthrough badge.
+    // fetchLatestManagerScore() looks up by date only, not by person — so
+    // explicitly confirm the grade actually belongs to whoever closed
+    // before trusting it, in case more than one manager was ever graded
+    // for the same shift_date (would otherwise misattribute someone
+    // else's grade onto this person's streak).
+    // A completely blank submission (nothing filled in at all) never
+    // counts, regardless of grade — confirmed via a real incident (Sarah,
+    // 7/15) where a blank close still got graded well; there was nothing
+    // to grade well in the first place.
+    const closingWasBlank = !!closingRow && !!closingCalc && closingCalc.done === 0;
+    const closingWasPerfect = !closingWasBlank
+      && !!walkthroughScore
+      && walkthroughScore.grade === 'A'
+      && walkthroughScore.graded_manager === closingManagerName;
     const ps = personalStreaks[closingManagerName] || { current: 0, record: 0, lastDate: null, totalPerfect: 0 };
     if (ps.lastDate !== closingDateStr) {
       if (closingWasPerfect) {
