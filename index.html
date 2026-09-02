@@ -1684,9 +1684,13 @@ async function renderScorecard() {
       </div>`;
     }
 
-    // Summary cards per manager
+    // Summary cards per manager — only show managers still on the active
+    // roster (rally_team). byManager is grouped from historical
+    // rally_manager_scores rows, so someone removed from the manager list
+    // would otherwise keep showing up here forever.
+    const activeManagerNames = new Set(users.filter(u => u.role === 'manager').map(u => u.name));
     html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:24px;">';
-    Object.entries(byManager).forEach(([mgr, scores]) => {
+    Object.entries(byManager).filter(([mgr]) => activeManagerNames.has(mgr)).forEach(([mgr, scores]) => {
       const avg = Math.round(scores.reduce((s,r) => s+(r.pct||r.score||0), 0) / scores.length);
       const grade = avg >= 90 ? 'A' : avg >= 75 ? 'B' : avg >= 60 ? 'C' : 'D';
       // Personal streak — consecutive Closing shifts THIS manager personally
@@ -5432,7 +5436,11 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
     // "who closed?" dropdown at Opening sign-off) without ever having
     // actually submitted a Closing checklist themselves, so they'd
     // otherwise never appear here at all (e.g. Murphy).
-    const names = new Set([...Object.keys(personalStreaks || {}), ...Object.keys(managerGrades || {})]);
+    // Restricted to the active rally_team roster so someone removed from
+    // the manager list drops out of this footer instead of lingering
+    // forever off old personalStreaks/managerGrades history.
+    const activeManagerNames = new Set(users.filter(u => u.role === 'manager').map(u => u.name));
+    const names = new Set([...Object.keys(personalStreaks || {}), ...Object.keys(managerGrades || {})].filter(n => activeManagerNames.has(n)));
     if (!names.size) return '';
     const entries = Array.from(names).map(name => [name, personalStreaks[name] || null, (managerGrades || {})[name] || null]);
     entries.sort((a, b) => {
