@@ -349,7 +349,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
 .cal-dow-cell{background:rgba(42,120,214,.12);color:var(--cal-header-blue);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:7px 0;border-radius:6px;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-.cal-cell{min-height:80px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
+.cal-cell{min-height:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
 .cal-cell:hover{border-color:var(--teal);}
 .cal-cell.empty{background:transparent;border:none;cursor:default;min-height:0;}
 .cal-cell.today{border-color:var(--olive);border-width:2px;}
@@ -6628,14 +6628,14 @@ function renderCalGrid() {
     const dayEvents = entries.filter(e => e._type === 'event');
     const dayPto = entries.filter(e => e._type === 'pto');
     const isToday = dateStr === todayStr;
-    const shownEvents = dayEvents.slice(0,3);
+    const shownEvents = dayEvents.slice(0,6);
 
     const eventsHtml = shownEvents.map(e => {
       const cat = CAL_CAT_BY_KEY[e.category];
       const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(cat?.tag || cat?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
       return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
-    }).join('') + (dayEvents.length>3 ? `<div class="cal-more">+${dayEvents.length-3} more</div>` : '');
+    }).join('') + (dayEvents.length>6 ? `<div class="cal-more">+${dayEvents.length-6} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
       <div class="cal-pto-block">
