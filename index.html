@@ -6499,19 +6499,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 // ─── CALENDAR (Team Calendar + PTO) ──────────────────────────────────────────
-// Everyone can view; only the signed-in GM email can add/edit/delete. The
-// real gate is the rally_calendar_events / rally_pto RLS policies (manager
-// email only) — isGM here is a UI convenience so non-GM staff never see
-// controls that would just fail server-side.
+// Everyone can view; any manager (the shared Manager PIN, same as Tasks and
+// Shift Reports) can add/edit/delete. isGM() just checks currentRole —
+// no real per-person sign-in involved, matching how the rest of the app's
+// manager-only actions already work.
 
 const CAL_SUPA = window.RALLY_SUPABASE_URL;
 const CAL_KEY  = window.RALLY_SUPABASE_ANON_KEY;
-// This deployment (rallydolist.netlify.app) has no real per-person sign-in —
-// it's PIN-only, by design, so the whole team isn't asked for an email.
-// That means isGM can never become true here (rally_am_i_allowed has no
-// real email to match), so the calendar is naturally view-only for
-// everyone on this site. Adding/editing calendar entries has to happen
-// from a surface that does have real sign-in (rallyportal.netlify.app).
 function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
 
 const CAL_CATEGORIES = [
@@ -6530,7 +6524,7 @@ const PTO_COLOR = 'var(--cal-pto)';
 let calEvents = [], ptoEntries = [];
 let calViewMonth = new Date(); calViewMonth.setDate(1);
 let calSubView = 'events'; // 'events' | 'pto' — only used in the associate hub's toggle mode
-let isGM = false;
+function isGM() { return currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director'; }
 let _calFormEditId = null;
 let _calFormEditTableType = null; // 'event' | 'pto' | null — which table the row being edited came from; null for a brand-new entry
 let _calRenderTarget = 'cal-hub-body'; // id of the body div currently showing the calendar — there are two mount points (associate hub + manager dashboard)
@@ -6543,18 +6537,6 @@ function fmtCalDate(dateStr) {
   if(!dateStr) return '';
   const [y,m,d] = dateStr.split('-').map(Number);
   return new Date(y, m-1, d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
-}
-
-async function checkGmStatus() {
-  try {
-    const res = await fetch(`${CAL_SUPA}/rest/v1/rpc/rally_am_i_allowed`, { method:'POST', headers: CAL_HDRS(), body:'{}' });
-    const data = await res.json();
-    const row = Array.isArray(data) ? data[0] : data;
-    isGM = !!(row && row.pin_role === 'manager');
-  } catch(e) { console.warn('GM status check failed', e); isGM = false; }
-  // Re-render if the Calendar tab is already open and waiting on this
-  // (either the associate hub's tab or the manager dashboard's tab).
-  if(document.getElementById(_calRenderTarget)?.querySelector('.cal-grid-wrap')) renderCalGrid();
 }
 
 async function loadCalendarEvents() {
@@ -6642,7 +6624,7 @@ function renderCalGrid() {
 
   // Merged (manager) mode adds entries by clicking a day, not a nav button —
   // see calDayClick(). The toggle (associate) mode keeps its explicit button.
-  const addButtons = (!isGM || _calMergedMode) ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`;
+  const addButtons = (!isGM() || _calMergedMode) ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`;
 
   const legendHtml = _calMergedMode
     ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${PTO_COLOR};"></span>PTO</span></div>`
@@ -6662,7 +6644,7 @@ function renderCalGrid() {
 }
 
 function calDayClick(dateStr) {
-  if(!isGM) return; // view-only staff: nothing to do on an empty day tap
+  if(!isGM()) return; // view-only staff: nothing to do on an empty day tap
   if(_calMergedMode) { openCalForm(null, null, dateStr); return; } // type is chosen inside the form
   openCalForm(calSubView==='events' ? 'event' : 'pto', null, dateStr);
 }
@@ -6686,7 +6668,7 @@ function viewCalEntry(type, id, ev) {
   if(entry.notes) { notesWrap.style.display=''; document.getElementById('cv-notes').textContent = entry.notes; }
   else notesWrap.style.display = 'none';
 
-  document.getElementById('cv-actions').innerHTML = isGM
+  document.getElementById('cv-actions').innerHTML = isGM()
     ? `<button class="modal-btn primary" onclick="closeCalViewModal();openCalForm('${type}','${entry.id}')">✏ Edit</button>
        <button class="modal-btn" style="background:rgba(220,80,60,.06);color:#c04020;border:1.5px solid rgba(220,80,60,.2);" onclick="deleteCalEntry('${type}','${entry.id}')">✕ Delete</button>`
     : `<button class="modal-btn secondary" style="flex:1;" onclick="closeCalViewModal()">Close</button>`;
@@ -6701,7 +6683,7 @@ function closeCalViewModal(ev) { if(ev && ev.target.id !== 'cal-view-modal') ret
 // both tables). The dropdown itself always offers all 9 options (8
 // categories + PTO) regardless of tableType.
 function openCalForm(tableType, id, prefillDate) {
-  if(!isGM) return;
+  if(!isGM()) return;
   _calFormEditId = id || null;
   _calFormEditTableType = tableType || null;
 
@@ -6733,7 +6715,7 @@ function calToggleModRow() {
 function closeCalFormModal(ev) { if(ev && ev.target.id !== 'cal-form-modal') return; document.getElementById('cal-form-modal').style.display = 'none'; }
 
 async function saveCalForm() {
-  if(!isGM) { showToast('View only — ask the GM to make changes'); return; }
+  if(!isGM()) { showToast('View only — ask the GM to make changes'); return; }
   const desc = document.getElementById('cf-desc').value.trim();
   if(!desc) { showToast('Enter a description'); return; }
   const selectedType = document.getElementById('cf-type').value; // one of the 8 category keys, or 'pto'
@@ -6777,7 +6759,7 @@ async function saveCalForm() {
 }
 
 async function deleteCalEntry(type, id) {
-  if(!isGM) return;
+  if(!isGM()) return;
   if(!confirm('Remove this entry?')) return;
   const table = type === 'event' ? 'rally_calendar_events' : 'rally_pto';
   try {
@@ -6793,13 +6775,8 @@ async function deleteCalEntry(type, id) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Wait for the auth gate to actually resolve (real sign-in completing, or
-  // the local-dev bypass) before checking GM status — otherwise this fires
-  // immediately on page load, before RallyAuth has a real session token,
-  // and isGM gets stuck false for the rest of the session.
-  const initCal = () => { checkGmStatus(); loadCalendarEvents(); loadPto(); };
-  if (window.RallyAuth && window.RallyAuth.whenReady) window.RallyAuth.whenReady(initCal);
-  else initCal();
+  loadCalendarEvents();
+  loadPto();
 });
 </script>
 
