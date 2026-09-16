@@ -15,6 +15,12 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
   --amber:#f89a1c; --coral:#f58664; --sage:#cee4cf;
   --cream:#fbf6ed; --cream-dark:#f0e9da;
   --border:rgba(23,72,84,.15); --shadow:rgba(23,72,84,.1);
+  /* Calendar category colors — validated for CVD-safe adjacent pairs against
+     the cream surface via the dataviz skill's palette validator. Order
+     matters: it's the validated ordering, not cosmetic. */
+  --cal-large-event:#2a78d6; --cal-activation:#eb6834; --cal-pickleball:#1baf7a;
+  --cal-repair:#eda100; --cal-private-party:#e87ba4; --cal-marketing:#008300;
+  --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--teal);min-height:100vh;}
@@ -326,6 +332,25 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .hub-tab:hover{color:var(--teal);}
 .hub-tab.active{color:var(--teal);font-weight:700;border-bottom-color:var(--teal);}
 .hub-tab.has-badge{color:var(--amber);}
+
+/* ── CALENDAR ── */
+.cal-nav{display:flex;align-items:center;gap:10px;margin:4px 0 12px;}
+.cal-month-lbl{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--teal);}
+.cal-add-btn{margin-left:auto;padding:7px 14px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .2s;}
+.cal-add-btn:hover{opacity:.88;}
+.cal-legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin-bottom:14px;padding:10px 12px;background:var(--cream-dark);border-radius:6px;}
+.cal-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--teal);}
+.cal-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;font-weight:700;color:var(--olive);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:4px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal-cell{min-height:64px;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:4px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:2px;}
+.cal-cell:hover{border-color:var(--teal);}
+.cal-cell.empty{background:transparent;border:none;cursor:default;}
+.cal-cell.today{border-color:var(--olive);border-width:2px;}
+.cal-daynum{font-size:11px;font-weight:700;color:var(--teal);}
+.cal-entries{display:flex;flex-direction:column;gap:2px;overflow:hidden;}
+.cal-pill{font-size:9px;font-weight:700;color:#fff;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal-more{font-size:9px;font-weight:700;color:rgba(23,72,84,.45);padding:1px 5px;}
 
 /* ── CHECKLIST HUB BODY ── */
 .cl-hub{padding:16px 16px 80px;}
@@ -659,6 +684,48 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- CALENDAR ENTRY DETAIL MODAL -->
+<div id="cal-view-modal" class="modal-ov" style="display:none;" onclick="closeCalViewModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="cv-title"></div>
+      <button class="modal-close" onclick="closeCalViewModal()">×</button>
+    </div>
+    <div id="cv-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;"></div>
+    <div id="cv-dates" style="font-size:13px;color:var(--teal);font-weight:600;margin-bottom:10px;"></div>
+    <div id="cv-notes-wrap" style="display:none;">
+      <div class="modal-sec-lbl">Notes</div>
+      <div class="modal-inst" id="cv-notes"></div>
+    </div>
+    <div class="modal-actions" id="cv-actions"></div>
+  </div>
+</div>
+
+<!-- CALENDAR ENTRY ADD/EDIT MODAL (GM only) -->
+<div id="cal-form-modal" class="modal-ov" style="display:none;" onclick="closeCalFormModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="cf-title">Add Calendar Entry</div>
+      <button class="modal-close" onclick="closeCalFormModal()">×</button>
+    </div>
+    <div class="fg full"><label>Description</label><input id="cf-desc" type="text" placeholder="e.g. Corporate Buyout — Acme Co., or a staff name for PTO"/></div>
+    <div class="fg full"><label>Type</label>
+      <select id="cf-type" onchange="calToggleModRow()"></select>
+    </div>
+    <div class="fg full" id="cf-mod-row"><label>MOD <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — can be added or changed anytime)</span></label>
+      <select id="cf-mod"><option value="">— Unassigned —</option></select>
+    </div>
+    <div class="form-grid">
+      <div class="fg"><label>Start Date</label><input id="cf-start" type="date"/></div>
+      <div class="fg"><label>End Date</label><input id="cf-end" type="date"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="saveCalForm()">Save</button>
+      <button class="modal-btn secondary" onclick="closeCalFormModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ROLE SCREEN -->
 <div class="screen active" id="s-role">
   <div class="role-hero">
@@ -778,13 +845,14 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="hdr-right">
       <span class="hdr-user" id="mgr-hdr-user"></span>
-      <button class="btn-sm amber" onclick="openAddTask(true)">+ Add Task</button>
+      <button class="btn-sm amber" id="mgr-add-task-hdr-btn" style="display:none;" onclick="openAddTask(true)">+ Add Task</button>
       <button class="btn-sm" onclick="goBackFromMgr()">← Back</button>
       <button class="btn-sm danger" onclick="doLogout()">Out</button>
     </div>
   </div>
   <div class="nav-tabs" id="mgr-tabs">
-    <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
+    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
+    <button class="nav-tab" onclick="showMgrTab('tasks',this)">Tasks</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
   </div>
@@ -809,6 +877,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="cl-tab-editor" style="display:none;padding:16px 16px 80px;"><div id="cl-editor-body"></div></div>
   </div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
+  <div id="mgr-tab-calendar" style="flex:1;overflow-y:auto;display:none;">
+    <div class="cl-hub" id="mgr-cal-hub-body"></div>
+  </div>
 </div>
 
 <script>
@@ -963,7 +1034,7 @@ setInterval(async()=>{
     }
     const active=document.querySelector('.screen.active');
     if(active?.id==='s-host'||active?.id==='s-cl-hub')renderHost();
-    if(active?.id==='s-mgr')renderMgr();
+    if(active?.id==='s-mgr'&&mgrTab==='tasks')renderMgr();
   }catch(e){}
 },8000);
 
@@ -1110,7 +1181,7 @@ function goToHost(){
   if(currentRole==='manager'||currentRole==='owner'||currentRole==='director') {
     currentPosition = 'Manager';
     showScreen('s-mgr');
-    showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));
+    showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));
     document.getElementById('mgr-hdr-user').textContent = u?.name?.split(' ')[0] || 'Manager';
   } else if(currentRole==='associate') {
     // Position already picked before name — go straight to hub
@@ -1557,6 +1628,15 @@ function showMgrTab(tab, el) {
   if(tab === 'checklists')  { switchClScoreTab('checklists'); }
   document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
   if(tab === 'shiftreport') renderShiftReportForm();
+  document.getElementById('mgr-tab-calendar').style.display = tab === 'calendar' ? 'block' : 'none';
+  if(tab === 'calendar') renderCalendarHub('mgr-cal-hub-body', true);
+
+  // "+ Add Task" (header button + floating button) only makes sense on the
+  // Tasks tab — hide it everywhere else on the manager dashboard.
+  const fab = document.getElementById('fab-add');
+  if(fab) fab.classList.toggle('visible', tab === 'tasks');
+  const hdrAddTaskBtn = document.getElementById('mgr-add-task-hdr-btn');
+  if(hdrAddTaskBtn) hdrAddTaskBtn.style.display = tab === 'tasks' ? '' : 'none';
 }
 
 async function renderMgrClHub() {
@@ -3437,7 +3517,7 @@ function switchTaskView(view) {
   else renderMgrCompleted();
 }
 
-function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
+function goMgr(){showScreen('s-mgr');showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   // Go back to name picker so a different manager can log in
@@ -4559,6 +4639,7 @@ function goToHub() {
   tabsEl.innerHTML = `
     <button class="hub-tab active" onclick="showHubTab('tasks',this)" id="hub-tab-tasks">${doListLabel}</button>
     <button class="hub-tab${hasDueChecklists()?' has-badge':''}" onclick="showHubTab('cl',this)" id="hub-tab-cl">Checklists${hasDueChecklists()?' ●':''}</button>
+    <button class="hub-tab" onclick="showHubTab('cal',this)" id="hub-tab-cal">Calendar</button>
   `;
 
   showScreen('s-cl-hub');
@@ -4571,7 +4652,9 @@ function showHubTab(tab, el) {
   if(el) el.classList.add('active');
   document.getElementById('hub-tasks').style.display = tab === 'tasks' ? '' : 'none';
   document.getElementById('hub-cl').style.display = tab === 'cl' ? '' : 'none';
+  document.getElementById('hub-cal').style.display = tab === 'cal' ? '' : 'none';
   if(tab === 'cl') renderClHub();
+  if(tab === 'cal') renderCalendarHub('cal-hub-body');
   if(tab === 'tasks') {
     // Populate hub-tasks with s-host's inner content (tabs + tab panels, no header)
     const hubTasks = document.getElementById('hub-tasks');
@@ -6181,6 +6264,9 @@ function goBackToHub() {
   <div class="hub-panel" id="hub-cl" style="display:none;overflow-y:auto;">
     <div class="cl-hub" id="cl-hub-body"></div>
   </div>
+  <div class="hub-panel" id="hub-cal" style="display:none;overflow-y:auto;">
+    <div class="cl-hub" id="cal-hub-body"></div>
+  </div>
 </div>
 
 <!-- CHECKLIST SCREEN -->
@@ -6408,6 +6494,312 @@ function clEditorRemoveItem(key, itemId) {
 // ── Load config on startup (call after app loads) ─────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadChecklistConfig();
+});
+</script>
+
+<script>
+// ─── CALENDAR (Team Calendar + PTO) ──────────────────────────────────────────
+// Everyone can view; only the signed-in GM email can add/edit/delete. The
+// real gate is the rally_calendar_events / rally_pto RLS policies (manager
+// email only) — isGM here is a UI convenience so non-GM staff never see
+// controls that would just fail server-side.
+
+const CAL_SUPA = window.RALLY_SUPABASE_URL;
+const CAL_KEY  = window.RALLY_SUPABASE_ANON_KEY;
+// This deployment (rallydolist.netlify.app) has no real per-person sign-in —
+// it's PIN-only, by design, so the whole team isn't asked for an email.
+// That means isGM can never become true here (rally_am_i_allowed has no
+// real email to match), so the calendar is naturally view-only for
+// everyone on this site. Adding/editing calendar entries has to happen
+// from a surface that does have real sign-in (rallyportal.netlify.app).
+function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
+
+const CAL_CATEGORIES = [
+  { key:'large_event',        label:'Large Event',           color:'var(--cal-large-event)' },
+  { key:'activation',         label:'Activation',            color:'var(--cal-activation)' },
+  { key:'pickleball_event',   label:'Pickleball Event',      color:'var(--cal-pickleball)' },
+  { key:'repair_maintenance', label:'Repair & Maintenance',  color:'var(--cal-repair)' },
+  { key:'private_party',      label:'Private Party / Buyout',color:'var(--cal-private-party)' },
+  { key:'marketing_promo',    label:'Marketing / Promo',     color:'var(--cal-marketing)' },
+  { key:'staff_training',     label:'Staff Training',        color:'var(--cal-training)' },
+  { key:'holiday_closure',    label:'Holiday / Closure',     color:'var(--cal-holiday)' },
+];
+const CAL_CAT_BY_KEY = Object.fromEntries(CAL_CATEGORIES.map(c => [c.key, c]));
+const PTO_COLOR = 'var(--cal-pto)';
+
+let calEvents = [], ptoEntries = [];
+let calViewMonth = new Date(); calViewMonth.setDate(1);
+let calSubView = 'events'; // 'events' | 'pto' — only used in the associate hub's toggle mode
+let isGM = false;
+let _calFormEditId = null;
+let _calFormEditTableType = null; // 'event' | 'pto' | null — which table the row being edited came from; null for a brand-new entry
+let _calRenderTarget = 'cal-hub-body'; // id of the body div currently showing the calendar — there are two mount points (associate hub + manager dashboard)
+let _calMergedMode = false; // true on the manager dashboard: one combined calendar (events + PTO together) instead of the associate hub's toggle-between-two-views
+
+function calEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtCalDate(dateStr) {
+  if(!dateStr) return '';
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+}
+
+async function checkGmStatus() {
+  try {
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rpc/rally_am_i_allowed`, { method:'POST', headers: CAL_HDRS(), body:'{}' });
+    const data = await res.json();
+    const row = Array.isArray(data) ? data[0] : data;
+    isGM = !!(row && row.pin_role === 'manager');
+  } catch(e) { console.warn('GM status check failed', e); isGM = false; }
+  // Re-render if the Calendar tab is already open and waiting on this
+  // (either the associate hub's tab or the manager dashboard's tab).
+  if(document.getElementById(_calRenderTarget)?.querySelector('.cal-grid-wrap')) renderCalGrid();
+}
+
+async function loadCalendarEvents() {
+  try {
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rally_calendar_events?select=*&order=start_date.asc`, { headers: CAL_HDRS() });
+    const data = await res.json();
+    calEvents = (res.ok && Array.isArray(data)) ? data : [];
+    if(!res.ok) console.warn('Calendar events load failed', data);
+  } catch(e) { console.warn('Calendar events load failed', e); calEvents = []; }
+}
+async function loadPto() {
+  try {
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rally_pto?select=*&order=start_date.asc`, { headers: CAL_HDRS() });
+    const data = await res.json();
+    ptoEntries = (res.ok && Array.isArray(data)) ? data : [];
+    if(!res.ok) console.warn('PTO load failed', data);
+  } catch(e) { console.warn('PTO load failed', e); ptoEntries = []; }
+}
+
+function renderCalendarHub(targetId, merged) {
+  if(targetId) _calRenderTarget = targetId;
+  _calMergedMode = !!merged;
+  const body = document.getElementById(_calRenderTarget);
+  if(!body) return;
+  body.innerHTML = `
+    <div class="cl-hub-title">Calendar</div>
+    <div class="cl-hub-sub">Events, activations, and team PTO.</div>
+    ${_calMergedMode ? '' : `
+    <div class="lb-toggle">
+      <button class="lb-tog ${calSubView==='events'?'on':''}" onclick="switchCalSubView('events')">📅 Team Calendar</button>
+      <button class="lb-tog ${calSubView==='pto'?'on':''}" onclick="switchCalSubView('pto')">🏖 PTO</button>
+    </div>`}
+    <div class="cal-grid-wrap"></div>
+  `;
+  renderCalGrid();
+}
+
+function switchCalSubView(v) { calSubView = v; renderCalendarHub(); }
+
+function calShiftMonth(delta) {
+  calViewMonth.setMonth(calViewMonth.getMonth() + delta);
+  renderCalGrid();
+}
+
+function calEntriesForDay(dateStr) {
+  let list;
+  if(_calMergedMode) {
+    list = [
+      ...calEvents.map(e => ({...e, _type:'event'})),
+      ...ptoEntries.map(e => ({...e, _type:'pto'})),
+    ];
+  } else {
+    const type = calSubView === 'events' ? 'event' : 'pto';
+    list = (calSubView === 'events' ? calEvents : ptoEntries).map(e => ({...e, _type:type}));
+  }
+  return list.filter(e => dateStr >= e.start_date && dateStr <= (e.end_date || e.start_date));
+}
+
+function renderCalGrid() {
+  const host = document.getElementById(_calRenderTarget);
+  const wrap = host && host.querySelector('.cal-grid-wrap');
+  if(!wrap) return;
+  const y = calViewMonth.getFullYear(), m = calViewMonth.getMonth();
+  const first = new Date(y, m, 1);
+  const startOffset = first.getDay();
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const todayStr = getTodayStr();
+
+  let cells = '';
+  for(let i=0; i<startOffset; i++) cells += `<div class="cal-cell empty"></div>`;
+  for(let day=1; day<=daysInMonth; day++) {
+    const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const entries = calEntriesForDay(dateStr);
+    const isToday = dateStr === todayStr;
+    const shown = entries.slice(0,3);
+    cells += `
+      <div class="cal-cell${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
+        <div class="cal-daynum">${day}</div>
+        <div class="cal-entries">
+          ${shown.map(e => `<div class="cal-pill" style="background:${e._type==='event' ? (CAL_CAT_BY_KEY[e.category]?.color||'#999') : PTO_COLOR};" title="${calEsc(e._type==='event'?e.title:e.staff_name)}" onclick="viewCalEntry('${e._type}','${e.id}',event)">${calEsc(e._type==='event'?e.title:e.staff_name)}</div>`).join('')}
+          ${entries.length>3 ? `<div class="cal-more">+${entries.length-3} more</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // Merged (manager) mode adds entries by clicking a day, not a nav button —
+  // see calDayClick(). The toggle (associate) mode keeps its explicit button.
+  const addButtons = (!isGM || _calMergedMode) ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`;
+
+  const legendHtml = _calMergedMode
+    ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${PTO_COLOR};"></span>PTO</span></div>`
+    : (calSubView==='events' ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}</div>` : '');
+
+  wrap.innerHTML = `
+    <div class="cal-nav">
+      <button class="ov-abtn" onclick="calShiftMonth(-1)">‹ Prev</button>
+      <div class="cal-month-lbl">${calViewMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      <button class="ov-abtn" onclick="calShiftMonth(1)">Next ›</button>
+      ${addButtons}
+    </div>
+    ${legendHtml}
+    <div class="cal-dow-row">${['S','M','T','W','T','F','S'].map(d=>`<div>${d}</div>`).join('')}</div>
+    <div class="cal-grid">${cells}</div>
+  `;
+}
+
+function calDayClick(dateStr) {
+  if(!isGM) return; // view-only staff: nothing to do on an empty day tap
+  if(_calMergedMode) { openCalForm(null, null, dateStr); return; } // type is chosen inside the form
+  openCalForm(calSubView==='events' ? 'event' : 'pto', null, dateStr);
+}
+
+function viewCalEntry(type, id, ev) {
+  if(ev) ev.stopPropagation();
+  const isEvent = type === 'event';
+  const list = isEvent ? calEvents : ptoEntries;
+  const entry = list.find(e => String(e.id) === String(id));
+  if(!entry) return;
+
+  document.getElementById('cv-title').textContent = isEvent ? entry.title : entry.staff_name;
+  document.getElementById('cv-badges').innerHTML = (isEvent
+    ? `<span class="wchip" style="background:${CAL_CAT_BY_KEY[entry.category]?.color||'#999'};color:#fff;border:none;">${CAL_CAT_BY_KEY[entry.category]?.label||entry.category}</span>`
+    : `<span class="wchip" style="background:${PTO_COLOR};color:#fff;border:none;">PTO</span>`)
+    + (isEvent && entry.mod_name ? `<span class="wchip">MOD: ${calEsc(entry.mod_name)}</span>` : '');
+  document.getElementById('cv-dates').textContent = entry.start_date === entry.end_date
+    ? fmtCalDate(entry.start_date)
+    : `${fmtCalDate(entry.start_date)} – ${fmtCalDate(entry.end_date)}`;
+  const notesWrap = document.getElementById('cv-notes-wrap');
+  if(entry.notes) { notesWrap.style.display=''; document.getElementById('cv-notes').textContent = entry.notes; }
+  else notesWrap.style.display = 'none';
+
+  document.getElementById('cv-actions').innerHTML = isGM
+    ? `<button class="modal-btn primary" onclick="closeCalViewModal();openCalForm('${type}','${entry.id}')">✏ Edit</button>
+       <button class="modal-btn" style="background:rgba(220,80,60,.06);color:#c04020;border:1.5px solid rgba(220,80,60,.2);" onclick="deleteCalEntry('${type}','${entry.id}')">✕ Delete</button>`
+    : `<button class="modal-btn secondary" style="flex:1;" onclick="closeCalViewModal()">Close</button>`;
+
+  document.getElementById('cal-view-modal').style.display = 'flex';
+}
+function closeCalViewModal(ev) { if(ev && ev.target.id !== 'cal-view-modal') return; document.getElementById('cal-view-modal').style.display = 'none'; }
+
+// tableType is 'event' | 'pto' | null — null means "new entry, type not
+// decided yet" (the day-click flow); 'event'/'pto' when editing an existing
+// row, so we know which table/array it came from (ids aren't unique across
+// both tables). The dropdown itself always offers all 9 options (8
+// categories + PTO) regardless of tableType.
+function openCalForm(tableType, id, prefillDate) {
+  if(!isGM) return;
+  _calFormEditId = id || null;
+  _calFormEditTableType = tableType || null;
+
+  let entry = null;
+  if(id && tableType) {
+    const list = tableType==='event' ? calEvents : ptoEntries;
+    entry = list.find(e => String(e.id) === String(id));
+  }
+
+  document.getElementById('cf-title').textContent = id ? 'Edit Calendar Entry' : 'Add Calendar Entry';
+  document.getElementById('cf-type').innerHTML = CAL_CATEGORIES.map(c=>`<option value="${c.key}">${c.label}</option>`).join('') + `<option value="pto">PTO</option>`;
+  document.getElementById('cf-type').value = entry
+    ? (tableType==='event' ? entry.category : 'pto')
+    : (tableType==='pto' ? 'pto' : CAL_CATEGORIES[0].key);
+  document.getElementById('cf-desc').value = entry ? (tableType==='event' ? entry.title : entry.staff_name) : '';
+  const mgrs = users.filter(u=>u.role==='manager');
+  document.getElementById('cf-mod').innerHTML = '<option value="">— Unassigned —</option>' + mgrs.map(u=>`<option value="${calEsc(u.name)}">${calEsc(u.name)}</option>`).join('');
+  document.getElementById('cf-mod').value = (entry && tableType==='event') ? (entry.mod_name || '') : '';
+  document.getElementById('cf-start').value = entry ? entry.start_date : (prefillDate || getTodayStr());
+  document.getElementById('cf-end').value = entry ? (entry.end_date || entry.start_date) : (prefillDate || getTodayStr());
+
+  calToggleModRow();
+  document.getElementById('cal-form-modal').style.display = 'flex';
+}
+function calToggleModRow() {
+  const isPto = document.getElementById('cf-type').value === 'pto';
+  document.getElementById('cf-mod-row').style.display = isPto ? 'none' : '';
+}
+function closeCalFormModal(ev) { if(ev && ev.target.id !== 'cal-form-modal') return; document.getElementById('cal-form-modal').style.display = 'none'; }
+
+async function saveCalForm() {
+  if(!isGM) { showToast('View only — ask the GM to make changes'); return; }
+  const desc = document.getElementById('cf-desc').value.trim();
+  if(!desc) { showToast('Enter a description'); return; }
+  const selectedType = document.getElementById('cf-type').value; // one of the 8 category keys, or 'pto'
+  const isPto = selectedType === 'pto';
+  const start = document.getElementById('cf-start').value;
+  if(!start) { showToast('Pick a start date'); return; }
+  let end = document.getElementById('cf-end').value || start;
+  if(end < start) end = start;
+  const createdBy = (window.RallyAuth && window.RallyAuth.email()) || null;
+
+  const modName = document.getElementById('cf-mod').value || null;
+  const newTable = isPto ? 'rally_pto' : 'rally_calendar_events';
+  const payload = isPto
+    ? { staff_name: desc, start_date: start, end_date: end, created_by: createdBy }
+    : { title: desc, category: selectedType, mod_name: modName, start_date: start, end_date: end, created_by: createdBy };
+
+  try {
+    if(_calFormEditId && _calFormEditTableType) {
+      const oldIsPto = _calFormEditTableType === 'pto';
+      if(oldIsPto === isPto) {
+        // Same table — simple update.
+        await fetch(`${CAL_SUPA}/rest/v1/${newTable}?id=eq.${_calFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      } else {
+        // Type crossed the event/PTO boundary — move the row: delete from
+        // the old table, insert into the new one.
+        const oldTable = oldIsPto ? 'rally_pto' : 'rally_calendar_events';
+        await fetch(`${CAL_SUPA}/rest/v1/${oldTable}?id=eq.${_calFormEditId}`, { method:'DELETE', headers: CAL_HDRS() });
+        await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      }
+    } else {
+      await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    }
+    await Promise.all([loadCalendarEvents(), loadPto()]);
+    closeCalFormModal();
+    renderCalGrid();
+    showToast('Saved ✓');
+  } catch(e) {
+    console.warn('Calendar save failed', e);
+    showToast('⚠ Save failed — check connection');
+  }
+}
+
+async function deleteCalEntry(type, id) {
+  if(!isGM) return;
+  if(!confirm('Remove this entry?')) return;
+  const table = type === 'event' ? 'rally_calendar_events' : 'rally_pto';
+  try {
+    await fetch(`${CAL_SUPA}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    if(type === 'event') await loadCalendarEvents(); else await loadPto();
+    closeCalViewModal();
+    renderCalGrid();
+    showToast('Removed');
+  } catch(e) {
+    console.warn('Calendar delete failed', e);
+    showToast('⚠ Delete failed');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait for the auth gate to actually resolve (real sign-in completing, or
+  // the local-dev bypass) before checking GM status — otherwise this fires
+  // immediately on page load, before RallyAuth has a real session token,
+  // and isGM gets stuck false for the rest of the session.
+  const initCal = () => { checkGmStatus(); loadCalendarEvents(); loadPto(); };
+  if (window.RallyAuth && window.RallyAuth.whenReady) window.RallyAuth.whenReady(initCal);
+  else initCal();
 });
 </script>
 
