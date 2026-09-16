@@ -22,7 +22,7 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
      specifically must stay between Repair/Maintenance and Private Party;
      lime next to orange (Activation) collapses under red-green color
      blindness, which is why it isn't first despite being listed first here. */
-  --cal-activation:#eb6834; --cal-pickleball:#0080ff; --cal-repair:#eda100;
+  --cal-activation:#eb6834; --cal-pickleball:#0d8fc7; --cal-repair:#eda100;
   --cal-large-event:#4f9a1a; --cal-private-party:#e87ba4; --cal-marketing:#008300;
   --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
   --cal-header-blue:#2a78d6; /* day-of-week header box — independent of Large Event's color */
@@ -6627,9 +6627,9 @@ function renderCalGrid() {
     const shownEvents = dayEvents.slice(0,3);
 
     const eventsHtml = shownEvents.map(e => {
-      const buyoutTag = e.category==='private_party' ? ` <span class="cal-pill-mod">· Buyout</span>` : '';
+      const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(CAL_CAT_BY_KEY[e.category]?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
-      return `<div class="cal-pill" style="background:${CAL_CAT_BY_KEY[e.category]?.color||'#999'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${buyoutTag}${modSuffix}</div>`;
+      return `<div class="cal-pill" style="background:${CAL_CAT_BY_KEY[e.category]?.color||'#999'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
     }).join('') + (dayEvents.length>3 ? `<div class="cal-more">+${dayEvents.length-3} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
@@ -6652,8 +6652,10 @@ function renderCalGrid() {
   // see calDayClick(). The toggle (associate) mode keeps its explicit button.
   const addButtons = (!isGM() || _calMergedMode) ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`;
 
+  // Merged (manager) mode drops the color legend — each pill now names its
+  // own category directly (see categoryTag above), so the key is redundant.
   const legendHtml = _calMergedMode
-    ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${PTO_COLOR};"></span>PTO</span></div>`
+    ? ''
     : (calSubView==='events' ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}</div>` : '');
 
   wrap.innerHTML = `
