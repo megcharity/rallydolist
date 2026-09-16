@@ -16,11 +16,16 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
   --cream:#fbf6ed; --cream-dark:#f0e9da;
   --border:rgba(23,72,84,.15); --shadow:rgba(23,72,84,.1);
   /* Calendar category colors — validated for CVD-safe adjacent pairs against
-     the cream surface via the dataviz skill's palette validator. Order
-     matters: it's the validated ordering, not cosmetic. */
-  --cal-large-event:#2a78d6; --cal-activation:#eb6834; --cal-pickleball:#1baf7a;
-  --cal-repair:#eda100; --cal-private-party:#e87ba4; --cal-marketing:#008300;
+     the cream surface via the dataviz skill's palette validator. Both the
+     hex values AND their order (CAL_CATEGORIES array order below) matter —
+     it's a validated sequence, not independently-chosen colors. Large Event
+     specifically must stay between Repair/Maintenance and Private Party;
+     lime next to orange (Activation) collapses under red-green color
+     blindness, which is why it isn't first despite being listed first here. */
+  --cal-activation:#eb6834; --cal-pickleball:#1baf7a; --cal-repair:#eda100;
+  --cal-large-event:#4f9a1a; --cal-private-party:#e87ba4; --cal-marketing:#008300;
   --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
+  --cal-header-blue:#2a78d6; /* day-of-week header box — independent of Large Event's color */
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--teal);min-height:100vh;}
@@ -342,7 +347,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--teal);}
 .cal-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
-.cal-dow-cell{background:var(--cal-large-event);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:7px 0;border-radius:6px;}
+.cal-dow-cell{background:var(--cal-header-blue);color:#fff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:7px 0;border-radius:6px;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
 .cal-cell{min-height:80px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
 .cal-cell:hover{border-color:var(--teal);}
@@ -6515,10 +6520,10 @@ const CAL_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
 
 const CAL_CATEGORIES = [
-  { key:'large_event',        label:'Large Event',           color:'var(--cal-large-event)' },
   { key:'activation',         label:'Activation',            color:'var(--cal-activation)' },
   { key:'pickleball_event',   label:'Pickleball Event',      color:'var(--cal-pickleball)' },
   { key:'repair_maintenance', label:'Repair & Maintenance',  color:'var(--cal-repair)' },
+  { key:'large_event',        label:'Large Event',           color:'var(--cal-large-event)' },
   { key:'private_party',      label:'Private Party / Buyout',color:'var(--cal-private-party)' },
   { key:'marketing_promo',    label:'Marketing / Promo',     color:'var(--cal-marketing)' },
   { key:'staff_training',     label:'Staff Training',        color:'var(--cal-training)' },
