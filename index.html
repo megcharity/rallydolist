@@ -341,16 +341,17 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-legend{display:flex;flex-wrap:wrap;gap:7px 14px;margin-bottom:14px;padding:10px 12px;background:var(--cream-dark);border-radius:6px;}
 .cal-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--teal);}
 .cal-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;font-weight:700;color:var(--olive);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:4px;}
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-.cal-cell{min-height:64px;background:#fff;border:1.5px solid var(--border);border-radius:6px;padding:4px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:2px;}
+.cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:11px;font-weight:700;color:var(--olive);text-transform:uppercase;letter-spacing:.05em;text-align:center;margin-bottom:6px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+.cal-cell{aspect-ratio:1;min-height:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:4px;}
 .cal-cell:hover{border-color:var(--teal);}
-.cal-cell.empty{background:transparent;border:none;cursor:default;}
+.cal-cell.empty{background:transparent;border:none;cursor:default;aspect-ratio:auto;min-height:0;}
 .cal-cell.today{border-color:var(--olive);border-width:2px;}
-.cal-daynum{font-size:11px;font-weight:700;color:var(--teal);}
-.cal-entries{display:flex;flex-direction:column;gap:2px;overflow:hidden;}
-.cal-pill{font-size:9px;font-weight:700;color:#fff;padding:2px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
-.cal-more{font-size:9px;font-weight:700;color:rgba(23,72,84,.45);padding:1px 5px;}
+.cal-daynum{font-size:13px;font-weight:700;color:var(--teal);}
+.cal-entries{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
+.cal-pill{font-size:10px;font-weight:700;color:#fff;padding:3px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4;}
+.cal-pill-mod{font-weight:500;opacity:.85;}
+.cal-more{font-size:10px;font-weight:700;color:rgba(23,72,84,.45);padding:1px 5px;}
 
 /* ── CHECKLIST HUB BODY ── */
 .cl-hub{padding:16px 16px 80px;}
@@ -6616,7 +6617,11 @@ function renderCalGrid() {
       <div class="cal-cell${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
         <div class="cal-daynum">${day}</div>
         <div class="cal-entries">
-          ${shown.map(e => `<div class="cal-pill" style="background:${e._type==='event' ? (CAL_CAT_BY_KEY[e.category]?.color||'#999') : PTO_COLOR};" title="${calEsc(e._type==='event'?e.title:e.staff_name)}" onclick="viewCalEntry('${e._type}','${e.id}',event)">${calEsc(e._type==='event'?e.title:e.staff_name)}</div>`).join('')}
+          ${shown.map(e => {
+            const label = e._type==='event' ? e.title : e.staff_name;
+            const modSuffix = (e._type==='event' && e.mod_name) ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
+            return `<div class="cal-pill" style="background:${e._type==='event' ? (CAL_CAT_BY_KEY[e.category]?.color||'#999') : PTO_COLOR};" title="${calEsc(label)}${e._type==='event' && e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('${e._type}','${e.id}',event)">${calEsc(label)}${modSuffix}</div>`;
+          }).join('')}
           ${entries.length>3 ? `<div class="cal-more">+${entries.length-3} more</div>` : ''}
         </div>
       </div>`;
