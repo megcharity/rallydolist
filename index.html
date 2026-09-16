@@ -357,6 +357,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-entries{display:flex;flex-direction:column;gap:3px;overflow:hidden;}
 .cal-pill{font-size:10px;font-weight:700;color:#fff;padding:3px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4;}
 .cal-pill-mod{font-weight:500;opacity:.85;}
+.cal-callout-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#e11d1d;border:1px solid rgba(255,255,255,.7);margin-right:4px;vertical-align:middle;flex-shrink:0;}
 .cal-more{font-size:10px;font-weight:700;color:rgba(23,72,84,.45);padding:1px 5px;}
 .cal-pto-block{margin-top:auto;padding-top:5px;border-top:1px dashed rgba(23,72,84,.18);}
 .cal-pto-label{font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cal-pto);margin-bottom:3px;}
@@ -705,7 +706,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="cv-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;"></div>
     <div id="cv-dates" style="font-size:13px;color:var(--teal);font-weight:600;margin-bottom:10px;"></div>
     <div id="cv-notes-wrap" style="display:none;">
-      <div class="modal-sec-lbl">Notes</div>
+      <div class="modal-sec-lbl">🔴 Special Callout</div>
       <div class="modal-inst" id="cv-notes"></div>
     </div>
     <div class="modal-actions" id="cv-actions"></div>
@@ -730,6 +731,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="fg"><label>Start Date</label><input id="cf-start" type="date"/></div>
       <div class="fg"><label>End Date</label><input id="cf-end" type="date"/></div>
     </div>
+    <div class="fg full" id="cf-callout-row"><label>🔴 Special Callout <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — shows a red dot on the calendar)</span></label><textarea id="cf-callout" rows="2" placeholder="Something important the team needs to know about this event"></textarea></div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveCalForm()">Save</button>
       <button class="modal-btn secondary" onclick="closeCalFormModal()">Cancel</button>
@@ -6634,7 +6636,8 @@ function renderCalGrid() {
       const cat = CAL_CAT_BY_KEY[e.category];
       const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(cat?.tag || cat?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
-      return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
+      const calloutDot = e.notes ? `<span class="cal-callout-dot" title="Special callout: ${calEsc(e.notes)}"></span>` : '';
+      return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}${e.notes ? ' — ⚠ '+calEsc(e.notes) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calloutDot}${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
     }).join('') + (dayEvents.length>6 ? `<div class="cal-more">+${dayEvents.length-6} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
@@ -6738,6 +6741,7 @@ function openCalForm(tableType, id, prefillDate) {
   document.getElementById('cf-mod').value = (entry && tableType==='event') ? (entry.mod_name || '') : '';
   document.getElementById('cf-start').value = entry ? entry.start_date : (prefillDate || getTodayStr());
   document.getElementById('cf-end').value = entry ? (entry.end_date || entry.start_date) : (prefillDate || getTodayStr());
+  document.getElementById('cf-callout').value = (entry && tableType==='event') ? (entry.notes || '') : '';
 
   calToggleModRow();
   document.getElementById('cal-form-modal').style.display = 'flex';
@@ -6745,6 +6749,7 @@ function openCalForm(tableType, id, prefillDate) {
 function calToggleModRow() {
   const isPto = document.getElementById('cf-type').value === 'pto';
   document.getElementById('cf-mod-row').style.display = isPto ? 'none' : '';
+  document.getElementById('cf-callout-row').style.display = isPto ? 'none' : '';
 }
 function closeCalFormModal(ev) { if(ev && ev.target.id !== 'cal-form-modal') return; document.getElementById('cal-form-modal').style.display = 'none'; }
 
@@ -6761,10 +6766,11 @@ async function saveCalForm() {
   const createdBy = (window.RallyAuth && window.RallyAuth.email()) || null;
 
   const modName = document.getElementById('cf-mod').value || null;
+  const callout = document.getElementById('cf-callout').value.trim() || null;
   const newTable = isPto ? 'rally_pto' : 'rally_calendar_events';
   const payload = isPto
     ? { staff_name: desc, start_date: start, end_date: end, created_by: createdBy }
-    : { title: desc, category: selectedType, mod_name: modName, start_date: start, end_date: end, created_by: createdBy };
+    : { title: desc, category: selectedType, mod_name: modName, notes: callout, start_date: start, end_date: end, created_by: createdBy };
 
   try {
     if(_calFormEditId && _calFormEditTableType) {
