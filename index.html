@@ -352,6 +352,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-pill{font-size:10px;font-weight:700;color:#fff;padding:3px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.4;}
 .cal-pill-mod{font-weight:500;opacity:.85;}
 .cal-more{font-size:10px;font-weight:700;color:rgba(23,72,84,.45);padding:1px 5px;}
+.cal-pto-block{margin-top:auto;padding-top:5px;border-top:1px dashed rgba(23,72,84,.18);}
+.cal-pto-label{font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cal-pto);margin-bottom:3px;}
+.cal-pto-names{display:flex;flex-wrap:wrap;gap:3px;}
+.cal-pto-chip{font-size:10px;font-weight:700;color:#fff;background:var(--cal-pto);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
 
 /* ── CHECKLIST HUB BODY ── */
 .cl-hub{padding:16px 16px 80px;}
@@ -6611,19 +6615,29 @@ function renderCalGrid() {
   for(let day=1; day<=daysInMonth; day++) {
     const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const entries = calEntriesForDay(dateStr);
+    const dayEvents = entries.filter(e => e._type === 'event');
+    const dayPto = entries.filter(e => e._type === 'pto');
     const isToday = dateStr === todayStr;
-    const shown = entries.slice(0,3);
+    const shownEvents = dayEvents.slice(0,3);
+
+    const eventsHtml = shownEvents.map(e => {
+      const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
+      return `<div class="cal-pill" style="background:${CAL_CAT_BY_KEY[e.category]?.color||'#999'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${modSuffix}</div>`;
+    }).join('') + (dayEvents.length>3 ? `<div class="cal-more">+${dayEvents.length-3} more</div>` : '');
+
+    const ptoHtml = dayPto.length ? `
+      <div class="cal-pto-block">
+        <div class="cal-pto-label">🏖 PTO</div>
+        <div class="cal-pto-names">
+          ${dayPto.map(p => `<div class="cal-pto-chip" title="${calEsc(p.staff_name)}" onclick="viewCalEntry('pto','${p.id}',event)">${calEsc(p.staff_name)}</div>`).join('')}
+        </div>
+      </div>` : '';
+
     cells += `
       <div class="cal-cell${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
         <div class="cal-daynum">${day}</div>
-        <div class="cal-entries">
-          ${shown.map(e => {
-            const label = e._type==='event' ? e.title : e.staff_name;
-            const modSuffix = (e._type==='event' && e.mod_name) ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
-            return `<div class="cal-pill" style="background:${e._type==='event' ? (CAL_CAT_BY_KEY[e.category]?.color||'#999') : PTO_COLOR};" title="${calEsc(label)}${e._type==='event' && e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('${e._type}','${e.id}',event)">${calEsc(label)}${modSuffix}</div>`;
-          }).join('')}
-          ${entries.length>3 ? `<div class="cal-more">+${entries.length-3} more</div>` : ''}
-        </div>
+        <div class="cal-entries">${eventsHtml}</div>
+        ${ptoHtml}
       </div>`;
   }
 
