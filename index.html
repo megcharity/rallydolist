@@ -22,7 +22,7 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
      specifically must stay between Repair/Maintenance and Private Party;
      lime next to orange (Activation) collapses under red-green color
      blindness, which is why it isn't first despite being listed first here. */
-  --cal-activation:#eb6834; --cal-pickleball:#0d8fc7; --cal-repair:#eda100;
+  --cal-activation:#eb6834; --cal-pickleball:#82eefd; --cal-repair:#eda100;
   --cal-large-event:#4f9a1a; --cal-private-party:#e87ba4; --cal-marketing:#008300;
   --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
   --cal-header-blue:#2a78d6; /* day-of-week header box — independent of Large Event's color */
@@ -6519,15 +6519,19 @@ const CAL_SUPA = window.RALLY_SUPABASE_URL;
 const CAL_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
 
+// label = full name (shown in the Add/Edit Type dropdown); tag = short form
+// shown on the pill itself, e.g. "Pickleball Event" -> "Pickle". textColor
+// defaults to white; only overridden for a background too pale for white
+// text to read against (Pickleball's baby blue).
 const CAL_CATEGORIES = [
-  { key:'activation',         label:'Activation',            color:'var(--cal-activation)' },
-  { key:'pickleball_event',   label:'Pickleball Event',      color:'var(--cal-pickleball)' },
-  { key:'repair_maintenance', label:'Repair & Maintenance',  color:'var(--cal-repair)' },
-  { key:'large_event',        label:'Event',                 color:'var(--cal-large-event)' },
-  { key:'private_party',      label:'Buyout',                color:'var(--cal-private-party)' },
-  { key:'marketing_promo',    label:'Marketing / Promo',     color:'var(--cal-marketing)' },
-  { key:'staff_training',     label:'Staff Training',        color:'var(--cal-training)' },
-  { key:'holiday_closure',    label:'Holiday / Closure',     color:'var(--cal-holiday)' },
+  { key:'activation',         label:'Activation',            tag:'Activation', color:'var(--cal-activation)' },
+  { key:'pickleball_event',   label:'Pickleball Event',      tag:'Pickle',     color:'var(--cal-pickleball)', textColor:'var(--teal)' },
+  { key:'repair_maintenance', label:'Repair & Maintenance',  tag:'Repair',     color:'var(--cal-repair)' },
+  { key:'large_event',        label:'Event',                 tag:'Event',      color:'var(--cal-large-event)' },
+  { key:'private_party',      label:'Buyout',                tag:'Buyout',     color:'var(--cal-private-party)' },
+  { key:'marketing_promo',    label:'Marketing / Promo',     tag:'Promo',      color:'var(--cal-marketing)' },
+  { key:'staff_training',     label:'Staff Training',        tag:'Training',   color:'var(--cal-training)' },
+  { key:'holiday_closure',    label:'Holiday / Closure',     tag:'Holiday',    color:'var(--cal-holiday)' },
 ];
 const CAL_CAT_BY_KEY = Object.fromEntries(CAL_CATEGORIES.map(c => [c.key, c]));
 const PTO_COLOR = 'var(--cal-pto)';
@@ -6627,9 +6631,10 @@ function renderCalGrid() {
     const shownEvents = dayEvents.slice(0,3);
 
     const eventsHtml = shownEvents.map(e => {
-      const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(CAL_CAT_BY_KEY[e.category]?.label || e.category)}</span>` : '';
+      const cat = CAL_CAT_BY_KEY[e.category];
+      const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(cat?.tag || cat?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
-      return `<div class="cal-pill" style="background:${CAL_CAT_BY_KEY[e.category]?.color||'#999'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
+      return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
     }).join('') + (dayEvents.length>3 ? `<div class="cal-more">+${dayEvents.length-3} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
@@ -6685,8 +6690,9 @@ function viewCalEntry(type, id, ev) {
   if(!entry) return;
 
   document.getElementById('cv-title').textContent = isEvent ? entry.title : entry.staff_name;
+  const entryCat = isEvent ? CAL_CAT_BY_KEY[entry.category] : null;
   document.getElementById('cv-badges').innerHTML = (isEvent
-    ? `<span class="wchip" style="background:${CAL_CAT_BY_KEY[entry.category]?.color||'#999'};color:#fff;border:none;">${CAL_CAT_BY_KEY[entry.category]?.label||entry.category}</span>`
+    ? `<span class="wchip" style="background:${entryCat?.color||'#999'};color:${entryCat?.textColor||'#fff'};border:none;">${entryCat?.label||entry.category}</span>`
     : `<span class="wchip" style="background:${PTO_COLOR};color:#fff;border:none;">PTO</span>`)
     + (isEvent && entry.mod_name ? `<span class="wchip">MOD: ${calEsc(entry.mod_name)}</span>` : '');
   document.getElementById('cv-dates').textContent = entry.start_date === entry.end_date
