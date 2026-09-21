@@ -431,6 +431,16 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-rate-star.lit{opacity:1;}
 .cl-rate-star:hover{transform:scale(1.15);}
 
+/* ── OPENING PHOTOS ── */
+.cl-photo-section{padding:14px 16px;background:var(--cream-dark);border-top:1px solid var(--border);flex-shrink:0;}
+.cl-photo-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--olive);margin-bottom:8px;}
+.cl-photo-add-btn{padding:8px 14px;border:1.5px dashed var(--border);border-radius:7px;background:#fff;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.cl-photo-add-btn:hover{border-color:var(--teal);}
+.cl-photo-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.cl-photo-thumb{position:relative;width:64px;height:64px;border-radius:7px;overflow:hidden;border:1.5px solid var(--border);flex-shrink:0;}
+.cl-photo-thumb img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;}
+.cl-photo-thumb-rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(23,72,84,.75);color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
 /* ── SIGN OFF FOOTER ── */
 .cl-signoff{padding:16px 20px;background:var(--cream);border-top:1px solid var(--border);flex-shrink:0;}
 .cl-signoff-btn{width:100%;padding:12px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.03em;}
@@ -888,10 +898,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
       <button id="cl-view-cl-btn" class="task-view-btn active" onclick="switchClScoreTab('checklists')">Checklists</button>
       <button id="cl-view-sc-btn" class="task-view-btn" onclick="switchClScoreTab('scorecard')">Scorecard</button>
+      <button id="cl-view-photos-btn" class="task-view-btn" onclick="switchClScoreTab('photos')">📸 Photos</button>
       <button id="cl-view-edit-btn" class="task-view-btn" onclick="switchClScoreTab('editor')">✏ Edit</button>
     </div>
     <div id="cl-tab-checklists"><div class="cl-hub" id="mgr-cl-hub-body"></div></div>
     <div id="cl-tab-scorecard" style="display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
+    <div id="cl-tab-photos" style="display:none;"><div class="mgr-body" id="cl-photos-body"></div></div>
     <div id="cl-tab-editor" style="display:none;padding:16px 16px 80px;"><div id="cl-editor-body"></div></div>
   </div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
@@ -1856,6 +1868,40 @@ async function renderScorecard() {
   } catch(e) {
     body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(220,80,60,.6);">Failed to load scorecard.</div>';
     console.warn('Scorecard load failed', e);
+  }
+}
+
+// ── OPENING PHOTOS REVIEW (Manager dashboard) ───────────────────────────────
+async function renderClPhotosReview() {
+  const body = document.getElementById('cl-photos-body');
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading photos...</div>';
+
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_opening&signed_off_at=not.is.null&select=date,manager_name,photo_urls,signed_off_at&order=date.desc&limit=60`,
+      { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
+    const rows = (await res.json()).filter(r => Array.isArray(r.photo_urls) && r.photo_urls.length);
+
+    if(!rows.length) {
+      body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No opening photos yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Photos attached at Manager Opening sign-off will show up here.</span></div>';
+      return;
+    }
+
+    body.innerHTML = `<div style="padding:16px 16px 80px;">` + rows.map(r => `
+      <div class="mgr-card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+          <div style="font-weight:700;font-size:14px;color:var(--teal);">${r.date}</div>
+          <div style="font-size:12px;color:var(--olive);font-weight:600;">${calEsc(r.manager_name)}</div>
+        </div>
+        <div class="cl-photo-strip" style="margin-top:0;">
+          ${r.photo_urls.map(url => `<div class="cl-photo-thumb"><img src="${url}" onclick="window.open('${url}','_blank')" alt="Opening photo"></div>`).join('')}
+        </div>
+      </div>`).join('') + `</div>`;
+  } catch(e) {
+    body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(220,80,60,.6);">Failed to load photos.</div>';
+    console.warn('Photo review load failed', e);
   }
 }
 
@@ -3511,12 +3557,15 @@ async function srResendEmail() {
 function switchClScoreTab(view) {
   document.getElementById('cl-view-cl-btn').classList.toggle('active', view === 'checklists');
   document.getElementById('cl-view-sc-btn').classList.toggle('active', view === 'scorecard');
+  document.getElementById('cl-view-photos-btn').classList.toggle('active', view === 'photos');
   document.getElementById('cl-view-edit-btn').classList.toggle('active', view === 'editor');
   document.getElementById('cl-tab-checklists').style.display = view === 'checklists' ? 'block' : 'none';
   document.getElementById('cl-tab-scorecard').style.display  = view === 'scorecard'  ? 'block' : 'none';
+  document.getElementById('cl-tab-photos').style.display     = view === 'photos'     ? 'block' : 'none';
   document.getElementById('cl-tab-editor').style.display     = view === 'editor'     ? 'block' : 'none';
   if(view === 'checklists') renderMgrClHub();
   if(view === 'scorecard')  renderScorecard();
+  if(view === 'photos')     renderClPhotosReview();
   if(view === 'editor')     renderClEditor();
 }
 
@@ -4542,6 +4591,12 @@ let currentPosition = null;
 let currentChecklistKey = null;
 let clState = {};  // {itemId: {done, rating, issue, fixed, fixNote}}
 let clProgressCache = {}; // {key: {done, total, pct}} — loaded from Supabase for hub display
+// Manager Opening only: photos attached at sign-off. clPendingPhotos holds
+// File objects staged but not yet uploaded (this session, not yet signed
+// off); clUploadedPhotoUrls holds URLs already saved on a signed-off row,
+// shown read-only when reopening a checklist that's already complete.
+let clPendingPhotos = [];
+let clUploadedPhotoUrls = [];
 let clLogs = [];
 
 // ── DATE HELPERS ──────────────────────────────────────────────
@@ -4906,6 +4961,8 @@ async function renderClHub() {
 async function startChecklist(key) {
   currentChecklistKey = key;
   clState = {};
+  clPendingPhotos = [];
+  clUploadedPhotoUrls = [];
   let isSignedOff = false;
 
   // Show screen immediately with empty state while we fetch
@@ -4929,6 +4986,7 @@ async function startChecklist(key) {
     if(Array.isArray(rows) && rows[0] && rows[0].items) {
       clState = rows[0].items;
       isSignedOff = !!rows[0].signed_off_at;
+      if(Array.isArray(rows[0].photo_urls)) clUploadedPhotoUrls = rows[0].photo_urls;
       renderChecklist(isSignedOff);
       updateClProgress();
       if(isSignedOff) {
@@ -5017,7 +5075,63 @@ function renderChecklist(signedOff = false) {
     signoffBtn.style.opacity = signedOff ? '0.5' : '';
     signoffBtn.style.cursor = signedOff ? 'default' : '';
   }
+  // Opening Photos — Manager Opening only
+  const photoSection = document.getElementById('cl-photo-section');
+  if(photoSection) {
+    photoSection.style.display = key === 'manager_opening' ? '' : 'none';
+    const addBtn = photoSection.querySelector('.cl-photo-add-btn');
+    if(addBtn) addBtn.style.display = signedOff ? 'none' : '';
+    renderClPhotoThumbs();
+  }
   updateClProgress();
+}
+
+// ── OPENING PHOTOS (Manager Opening only) ──────────────────────
+function clHandlePhotoInput(ev) {
+  const files = Array.from(ev.target.files || []);
+  clPendingPhotos.push(...files);
+  ev.target.value = ''; // allow re-selecting the same file later
+  renderClPhotoThumbs();
+}
+function clRemovePendingPhoto(idx) {
+  clPendingPhotos.splice(idx, 1);
+  renderClPhotoThumbs();
+}
+function renderClPhotoThumbs() {
+  const strip = document.getElementById('cl-photo-strip');
+  if(!strip) return;
+  const uploadedHtml = clUploadedPhotoUrls.map(url => `
+    <div class="cl-photo-thumb"><img src="${url}" onclick="window.open('${url}','_blank')" alt="Opening photo"></div>`).join('');
+  const pendingHtml = clPendingPhotos.map((file, i) => `
+    <div class="cl-photo-thumb"><img src="${URL.createObjectURL(file)}" alt="${calEsc(file.name)}">
+      <button class="cl-photo-thumb-rm" onclick="clRemovePendingPhoto(${i})" title="Remove">×</button>
+    </div>`).join('');
+  strip.innerHTML = uploadedHtml + pendingHtml;
+}
+async function uploadPendingClPhotos() {
+  if(!clPendingPhotos.length) return [];
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+  const token = (window.RallyAuth && window.RallyAuth.token()) || KEY;
+  const urls = [];
+  let failCount = 0;
+  for(const file of clPendingPhotos) {
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+      const path = `manager_opening/${getTodayStr()}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+      const res = await fetch(`${SUPA}/storage/v1/object/checklist-photos/${path}`, {
+        method: 'POST',
+        headers: { 'apikey': KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' },
+        body: file
+      });
+      if(res.ok) urls.push(`${SUPA}/storage/v1/object/public/checklist-photos/${path}`);
+      else failCount++;
+    } catch(e) { console.warn('Photo upload failed', e); failCount++; }
+  }
+  if(failCount) showToast(`⚠ ${failCount} photo${failCount===1?'':'s'} failed to upload`);
+  clPendingPhotos = [];
+  renderClPhotoThumbs();
+  return urls;
 }
 
 function renderClItem(item) {
@@ -5176,7 +5290,7 @@ function autoSaveCl() {
   clSaveTimer = setTimeout(saveClProgress, 1500);
 }
 
-async function saveClProgress(signedOff = false, extraFields = {}) {
+async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = null) {
   // Update local cache immediately
   if(currentChecklistKey) {
     const items = ALL_CHECKLISTS[currentChecklistKey] || [];
@@ -5204,6 +5318,10 @@ async function saveClProgress(signedOff = false, extraFields = {}) {
     items:        { ...clState, ...extraFields },
     signed_off_at: signedOff ? new Date().toISOString() : null
   };
+  // Only set when explicitly provided — omitting the key leaves the
+  // column untouched, so routine autosaves (signedOff=false) never wipe
+  // out photos already attached by an earlier sign-off call.
+  if(photoUrls !== null) payload.photo_urls = photoUrls;
   try {
     // Try to update existing record for this shift+date+person first
     const existing = await fetch(
@@ -6046,7 +6164,8 @@ async function signOffChecklist() {
       if(res.cancelled) return;
       const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
       if(!confirm(msg)) return;
-      await saveClProgress(true, res.extraFields);
+      const photoUrls = clUploadedPhotoUrls.concat(await uploadPendingClPhotos());
+      await saveClProgress(true, res.extraFields, photoUrls);
       showToast('Checklist signed off! ✅');
       // This is the one deterministic moment we can be sure last night's
       // Closing is truly missing (not just not-yet-done) — the opening
@@ -6149,7 +6268,8 @@ async function signOffChecklist() {
         if(!selectedCloseRating) { document.getElementById('close-rating-err').textContent = 'Please rate the close before signing off.'; return; }
         const closeNotes = document.getElementById('close-notes').value.trim();
         overlay.remove();
-        await saveClProgress(true);
+        const photoUrls = clUploadedPhotoUrls.concat(await uploadPendingClPhotos());
+        await saveClProgress(true, {}, photoUrls);
         await submitWalkthroughScore(closer, selectedCloseRating, closeNotes);
         resolve();
       };
@@ -6307,6 +6427,12 @@ function goBackToHub() {
     <div class="cl-prog-track"><div class="cl-prog-fill" id="cl-prog-fill" style="width:0%"></div></div>
   </div>
   <div class="cl-items-body" id="cl-items-body"></div>
+  <div class="cl-photo-section" id="cl-photo-section" style="display:none;">
+    <div class="cl-photo-lbl">📸 Opening Photos <span style="font-weight:400;text-transform:none;letter-spacing:0;color:rgba(23,72,84,.4);">(optional)</span></div>
+    <input type="file" id="cl-photo-input" accept="image/*" capture="environment" multiple style="display:none;" onchange="clHandlePhotoInput(event)"/>
+    <button class="cl-photo-add-btn" onclick="document.getElementById('cl-photo-input').click()">+ Add Photos</button>
+    <div class="cl-photo-strip" id="cl-photo-strip"></div>
+  </div>
   <div class="cl-signoff">
     <button class="cl-signoff-btn" onclick="signOffChecklist()">Sign Off & Submit ✓</button>
     <div class="cl-signoff-sub" id="cl-signoff-sub"></div>
