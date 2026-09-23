@@ -274,6 +274,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-assignee-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
 .ov-assignee-name{font-size:15px;font-weight:800;letter-spacing:.01em;}
 .ov-due-badge{display:inline-block;font-size:13px;font-weight:800;padding:5px 12px;border-radius:8px;margin-bottom:8px;}
+
+/* ── ANNOUNCEMENTS ── */
+.ann-add-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--amber);color:#fff;font-size:16px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s;flex-shrink:0;}
+.ann-add-btn:hover{opacity:.85;}
+.ann-alert{background:rgba(248,154,28,.1);border:1.5px solid rgba(248,154,28,.4);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+.ann-alert-hdr{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#b87000;margin-bottom:6px;}
+.ann-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--teal);margin-bottom:4px;}
+.ann-body{font-size:13px;color:var(--teal);line-height:1.5;margin-bottom:10px;white-space:pre-wrap;}
+.ann-roster{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.ann-roster-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;background:#fff;border:1px solid var(--border);}
+.ann-roster-chip.read{color:var(--olive);border-color:rgba(78,98,44,.3);background:rgba(78,98,44,.06);}
+.ann-roster-chip.unread{color:rgba(23,72,84,.4);}
+.ann-card{background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;}
 .ov-assign-row{display:flex;gap:6px;margin-top:6px;}
 .ov-asel{flex:1;padding:5px 8px;background:var(--cream);border:1px solid var(--border);border-radius:5px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:11px;outline:none;}
 .ov-abtn{background:rgba(23,72,84,.07);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;}
@@ -777,6 +790,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- ANNOUNCEMENT FORM MODAL -->
+<div id="announcement-form-modal" class="modal-ov" style="display:none;" onclick="closeAnnouncementForm(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title">New Announcement</div>
+      <button class="modal-close" onclick="closeAnnouncementForm()">×</button>
+    </div>
+    <div class="fg full"><label>Title</label><input id="ann-title-input" type="text" placeholder="e.g. New menu item starting Monday"/></div>
+    <div class="fg full"><label>Details</label><textarea id="ann-body-input" rows="4" placeholder="What managers need to know…"></textarea></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="saveAnnouncement()">Post</button>
+      <button class="modal-btn secondary" onclick="closeAnnouncementForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ROLE SCREEN -->
 <div class="screen active" id="s-role">
   <div class="role-hero">
@@ -913,10 +942,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Associate Tasks</button>
       <button id="task-view-mgr-btn" class="task-view-btn" onclick="switchTaskView('manager')">Manager Tasks</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
+      <button id="task-view-ann-btn" class="task-view-btn" onclick="switchTaskView('announcements')">Announcements</button>
     </div>
     <div class="mgr-body" id="mgr-body"></div>
     <div class="mgr-body" id="mgr-manager-body" style="display:none;"></div>
     <div class="mgr-body" id="mgr-completed-body" style="display:none;"></div>
+    <div class="mgr-body" id="mgr-announcements-body" style="display:none;"></div>
   </div>
   <div id="mgr-tab-checklists" style="flex:1;overflow-y:auto;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
@@ -2078,6 +2109,155 @@ async function deleteAdminLogEntry(id) {
     console.warn('Admin log delete failed', e);
     showToast('⚠ Delete failed');
   }
+}
+
+// ── ANNOUNCEMENTS ───────────────────────────────────────────────────────
+// Any manager can post (same shared-trust model as everything else here).
+// "Fully read" is never stored — it's computed live by comparing
+// rally_announcement_reads against the CURRENT active manager roster, so
+// a manager leaving the company can never permanently block an
+// announcement from clearing off the Calendar. Reuses AL_HDRS() (Admin
+// Log's headers helper) since it's identical — same anon-key/RallyAuth
+// fallback pattern, not announcement-specific.
+let announcements = [];
+let announcementReads = [];
+let _annWeekStart = null; // reuses alMondayOf/alDateToYMD/alWeekLabel from Admin Log's week-nav helpers
+
+async function loadAnnouncements() {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    const [aRes, rRes] = await Promise.all([
+      fetch(`${SUPA}/rest/v1/rally_announcements?select=*&order=created_at.desc`, { headers: AL_HDRS() }),
+      fetch(`${SUPA}/rest/v1/rally_announcement_reads?select=*`, { headers: AL_HDRS() }),
+    ]);
+    const a = await aRes.json();
+    const r = await rRes.json();
+    announcements = Array.isArray(a) ? a : [];
+    announcementReads = Array.isArray(r) ? r : [];
+  } catch(e) { console.warn('Announcements load failed', e); }
+}
+
+function annActiveManagers() { return users.filter(u => u.role === 'manager'); }
+function annReadersOf(id) { return announcementReads.filter(r => r.announcement_id === id).map(r => r.manager_name); }
+function annIsFullyRead(id) {
+  const readers = new Set(annReadersOf(id));
+  const mgrs = annActiveManagers();
+  return mgrs.length > 0 && mgrs.every(m => readers.has(m.name));
+}
+
+async function renderAnnouncementAlert() {
+  const wrap = document.getElementById('ann-alert-wrap');
+  if(!wrap) return;
+  const active = announcements.filter(a => !annIsFullyRead(a.id));
+  if(!active.length) { wrap.innerHTML = ''; return; }
+  const me = currentManagerName();
+  wrap.innerHTML = active.map(a => {
+    const readers = new Set(annReadersOf(a.id));
+    const roster = annActiveManagers().map(m => `<span class="ann-roster-chip ${readers.has(m.name)?'read':'unread'}">${readers.has(m.name)?'✓':'○'} ${calEsc(m.name)}</span>`).join('');
+    const iRead = readers.has(me);
+    return `<div class="ann-alert">
+      <div class="ann-alert-hdr">📣 New Announcement</div>
+      <div class="ann-title">${calEsc(a.title)}</div>
+      ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
+      <div class="ann-roster">${roster}</div>
+      ${iRead
+        ? `<div style="font-size:12px;font-weight:700;color:var(--olive);">✓ You've confirmed</div>`
+        : `<button class="modal-btn primary" style="width:auto;padding:8px 16px;" onclick="markAnnouncementRead(${a.id})">✓ Mark as Read</button>`}
+    </div>`;
+  }).join('');
+}
+
+function openAnnouncementForm() {
+  document.getElementById('ann-title-input').value = '';
+  document.getElementById('ann-body-input').value = '';
+  document.getElementById('announcement-form-modal').style.display = 'flex';
+}
+function closeAnnouncementForm(ev) { if(ev && ev.target.id !== 'announcement-form-modal') return; document.getElementById('announcement-form-modal').style.display = 'none'; }
+
+async function saveAnnouncement() {
+  const title = document.getElementById('ann-title-input').value.trim();
+  const body = document.getElementById('ann-body-input').value.trim();
+  if(!title) { showToast('Enter a title'); return; }
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const me = currentManagerName();
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me }) });
+    const rows = await res.json();
+    const newId = Array.isArray(rows) && rows[0] && rows[0].id;
+    // The author obviously "read" their own post — mark it immediately so
+    // they don't show up as an outstanding unread on their own alert.
+    if(newId) {
+      await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ announcement_id: newId, manager_name: me }) });
+    }
+    closeAnnouncementForm();
+    await loadAnnouncements();
+    renderAnnouncementAlert();
+    showToast('Announcement posted ✓');
+  } catch(e) {
+    console.warn('Announcement save failed', e);
+    showToast('⚠ Post failed — check connection');
+  }
+}
+
+async function markAnnouncementRead(id) {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const me = currentManagerName();
+  try {
+    await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ announcement_id: id, manager_name: me }) });
+    await loadAnnouncements();
+    renderAnnouncementAlert();
+    showToast('Marked as read ✓');
+  } catch(e) {
+    console.warn('Mark as read failed', e);
+    showToast('⚠ Could not mark as read');
+  }
+}
+
+// ── ANNOUNCEMENTS ARCHIVE (Tasks tab, week view) ─────────────────────────
+function annShiftWeek(delta) { _annWeekStart.setDate(_annWeekStart.getDate() + delta*7); renderAnnouncementsArchiveTab(); }
+function annJumpToThisWeek() { _annWeekStart = alMondayOf(new Date()); renderAnnouncementsArchiveTab(); }
+
+async function renderAnnouncementsArchiveTab() {
+  const body = document.getElementById('mgr-announcements-body');
+  if(!body) return;
+  if(!_annWeekStart) _annWeekStart = alMondayOf(new Date());
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading announcements...</div>';
+
+  await loadAnnouncements();
+  const weekStart = _annWeekStart;
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const isCurrentWeek = alDateToYMD(weekStart) === alDateToYMD(alMondayOf(new Date()));
+
+  const archived = announcements.filter(a => {
+    if(!annIsFullyRead(a.id)) return false;
+    const d = new Date(a.created_at);
+    return d >= weekStart && d < new Date(weekEnd.getTime() + 86400000);
+  });
+
+  const navHtml = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <button class="ov-abtn" onclick="annShiftWeek(-1)">‹ Prev Week</button>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--teal);">${alWeekLabel(weekStart)}${isCurrentWeek ? ' <span style="font-size:11px;font-weight:700;color:var(--olive);text-transform:uppercase;letter-spacing:.04em;">· This Week</span>' : ''}</div>
+      <button class="ov-abtn" onclick="annShiftWeek(1)">Next Week ›</button>
+      ${!isCurrentWeek ? `<button class="btn-sm" onclick="annJumpToThisWeek()">This Week</button>` : ''}
+    </div>`;
+
+  if(!archived.length) {
+    body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}
+      <div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No fully-read announcements this week.<br><span style="font-size:12px;margin-top:6px;display:block;">Announcements move here once every manager has confirmed reading them.</span></div>
+    </div>`;
+    return;
+  }
+
+  body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}` + archived.map(a => `
+    <div class="ann-card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+        <div class="ann-title" style="margin-bottom:0;">${calEsc(a.title)}</div>
+        <div style="font-size:11px;color:rgba(23,72,84,.4);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+      </div>
+      ${a.body ? `<div class="ann-body" style="margin-bottom:4px;">${calEsc(a.body)}</div>` : ''}
+      <div style="font-size:11px;color:var(--olive);font-weight:600;">✓ Confirmed by all managers</div>
+    </div>`).join('') + `</div>`;
 }
 
 // ── SHIFT REPORT ──────────────────────────────────────────────────────────
@@ -3749,14 +3929,17 @@ function switchTaskView(view) {
   document.getElementById('task-view-active-btn').classList.toggle('active', view === 'active');
   document.getElementById('task-view-mgr-btn').classList.toggle('active', view === 'manager');
   document.getElementById('task-view-done-btn').classList.toggle('active', view === 'done');
+  document.getElementById('task-view-ann-btn').classList.toggle('active', view === 'announcements');
   document.getElementById('mgr-body').style.display          = view === 'active'  ? 'block' : 'none';
   document.getElementById('mgr-manager-body').style.display  = view === 'manager' ? 'block' : 'none';
   document.getElementById('mgr-completed-body').style.display= view === 'done'    ? 'block' : 'none';
+  document.getElementById('mgr-announcements-body').style.display = view === 'announcements' ? 'block' : 'none';
   // Update FAB to open correct task type
   const fab = document.getElementById('fab-add');
   if(fab) fab.setAttribute('onclick', view === 'manager' ? 'openAddTask(true)' : 'openAddTask()');
   if(view === 'active')  renderMgr();
   else if(view === 'manager') renderMgrManagerTasks();
+  else if(view === 'announcements') renderAnnouncementsArchiveTab();
   else renderMgrCompleted();
 }
 
@@ -6923,8 +7106,12 @@ function renderCalendarHub(targetId, merged) {
   const body = document.getElementById(_calRenderTarget);
   if(!body) return;
   body.innerHTML = `
-    <div class="cl-hub-title">Calendar</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div class="cl-hub-title" style="margin-bottom:0;">Calendar</div>
+      ${_calMergedMode ? `<button class="ann-add-btn" onclick="openAnnouncementForm()" title="New Announcement">+</button>` : ''}
+    </div>
     <div class="cl-hub-sub">Events, activations, and team PTO.</div>
+    ${_calMergedMode ? `<div id="ann-alert-wrap"></div>` : ''}
     ${_calMergedMode ? '' : `
     <div class="lb-toggle">
       <button class="lb-tog ${calSubView==='events'?'on':''}" onclick="switchCalSubView('events')">📅 Team Calendar</button>
@@ -6933,6 +7120,7 @@ function renderCalendarHub(targetId, merged) {
     <div class="cal-grid-wrap"></div>
   `;
   renderCalGrid();
+  if(_calMergedMode) { loadAnnouncements().then(renderAnnouncementAlert); }
 }
 
 function switchCalSubView(v) { calSubView = v; renderCalendarHub(); }
