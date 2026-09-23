@@ -279,6 +279,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ann-add-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--amber);color:#fff;font-size:16px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s;flex-shrink:0;}
 .ann-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(248,154,28,.15);border:1.5px solid rgba(248,154,28,.5);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:800;color:#b87000;cursor:pointer;margin-bottom:12px;transition:background .2s;}
 .ann-badge:hover{background:rgba(248,154,28,.22);}
+.task-due-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,.13);border:1.5px solid rgba(124,58,237,.45);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:800;color:#6d28d9;cursor:pointer;margin-bottom:12px;transition:background .2s;}
+.task-due-badge:hover{background:rgba(124,58,237,.2);}
 .ann-add-btn:hover{opacity:.85;}
 .ann-alert{background:rgba(248,154,28,.1);border:1.5px solid rgba(248,154,28,.4);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
 .ann-alert-hdr{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#b87000;margin-bottom:6px;}
@@ -668,6 +670,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button class="modal-close" onclick="closeTaskModal()">×</button>
     </div>
     <div id="tm-badges" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;"></div>
+    <div id="tm-assignee" style="display:none;margin-bottom:12px;"></div>
     <div id="tm-prog" style="display:none;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;font-size:10px;font-weight:700;color:var(--olive);margin-bottom:4px;"><span>PROGRESS</span><span id="tm-pct-lbl"></span></div>
       <div style="background:var(--sage);border-radius:4px;height:6px;overflow:hidden;"><div id="tm-pct-bar" style="height:100%;border-radius:4px;background:linear-gradient(90deg,var(--olive),var(--teal));transition:width .3s;"></div></div>
@@ -1384,6 +1387,17 @@ function openTaskModal(id){
   const cdCls={ok:'cd-ok',warning:'cd-w',urgent:'cd-u',overdue:'cd-ov'}[ds]||'';
   document.getElementById('tm-title').textContent=t.text;
   document.getElementById('tm-badges').innerHTML=`<span class="bdg bdg-pts">${pts}pts</span><span class="bdg ${EC[t.effort]}">${EL[t.effort]}</span>${t.deadline?`<span class="cdw ${cdCls}">⏰ ${fmtCd(t.deadline)}</span>`:''}<span class="bdg bdg-by">by ${t.by}</span>`;
+  const asgDiv=document.getElementById('tm-assignee');
+  const asgUser=t.claimedBy?users.find(u=>u.id===t.claimedBy):(t.assignedTo?users.find(u=>u.id===t.assignedTo):null);
+  if(asgUser){
+    const avIdx=(asgUser.name.charCodeAt(0)||0)%AVATAR_COLORS.length;
+    const asgLbl=t.claimedBy?'Picked up by':'Assigned to';
+    asgDiv.style.display='block';
+    asgDiv.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--olive);letter-spacing:.04em;margin-bottom:4px;">${asgLbl.toUpperCase()}</div><div class="ov-assignee-chip" style="background:${AVATAR_COLORS[avIdx]};"><span class="ov-assignee-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;">${initials(asgUser.name)}</span><span class="ov-assignee-name" style="color:${AVATAR_TEXT[avIdx]};">${asgUser.name}</span></div>`;
+  } else {
+    asgDiv.style.display='block';
+    asgDiv.innerHTML=`<div class="ov-status dot-pending" style="display:inline-block;">Unassigned — open in pool</div>`;
+  }
   const progDiv=document.getElementById('tm-prog');
   if(t.progress>0&&!t.done){progDiv.style.display='block';document.getElementById('tm-pct-lbl').textContent=t.progress+'%';document.getElementById('tm-pct-bar').style.width=t.progress+'%';}
   else progDiv.style.display='none';
@@ -7151,6 +7165,56 @@ function calTaskEntriesForDay(dateStr) {
     .filter(Boolean);
 }
 
+// Manager-assigned, undone tasks with a deadline anywhere in the real
+// current calendar month (not whichever month the mini calendar happens
+// to be scrolled to) — re-derived live from `tasks`/`users`, same
+// no-duplication approach as calTaskEntriesForDay().
+function calTasksDueThisMonth() {
+  if(typeof tasks === 'undefined' || !Array.isArray(tasks)) return [];
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  return tasks
+    .filter(t => !t.done && t.deadline && t.assignedTo != null)
+    .map(t => {
+      const d = t.deadline instanceof Date ? t.deadline : new Date(t.deadline);
+      if(isNaN(d) || d.getFullYear() !== y || d.getMonth() !== m) return null;
+      const assignee = users.find(u => u.id === t.assignedTo);
+      if(!assignee || assignee.role !== 'manager') return null;
+      return { id: t.id, title: t.text, mgr_name: assignee.name, dateStr: dateToYMD(d) };
+    })
+    .filter(Boolean)
+    .sort((a,b) => a.dateStr.localeCompare(b.dateStr));
+}
+
+function renderMonthTaskAlert() {
+  const wrap = document.getElementById('task-month-alert-wrap');
+  if(!wrap) return;
+  const due = calTasksDueThisMonth();
+  if(!due.length) { wrap.innerHTML = ''; return; }
+  const monthLabel = new Date().toLocaleDateString('en-US', {month:'long'});
+  wrap.innerHTML = `<div class="task-due-badge" onclick="calShowMonthTasks()">🗂 ${due.length} Task${due.length>1?'s':''} Due in ${monthLabel}</div>`;
+}
+
+// Same picker-overlay pattern as calShowDayTasks(), just scoped to the
+// whole month instead of a single day.
+function calShowMonthTasks() {
+  const due = calTasksDueThisMonth();
+  if(!due.length) return;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:340px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:14px;">Tasks Due This Month</div>
+    ${due.map(t => `
+      <div style="padding:10px 12px;border:1.5px solid rgba(23,72,84,.15);border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="this.closest('[style*=fixed]').remove();openTaskModal(${t.id});">
+        <div style="font-weight:700;font-size:13px;color:#174854;">${calEsc(t.title)}</div>
+        <div style="font-size:11px;color:rgba(23,72,84,.5);margin-top:2px;">Due ${fmtCalDate(t.dateStr)} · Assigned to ${calEsc(t.mgr_name)}</div>
+      </div>`).join('')}
+    <button style="width:100%;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;" onclick="this.closest('[style*=fixed]').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
 async function loadCalendarEvents() {
   try {
     const res = await fetch(`${CAL_SUPA}/rest/v1/rally_calendar_events?select=*&order=start_date.asc`, { headers: CAL_HDRS() });
@@ -7179,6 +7243,7 @@ function renderCalendarHub(targetId, merged) {
       ${_calMergedMode ? `<button class="ann-add-btn" onclick="openAnnouncementForm()" title="New Announcement">+</button>` : ''}
     </div>
     <div class="cl-hub-sub">Events, activations, and team PTO.</div>
+    ${_calMergedMode ? `<div id="task-month-alert-wrap"></div>` : ''}
     ${_calMergedMode ? `<div id="ann-alert-wrap"></div>` : ''}
     ${_calMergedMode ? '' : `
     <div class="lb-toggle">
@@ -7188,7 +7253,7 @@ function renderCalendarHub(targetId, merged) {
     <div class="cal-grid-wrap"></div>
   `;
   renderCalGrid();
-  if(_calMergedMode) { loadAnnouncements().then(renderAnnouncementAlert); }
+  if(_calMergedMode) { renderMonthTaskAlert(); loadAnnouncements().then(renderAnnouncementAlert); }
 }
 
 function switchCalSubView(v) { calSubView = v; renderCalendarHub(); }
