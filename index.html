@@ -7028,8 +7028,37 @@ function renderCalGrid() {
 
 function calDayClick(dateStr) {
   if(!isGM()) return; // view-only staff: nothing to do on an empty day tap
-  if(_calMergedMode) { openCalForm(null, null, dateStr); return; } // type is chosen inside the form
+  if(_calMergedMode) { calShowAddChoice(dateStr); return; }
   openCalForm(calSubView==='events' ? 'event' : 'pto', null, dateStr);
+}
+
+// Merged (manager) calendar: clicking an empty day offers a choice between
+// a calendar entry and a task, since both can now live on this calendar.
+function calShowAddChoice(dateStr) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:300px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:16px;">${fmtCalDate(dateStr)}</div>
+    <button style="width:100%;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();openCalForm(null,null,'${dateStr}');">📅 Add Calendar Entry</button>
+    <button style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--cal-task);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();calAddTaskForDate('${dateStr}');">📋 Add Task</button>
+    <button style="width:100%;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
+// Opens the real Add Task panel (same one the FAB uses, with effort/points/
+// instructions — not a stripped-down calendar-only form), pre-filled as a
+// Manager Task with this date as the deadline and the assign picker ready
+// on "Manager", since that's what makes a task show up on this calendar.
+function calAddTaskForDate(dateStr) {
+  openAddTask(true);
+  const dlEl = document.getElementById('f-dl');
+  if(dlEl) dlEl.value = `${dateStr}T12:00`;
+  const posEl = document.getElementById('f-assign-pos');
+  if(posEl) posEl.value = 'manager';
+  if(!isAssigning) toggleAssign(); else updateAssignNames();
+  updatePts();
 }
 
 // Clicking the "Task Due" corner badge — one task opens it directly; more
