@@ -270,6 +270,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-status.active{color:#2e4010;}
 .ov-status.overdue{color:#8a2a10;}
 .ov-status.done{color:var(--teal);}
+.ov-assignee-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:20px;margin:4px 0 8px;}
+.ov-assignee-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.ov-assignee-name{font-size:15px;font-weight:800;letter-spacing:.01em;}
 .ov-assign-row{display:flex;gap:6px;margin-top:6px;}
 .ov-asel{flex:1;padding:5px 8px;background:var(--cream);border:1px solid var(--border);border-radius:5px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:11px;outline:none;}
 .ov-abtn{background:rgba(23,72,84,.07);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;}
@@ -4021,12 +4024,22 @@ function renderMgrManagerTasks(){
   body.innerHTML=`<div id="mgr-task-list">`+mgrTasks.map(t=>{
     const assigned=t.assignedTo?users.find(u=>u.id===t.assignedTo):null;
     const pts=EP[t.effort]||25;
+    // Avatar circle uses the deep shade with white text (inverted from the
+    // usual pastel-bg avatar elsewhere) so it pops against the chip's own
+    // soft pastel background — this is meant to read at a glance, not
+    // blend in like the smaller avatars on the Leaderboard/Roster.
+    const avIdx = assigned ? (assigned.name.charCodeAt(0)||0) % AVATAR_COLORS.length : 0;
+    const assigneeChip = assigned ? `
+      <div class="ov-assignee-chip" style="background:${AVATAR_COLORS[avIdx]};">
+        <span class="ov-assignee-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;">${initials(assigned.name)}</span>
+        <span class="ov-assignee-name" style="color:${AVATAR_TEXT[avIdx]};">${assigned.name}</span>
+      </div>` : `<div class="ov-status dot-pending">Unassigned</div>`;
     return`<div class="ov-task">
       <div class="ov-dot ${t.assignedTo?'dot-assigned':'dot-pending'}"></div>
       <div class="ov-info">
         <div class="ov-title" style="cursor:pointer;" onclick="openTaskModal(${t.id})">${t.text} <span style="font-size:10px;color:var(--olive);font-weight:600;">↗ details</span></div>
         <div class="ov-meta">${EL[t.effort]} · by ${t.by}</div>
-        ${assigned?`<div class="ov-status dot-assigned">👔 Assigned to ${assigned.name}</div>`:'<div class="ov-status dot-pending">Unassigned</div>'}
+        ${assigneeChip}
         <div class="ov-assign-row">
           <select class="ov-asel" id="ov-sel-${t.id}">
             <option value="">Assign to manager...</option>
