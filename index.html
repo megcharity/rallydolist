@@ -1940,33 +1940,73 @@ async function renderClPhotosReview() {
 // record even though the DB-level check can't tell managers apart.
 const AL_HDRS = () => ({ 'apikey': window.RALLY_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' });
 let _adminLogEditId = null;
+// Monday (local, 00:00) of the currently-viewed week — null until first
+// render, which defaults to the current week. Local helpers (alXxx), not
+// a reuse of the existing getMonday(), since that one is hardcoded to
+// "this week" for the points-reset logic and isn't parameterized.
+let _adminLogWeekStart = null;
 
 function currentManagerName() {
   const u = users.find(x => x.id === currentUser);
   return u ? u.name : (currentRole === 'manager' ? 'Manager' : 'Unknown');
 }
 
+function alMondayOf(d) {
+  const day = d.getDay();
+  const m = new Date(d);
+  m.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  m.setHours(0,0,0,0);
+  return m;
+}
+function alDateToYMD(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function alWeekLabel(monday) {
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  const fmt = (d,withYear) => d.toLocaleDateString('en-US', {month:'short', day:'numeric', year: withYear?'numeric':undefined});
+  return `${fmt(monday,false)} – ${fmt(sunday,true)}`;
+}
+function alShiftWeek(delta) {
+  _adminLogWeekStart.setDate(_adminLogWeekStart.getDate() + delta*7);
+  renderAdminLogTab();
+}
+function alJumpToThisWeek() {
+  _adminLogWeekStart = alMondayOf(new Date());
+  renderAdminLogTab();
+}
+
 async function renderAdminLogTab() {
   const body = document.getElementById('adminlog-body');
   if(!body) return;
+  if(!_adminLogWeekStart) _adminLogWeekStart = alMondayOf(new Date());
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading admin log...</div>';
+
+  const weekStart = _adminLogWeekStart;
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const weekStartStr = alDateToYMD(weekStart), weekEndStr = alDateToYMD(weekEnd);
+  const isCurrentWeek = weekStartStr === alDateToYMD(alMondayOf(new Date()));
 
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_admin_log?select=*&order=log_date.desc,created_at.desc&limit=100`, { headers: AL_HDRS() });
+    const res = await fetch(`${SUPA}/rest/v1/rally_admin_log?select=*&log_date=gte.${weekStartStr}&log_date=lte.${weekEndStr}&order=log_date.desc,created_at.desc`, { headers: AL_HDRS() });
     const rows = await res.json();
     const me = currentManagerName();
 
+    const navHtml = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button class="ov-abtn" onclick="alShiftWeek(-1)">‹ Prev Week</button>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--teal);">${alWeekLabel(weekStart)}${isCurrentWeek ? ' <span style="font-size:11px;font-weight:700;color:var(--olive);text-transform:uppercase;letter-spacing:.04em;">· This Week</span>' : ''}</div>
+        <button class="ov-abtn" onclick="alShiftWeek(1)">Next Week ›</button>
+        ${!isCurrentWeek ? `<button class="btn-sm" onclick="alJumpToThisWeek()">This Week</button>` : ''}
+      </div>`;
     const addBtnHtml = `<button class="add-task-btn" style="margin-bottom:16px;" onclick="openAdminLogForm()">+ Add Admin Log Entry</button>`;
 
     if(!Array.isArray(rows) || !rows.length) {
-      body.innerHTML = `<div style="padding:16px 16px 80px;">${addBtnHtml}
-        <div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No admin log entries yet.</div>
+      body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}${addBtnHtml}
+        <div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No admin log entries for this week.</div>
       </div>`;
       return;
     }
 
-    body.innerHTML = `<div style="padding:16px 16px 80px;">${addBtnHtml}` + rows.map(r => `
+    body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}${addBtnHtml}` + rows.map(r => `
       <div class="mgr-card">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
           <div style="font-weight:700;font-size:14px;color:var(--teal);">${fmtCalDate(r.log_date)}</div>
