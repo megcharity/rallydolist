@@ -757,6 +757,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- ADMIN LOG ADD/EDIT MODAL -->
+<div id="adminlog-form-modal" class="modal-ov" style="display:none;" onclick="closeAdminLogForm(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="al-title">Add Admin Log Entry</div>
+      <button class="modal-close" onclick="closeAdminLogForm()">×</button>
+    </div>
+    <div class="fg full"><label>Date</label><input id="al-date" type="date"/></div>
+    <div class="fg full"><label>What did you work on?</label><textarea id="al-notes" rows="4" placeholder="What you worked on during your admin time…"></textarea></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="saveAdminLogEntry()">Save</button>
+      <button class="modal-btn secondary" onclick="closeAdminLogForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ROLE SCREEN -->
 <div class="screen active" id="s-role">
   <div class="role-hero">
@@ -885,6 +901,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
+    <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
     <button class="nav-tab" onclick="showMgrTab('tasks',this)">Tasks</button>
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
@@ -912,6 +929,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
   <div id="mgr-tab-calendar" style="flex:1;overflow-y:auto;display:none;">
     <div class="cl-hub" id="mgr-cal-hub-body"></div>
+  </div>
+  <div id="mgr-tab-adminlog" style="flex:1;overflow-y:auto;display:none;">
+    <div class="mgr-body" id="adminlog-body"></div>
   </div>
 </div>
 
@@ -1663,6 +1683,8 @@ function showMgrTab(tab, el) {
   if(tab === 'shiftreport') renderShiftReportForm();
   document.getElementById('mgr-tab-calendar').style.display = tab === 'calendar' ? 'block' : 'none';
   if(tab === 'calendar') renderCalendarHub('mgr-cal-hub-body', true);
+  document.getElementById('mgr-tab-adminlog').style.display = tab === 'adminlog' ? 'block' : 'none';
+  if(tab === 'adminlog') renderAdminLogTab();
 
   // "+ Add Task" (header button + floating button) only makes sense on the
   // Tasks tab — hide it everywhere else on the manager dashboard.
@@ -1905,6 +1927,120 @@ async function renderClPhotosReview() {
   } catch(e) {
     body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(220,80,60,.6);">Failed to load photos.</div>';
     console.warn('Photo review load failed', e);
+  }
+}
+
+// ── ADMIN LOG ────────────────────────────────────────────────────────────
+// Any manager can log what they worked on during their scheduled admin
+// time (scheduling itself stays in HotSchedules — this just records what
+// actually got done, so the GM can see it in one place). Write access is
+// the same "any manager, shared PIN trust" model as Tasks/Calendar — see
+// migration 0007's header. Each entry is only editable/deletable by the
+// manager who wrote it (matched by name), so the log stays an honest
+// record even though the DB-level check can't tell managers apart.
+const AL_HDRS = () => ({ 'apikey': window.RALLY_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' });
+let _adminLogEditId = null;
+
+function currentManagerName() {
+  const u = users.find(x => x.id === currentUser);
+  return u ? u.name : (currentRole === 'manager' ? 'Manager' : 'Unknown');
+}
+
+async function renderAdminLogTab() {
+  const body = document.getElementById('adminlog-body');
+  if(!body) return;
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading admin log...</div>';
+
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_admin_log?select=*&order=log_date.desc,created_at.desc&limit=100`, { headers: AL_HDRS() });
+    const rows = await res.json();
+    const me = currentManagerName();
+
+    const addBtnHtml = `<button class="add-task-btn" style="margin-bottom:16px;" onclick="openAdminLogForm()">+ Add Admin Log Entry</button>`;
+
+    if(!Array.isArray(rows) || !rows.length) {
+      body.innerHTML = `<div style="padding:16px 16px 80px;">${addBtnHtml}
+        <div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No admin log entries yet.</div>
+      </div>`;
+      return;
+    }
+
+    body.innerHTML = `<div style="padding:16px 16px 80px;">${addBtnHtml}` + rows.map(r => `
+      <div class="mgr-card">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+          <div style="font-weight:700;font-size:14px;color:var(--teal);">${fmtCalDate(r.log_date)}</div>
+          <div style="font-size:12px;color:var(--olive);font-weight:600;">${calEsc(r.manager_name)}</div>
+        </div>
+        <div style="font-size:13px;color:var(--teal);line-height:1.5;white-space:pre-wrap;">${calEsc(r.notes)}</div>
+        ${r.manager_name === me ? `
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn-sm" onclick="openAdminLogForm(${r.id})">✏ Edit</button>
+          <button class="btn-sm danger" onclick="deleteAdminLogEntry(${r.id})">✕ Delete</button>
+        </div>` : ''}
+      </div>`).join('') + `</div>`;
+  } catch(e) {
+    body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(220,80,60,.6);">Failed to load admin log.</div>';
+    console.warn('Admin log load failed', e);
+  }
+}
+
+async function openAdminLogForm(id) {
+  _adminLogEditId = id || null;
+  document.getElementById('al-title').textContent = id ? 'Edit Admin Log Entry' : 'Add Admin Log Entry';
+  document.getElementById('al-date').value = getTodayStr();
+  document.getElementById('al-notes').value = '';
+
+  if(id) {
+    try {
+      const SUPA = window.RALLY_SUPABASE_URL;
+      const res = await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${id}&select=*&limit=1`, { headers: AL_HDRS() });
+      const rows = await res.json();
+      const entry = Array.isArray(rows) && rows[0];
+      if(entry) {
+        document.getElementById('al-date').value = entry.log_date;
+        document.getElementById('al-notes').value = entry.notes;
+      }
+    } catch(e) { console.warn('Could not load admin log entry for editing', e); }
+  }
+
+  document.getElementById('adminlog-form-modal').style.display = 'flex';
+}
+function closeAdminLogForm(ev) { if(ev && ev.target.id !== 'adminlog-form-modal') return; document.getElementById('adminlog-form-modal').style.display = 'none'; }
+
+async function saveAdminLogEntry() {
+  const logDate = document.getElementById('al-date').value;
+  const notes = document.getElementById('al-notes').value.trim();
+  if(!logDate) { showToast('Pick a date'); return; }
+  if(!notes) { showToast('Write what you worked on'); return; }
+
+  const payload = { manager_name: currentManagerName(), log_date: logDate, notes };
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    if(_adminLogEditId) {
+      await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${_adminLogEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    } else {
+      await fetch(`${SUPA}/rest/v1/rally_admin_log`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    }
+    closeAdminLogForm();
+    showToast('Saved ✓');
+    renderAdminLogTab();
+  } catch(e) {
+    console.warn('Admin log save failed', e);
+    showToast('⚠ Save failed — check connection');
+  }
+}
+
+async function deleteAdminLogEntry(id) {
+  if(!confirm('Remove this admin log entry?')) return;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    showToast('Removed');
+    renderAdminLogTab();
+  } catch(e) {
+    console.warn('Admin log delete failed', e);
+    showToast('⚠ Delete failed');
   }
 }
 
