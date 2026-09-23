@@ -7277,6 +7277,10 @@ function calShiftMonth(delta) {
   calViewMonth.setMonth(calViewMonth.getMonth() + delta);
   renderCalGrid();
 }
+function calJumpToToday() {
+  calViewMonth = new Date(); calViewMonth.setDate(1);
+  renderCalGrid();
+}
 
 function calEntriesForDay(dateStr) {
   let list;
@@ -7357,11 +7361,14 @@ function renderCalGrid() {
     ? ''
     : (calSubView==='events' ? `<div class="cal-legend">${CAL_CATEGORIES.map(c=>`<span class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.color};"></span>${c.label}</span>`).join('')}</div>` : '');
 
+  const now_ = new Date();
+  const isCurrentMonth = y === now_.getFullYear() && m === now_.getMonth();
   wrap.innerHTML = `
     <div class="cal-nav">
       <button class="ov-abtn" onclick="calShiftMonth(-1)">‹ Prev</button>
-      <div class="cal-month-lbl">${calViewMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
+      <div class="cal-month-lbl" style="cursor:pointer;" title="Click to jump to the current month" onclick="calJumpToToday()">${calViewMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'})}</div>
       <button class="ov-abtn" onclick="calShiftMonth(1)">Next ›</button>
+      ${!isCurrentMonth ? `<button class="btn-sm" onclick="calJumpToToday()">Today</button>` : ''}
       ${addButtons}
     </div>
     ${legendHtml}
