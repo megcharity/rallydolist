@@ -901,11 +901,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
   <div class="nav-tabs" id="mgr-tabs">
-    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
+    <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
+    <button class="nav-tab" onclick="showMgrTab('calendar',this)">Calendar</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
-    <button class="nav-tab" onclick="showMgrTab('tasks',this)">Tasks</button>
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
@@ -962,7 +962,7 @@ let personalStreaks={};
 let currentUser=null, currentRole=null;
 let selectedRole=null, selectedName=null;
 let pinBuf='', pinEditId=null;
-let lbMode='weekly', ovFilter='pending', isAssigning=false, timerInt=null, mgrTab='tasks', peopleEditId=null, newPersonRole='associate';
+let lbMode='weekly', ovFilter='pending', isAssigning=false, timerInt=null, mgrTab='tasks', mgrTaskSubView='manager', peopleEditId=null, newPersonRole='associate';
 
 // ─── SUPABASE ───────────────────────────────────────────────────────────────
 const SUPA_URL=window.RALLY_SUPABASE_URL;
@@ -1090,7 +1090,11 @@ setInterval(async()=>{
     }
     const active=document.querySelector('.screen.active');
     if(active?.id==='s-host'||active?.id==='s-cl-hub')renderHost();
-    if(active?.id==='s-mgr'&&mgrTab==='tasks')renderMgr();
+    if(active?.id==='s-mgr'&&mgrTab==='tasks'){
+      if(mgrTaskSubView==='active') renderMgr();
+      else if(mgrTaskSubView==='manager') renderMgrManagerTasks();
+      else if(mgrTaskSubView==='done') renderMgrCompleted();
+    }
   }catch(e){}
 },8000);
 
@@ -1237,7 +1241,7 @@ function goToHost(){
   if(currentRole==='manager'||currentRole==='owner'||currentRole==='director') {
     currentPosition = 'Manager';
     showScreen('s-mgr');
-    showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));
+    showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));
     document.getElementById('mgr-hdr-user').textContent = u?.name?.split(' ')[0] || 'Manager';
   } else if(currentRole==='associate') {
     // Position already picked before name — go straight to hub
@@ -1664,22 +1668,10 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
   const scorecardTab = document.getElementById('mgr-tab-scorecard');
   if(scorecardTab) scorecardTab.style.display = 'none';
-  if(tab === 'tasks') {
-    // Reset to Active view
-    const activeBtn = document.getElementById('task-view-active-btn');
-    const doneBtn   = document.getElementById('task-view-done-btn');
-    const mgrBtn    = document.getElementById('task-view-mgr-btn');
-    const mgrBody   = document.getElementById('mgr-body');
-    const mgrMgrBody= document.getElementById('mgr-manager-body');
-    const doneBody  = document.getElementById('mgr-completed-body');
-    if(activeBtn) activeBtn.classList.add('active');
-    if(doneBtn)   doneBtn.classList.remove('active');
-    if(mgrBtn)    mgrBtn.classList.remove('active');
-    if(mgrBody)   mgrBody.style.display = 'block';
-    if(mgrMgrBody)mgrMgrBody.style.display = 'none';
-    if(doneBody)  doneBody.style.display = 'none';
-    renderMgr();
-  }
+  // Land on Manager Tasks by default — it's now the first thing a manager
+  // sees, and the assignee-chip view is the one that matters most at a
+  // glance. switchTaskView() handles all the active-state/display toggling.
+  if(tab === 'tasks') switchTaskView('manager');
 
   if(tab === 'checklists')  { switchClScoreTab('checklists'); }
   document.getElementById('mgr-tab-shiftreport').style.display = tab === 'shiftreport' ? 'block' : 'none';
@@ -3752,6 +3744,7 @@ function switchClScoreTab(view) {
 }
 
 function switchTaskView(view) {
+  mgrTaskSubView = view; // tracked so the periodic poll (see setInterval below) knows which sub-view is actually visible and re-renders the right one
   document.getElementById('task-view-active-btn').classList.toggle('active', view === 'active');
   document.getElementById('task-view-mgr-btn').classList.toggle('active', view === 'manager');
   document.getElementById('task-view-done-btn').classList.toggle('active', view === 'done');
@@ -3766,7 +3759,7 @@ function switchTaskView(view) {
   else renderMgrCompleted();
 }
 
-function goMgr(){showScreen('s-mgr');showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));}
+function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   // Go back to name picker so a different manager can log in
