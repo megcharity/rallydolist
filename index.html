@@ -273,6 +273,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-assignee-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:20px;margin:4px 0 8px;}
 .ov-assignee-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
 .ov-assignee-name{font-size:15px;font-weight:800;letter-spacing:.01em;}
+.ov-due-badge{display:inline-block;font-size:13px;font-weight:800;padding:5px 12px;border-radius:8px;margin-bottom:8px;}
 .ov-assign-row{display:flex;gap:6px;margin-top:6px;}
 .ov-asel{flex:1;padding:5px 8px;background:var(--cream);border:1px solid var(--border);border-radius:5px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:11px;outline:none;}
 .ov-abtn{background:rgba(23,72,84,.07);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;}
@@ -901,11 +902,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
   <div class="nav-tabs" id="mgr-tabs">
-    <button class="nav-tab active" onclick="showMgrTab('tasks',this)">Tasks</button>
-    <button class="nav-tab" onclick="showMgrTab('calendar',this)">Calendar</button>
+    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
+    <button class="nav-tab" onclick="showMgrTab('tasks',this)">Tasks</button>
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
@@ -1241,7 +1242,7 @@ function goToHost(){
   if(currentRole==='manager'||currentRole==='owner'||currentRole==='director') {
     currentPosition = 'Manager';
     showScreen('s-mgr');
-    showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));
+    showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));
     document.getElementById('mgr-hdr-user').textContent = u?.name?.split(' ')[0] || 'Manager';
   } else if(currentRole==='associate') {
     // Position already picked before name — go straight to hub
@@ -3759,7 +3760,7 @@ function switchTaskView(view) {
   else renderMgrCompleted();
 }
 
-function goMgr(){showScreen('s-mgr');showMgrTab('tasks', document.querySelector('#mgr-tabs .nav-tab'));}
+function goMgr(){showScreen('s-mgr');showMgrTab('calendar', document.querySelector('#mgr-tabs .nav-tab'));}
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
   // Go back to name picker so a different manager can log in
@@ -4027,11 +4028,18 @@ function renderMgrManagerTasks(){
         <span class="ov-assignee-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;">${initials(assigned.name)}</span>
         <span class="ov-assignee-name" style="color:${AVATAR_TEXT[avIdx]};">${assigned.name}</span>
       </div>` : `<div class="ov-status dot-pending">Unassigned</div>`;
+    // Same color-coded urgency logic (cd-ok/cd-w/cd-u/cd-ov) already used
+    // for due-date badges elsewhere in the app, just sized up — this was
+    // easy to miss as the small default badge.
+    const ds = dlStatus(t.deadline);
+    const cdCls = {ok:'cd-ok',warning:'cd-w',urgent:'cd-u',overdue:'cd-ov'}[ds]||'';
+    const dueBadge = t.deadline ? `<div class="ov-due-badge ${cdCls}">⏰ ${fmtCd(t.deadline)}</div>` : '';
     return`<div class="ov-task">
       <div class="ov-dot ${t.assignedTo?'dot-assigned':'dot-pending'}"></div>
       <div class="ov-info">
         <div class="ov-title" style="cursor:pointer;" onclick="openTaskModal(${t.id})">${t.text} <span style="font-size:10px;color:var(--olive);font-weight:600;">↗ details</span></div>
         <div class="ov-meta">${EL[t.effort]} · by ${t.by}</div>
+        ${dueBadge}
         ${assigneeChip}
         <div class="ov-assign-row">
           <select class="ov-asel" id="ov-sel-${t.id}">
