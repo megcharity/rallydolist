@@ -274,6 +274,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-assignee-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
 .ov-assignee-name{font-size:15px;font-weight:800;letter-spacing:.01em;}
 .ov-due-badge{display:inline-block;font-size:13px;font-weight:800;padding:5px 12px;border-radius:8px;margin-bottom:8px;}
+.tm-assignee-hl{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:12px;}
+.tm-assignee-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;}
+.tm-assignee-lbl{font-size:10px;font-weight:800;letter-spacing:.06em;opacity:.75;margin-bottom:1px;}
+.tm-assignee-nm{font-size:17px;font-weight:800;letter-spacing:.01em;}
 
 /* ── ANNOUNCEMENTS ── */
 .ann-add-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--amber);color:#fff;font-size:16px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s;flex-shrink:0;}
@@ -692,6 +696,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="fg full"><label>Task Description</label><input id="e-text" type="text"/></div>
     <div class="fg full"><label>Instructions</label><textarea id="e-inst" rows="3"></textarea></div>
     <div class="fg full"><label>Resource Link</label><input id="e-link" type="url" placeholder="https://..."/></div>
+    <div class="fg full"><label>Deadline <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input type="datetime-local" id="e-dl"/></div>
     <div class="fg full"><label>Job Code</label>
       <select id="e-jobcode">
         <option value="">Everyone</option>
@@ -1393,7 +1398,7 @@ function openTaskModal(id){
     const avIdx=(asgUser.name.charCodeAt(0)||0)%AVATAR_COLORS.length;
     const asgLbl=t.claimedBy?'Picked up by':'Assigned to';
     asgDiv.style.display='block';
-    asgDiv.innerHTML=`<div style="font-size:10px;font-weight:700;color:var(--olive);letter-spacing:.04em;margin-bottom:4px;">${asgLbl.toUpperCase()}</div><div class="ov-assignee-chip" style="background:${AVATAR_COLORS[avIdx]};"><span class="ov-assignee-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;">${initials(asgUser.name)}</span><span class="ov-assignee-name" style="color:${AVATAR_TEXT[avIdx]};">${asgUser.name}</span></div>`;
+    asgDiv.innerHTML=`<div class="tm-assignee-hl" style="background:${AVATAR_COLORS[avIdx]};"><span class="tm-assignee-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;">${initials(asgUser.name)}</span><div><div class="tm-assignee-lbl" style="color:${AVATAR_TEXT[avIdx]};">${asgLbl.toUpperCase()}</div><div class="tm-assignee-nm" style="color:${AVATAR_TEXT[avIdx]};">${asgUser.name}</div></div></div>`;
   } else {
     asgDiv.style.display='block';
     asgDiv.innerHTML=`<div class="ov-status dot-pending" style="display:inline-block;">Unassigned — open in pool</div>`;
@@ -4399,12 +4404,20 @@ function updateEditAssignNames(){
   if(cur) sel.value = cur;
 }
 
+// Local (not UTC) YYYY-MM-DDTHH:mm string a <input type="datetime-local">
+// accepts as its value — mirrors how calAddTaskForDate() pre-fills f-dl.
+function toDLValue(d){
+  if(!(d instanceof Date)||isNaN(d))return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 function openEditModal(id){
   const t=tasks.find(x=>x.id===id);if(!t)return;
   pinEditId=id;
   document.getElementById('e-text').value=t.text;
   document.getElementById('e-inst').value=t.instructions||'';
   document.getElementById('e-link').value=t.instLink||'';
+  document.getElementById('e-dl').value=toDLValue(t.deadline);
   document.getElementById('e-jobcode').value=t.jobCode||'';
   // Populate assign dropdowns
   const associates=users;
@@ -4432,6 +4445,8 @@ function saveEdit(){
   if(txt)t.text=txt;
   t.instructions=document.getElementById('e-inst')?.value.trim()||'';
   t.instLink=document.getElementById('e-link')?.value.trim()||'';
+  const newDl=document.getElementById('e-dl')?.value;
+  t.deadline=newDl?new Date(newDl):null;
   t.jobCode=document.getElementById('e-jobcode')?.value||'';
   const newAssign=document.getElementById('e-assign')?.value;
   if(!t.done) t.assignedTo=newAssign?parseInt(newAssign):null;
