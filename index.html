@@ -277,6 +277,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── ANNOUNCEMENTS ── */
 .ann-add-btn{width:26px;height:26px;border-radius:50%;border:none;background:var(--amber);color:#fff;font-size:16px;font-weight:800;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s;flex-shrink:0;}
+.ann-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(248,154,28,.15);border:1.5px solid rgba(248,154,28,.5);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:800;color:#b87000;cursor:pointer;margin-bottom:12px;transition:background .2s;}
+.ann-badge:hover{background:rgba(248,154,28,.22);}
 .ann-add-btn:hover{opacity:.85;}
 .ann-alert{background:rgba(248,154,28,.1);border:1.5px solid rgba(248,154,28,.4);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
 .ann-alert-hdr{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#b87000;margin-bottom:6px;}
@@ -802,6 +804,20 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveAnnouncement()">Post</button>
       <button class="modal-btn secondary" onclick="closeAnnouncementForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ANNOUNCEMENT VIEW MODAL (opened from the small Calendar badge) -->
+<div id="announcement-view-modal" class="modal-ov" style="display:none;" onclick="closeAnnouncementViewModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title">📣 Announcements</div>
+      <button class="modal-close" onclick="closeAnnouncementViewModal()">×</button>
+    </div>
+    <div id="ann-view-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeAnnouncementViewModal()">Close</button>
     </div>
   </div>
 </div>
@@ -2137,7 +2153,11 @@ async function loadAnnouncements() {
   } catch(e) { console.warn('Announcements load failed', e); }
 }
 
-function annActiveManagers() { return users.filter(u => u.role === 'manager'); }
+// Only the Ops Managers need to sign off on an announcement — not every
+// manager. Hardcoded by name (GM's explicit list); update this array if
+// who's an Ops Manager changes.
+const OPS_MANAGER_NAMES = ['Kevin', 'Murphy', 'Vic'];
+function annActiveManagers() { return users.filter(u => u.role === 'manager' && OPS_MANAGER_NAMES.includes(u.name)); }
 function annReadersOf(id) { return announcementReads.filter(r => r.announcement_id === id).map(r => r.manager_name); }
 function annIsFullyRead(id) {
   const readers = new Set(annReadersOf(id));
@@ -2145,27 +2165,46 @@ function annIsFullyRead(id) {
   return mgrs.length > 0 && mgrs.every(m => readers.has(m.name));
 }
 
+// Compact click-to-expand badge on the Calendar — detail (title, body,
+// roster, mark-as-read) lives in the modal opened by
+// openAnnouncementViewModal(), not rendered inline.
 async function renderAnnouncementAlert() {
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
   const active = announcements.filter(a => !annIsFullyRead(a.id));
   if(!active.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
+}
+
+function renderAnnouncementViewBody() {
+  const active = announcements.filter(a => !annIsFullyRead(a.id));
   const me = currentManagerName();
-  wrap.innerHTML = active.map(a => {
+  const iAmOpsManager = OPS_MANAGER_NAMES.includes(me);
+  const body = document.getElementById('ann-view-body');
+  if(!body) return;
+  if(!active.length) { closeAnnouncementViewModal(); return; }
+  body.innerHTML = active.map(a => {
     const readers = new Set(annReadersOf(a.id));
     const roster = annActiveManagers().map(m => `<span class="ann-roster-chip ${readers.has(m.name)?'read':'unread'}">${readers.has(m.name)?'✓':'○'} ${calEsc(m.name)}</span>`).join('');
     const iRead = readers.has(me);
-    return `<div class="ann-alert">
-      <div class="ann-alert-hdr">📣 New Announcement</div>
+    const actionHtml = !iAmOpsManager
+      ? `<div style="font-size:12px;color:rgba(23,72,84,.45);">Awaiting confirmation from Ops Managers.</div>`
+      : iRead
+        ? `<div style="font-size:12px;font-weight:700;color:var(--olive);">✓ You've confirmed</div>`
+        : `<button class="modal-btn primary" style="width:auto;padding:8px 16px;" onclick="markAnnouncementRead(${a.id})">✓ Mark as Read</button>`;
+    return `<div class="ann-card">
       <div class="ann-title">${calEsc(a.title)}</div>
       ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
       <div class="ann-roster">${roster}</div>
-      ${iRead
-        ? `<div style="font-size:12px;font-weight:700;color:var(--olive);">✓ You've confirmed</div>`
-        : `<button class="modal-btn primary" style="width:auto;padding:8px 16px;" onclick="markAnnouncementRead(${a.id})">✓ Mark as Read</button>`}
+      ${actionHtml}
     </div>`;
   }).join('');
 }
+function openAnnouncementViewModal() {
+  renderAnnouncementViewBody();
+  document.getElementById('announcement-view-modal').style.display = 'flex';
+}
+function closeAnnouncementViewModal(ev) { if(ev && ev.target.id !== 'announcement-view-modal') return; document.getElementById('announcement-view-modal').style.display = 'none'; }
 
 function openAnnouncementForm() {
   document.getElementById('ann-title-input').value = '';
@@ -2206,6 +2245,7 @@ async function markAnnouncementRead(id) {
     await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ announcement_id: id, manager_name: me }) });
     await loadAnnouncements();
     renderAnnouncementAlert();
+    if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
     showToast('Marked as read ✓');
   } catch(e) {
     console.warn('Mark as read failed', e);
