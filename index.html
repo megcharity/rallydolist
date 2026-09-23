@@ -350,7 +350,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:6px;}
 .cal-dow-cell{background:rgba(42,120,214,.12);color:var(--cal-header-blue);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:7px 0;border-radius:6px;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-.cal-cell{min-height:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
+.cal-cell{position:relative;min-height:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
+.cal-task-badge{position:absolute;top:5px;right:5px;background:var(--cal-task);color:#fff;font-size:8px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;padding:3px 6px;border-radius:5px;cursor:pointer;line-height:1.3;box-shadow:0 1px 3px rgba(0,0,0,.15);z-index:2;}
+.cal-task-badge:hover{opacity:.88;}
 .cal-cell:hover{border-color:var(--teal);}
 .cal-cell.empty{background:transparent;border:none;cursor:default;min-height:0;}
 .cal-cell.today{border-color:var(--olive);border-width:2px;}
@@ -6786,20 +6788,16 @@ function renderCalGrid() {
     const dayTasks = entries.filter(e => e._type === 'task');
     const dayPto = entries.filter(e => e._type === 'pto');
     const isToday = dateStr === todayStr;
-    const dayNonPto = [...dayEvents, ...dayTasks];
-    const shownNonPto = dayNonPto.slice(0,6);
+    const shownEvents = dayEvents.slice(0,6);
 
-    const eventsHtml = shownNonPto.map(e => {
-      if(e._type === 'task') {
-        return `<div class="cal-pill" style="background:var(--cal-task);color:#fff;" title="Task: ${calEsc(e.title)} — assigned to ${calEsc(e.mgr_name)}" onclick="openTaskModal(${e.id});event.stopPropagation();">${calEsc(e.title)} <span class="cal-pill-mod">· Task · ${calEsc(e.mgr_name)}</span></div>`;
-      }
+    const eventsHtml = shownEvents.map(e => {
       const cat = CAL_CAT_BY_KEY[e.category];
       const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(cat?.tag || cat?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
       const hasFlag = e.notes || e.resource_link;
       const calloutDot = hasFlag ? `<span class="cal-callout-dot" title="${e.notes ? 'Special callout: '+calEsc(e.notes) : 'Has a resource link'}"></span>` : '';
       return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}${e.notes ? ' — ⚠ '+calEsc(e.notes) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calloutDot}${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
-    }).join('') + (dayNonPto.length>6 ? `<div class="cal-more">+${dayNonPto.length-6} more</div>` : '');
+    }).join('') + (dayEvents.length>6 ? `<div class="cal-more">+${dayEvents.length-6} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
       <div class="cal-pto-block">
@@ -6809,8 +6807,14 @@ function renderCalGrid() {
         </div>
       </div>` : '';
 
+    // Tasks (deadline + manager assigned) get a compact corner badge instead
+    // of a pill per task — busy days with several events would otherwise get
+    // crowded fast. See calShowDayTasks() for what the badge opens.
+    const taskBadgeHtml = dayTasks.length ? `<div class="cal-task-badge" onclick="calShowDayTasks('${dateStr}',event)">📋 ${dayTasks.length>1 ? dayTasks.length+' Tasks Due' : 'Task Due'}</div>` : '';
+
     cells += `
       <div class="cal-cell${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
+        ${taskBadgeHtml}
         <div class="cal-daynum">${day}</div>
         <div class="cal-entries">${eventsHtml}</div>
         ${ptoHtml}
@@ -6844,6 +6848,31 @@ function calDayClick(dateStr) {
   if(!isGM()) return; // view-only staff: nothing to do on an empty day tap
   if(_calMergedMode) { openCalForm(null, null, dateStr); return; } // type is chosen inside the form
   openCalForm(calSubView==='events' ? 'event' : 'pto', null, dateStr);
+}
+
+// Clicking the "Task Due" corner badge — one task opens it directly; more
+// than one shows a small picker list (each row opens that task's own
+// detail modal). Re-derives from calTaskEntriesForDay() rather than
+// threading the list through the DOM, so it can't go stale.
+function calShowDayTasks(dateStr, ev) {
+  if(ev) ev.stopPropagation();
+  const dayTasks = calTaskEntriesForDay(dateStr);
+  if(!dayTasks.length) return;
+  if(dayTasks.length === 1) { openTaskModal(dayTasks[0].id); return; }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:320px;max-width:90vw;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:14px;">Tasks Due — ${fmtCalDate(dateStr)}</div>
+    ${dayTasks.map(t => `
+      <div style="padding:10px 12px;border:1.5px solid rgba(23,72,84,.15);border-radius:8px;margin-bottom:8px;cursor:pointer;" onclick="this.closest('[style*=fixed]').remove();openTaskModal(${t.id});">
+        <div style="font-weight:700;font-size:13px;color:#174854;">${calEsc(t.title)}</div>
+        <div style="font-size:11px;color:rgba(23,72,84,.5);margin-top:2px;">Assigned to ${calEsc(t.mgr_name)}</div>
+      </div>`).join('')}
+    <button style="width:100%;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;" onclick="this.closest('[style*=fixed]').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
 }
 
 function viewCalEntry(type, id, ev) {
