@@ -26,6 +26,7 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
   --cal-large-event:#4f9a1a; --cal-private-party:#e87ba4; --cal-marketing:#008300;
   --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
   --cal-header-blue:#2a78d6; /* day-of-week header box — independent of Large Event's color */
+  --cal-task:#a83279; /* Do List tasks with a deadline + manager assigned, shown on the calendar */
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--teal);min-height:100vh;}
@@ -6686,6 +6687,26 @@ function fmtCalDate(dateStr) {
   const [y,m,d] = dateStr.split('-').map(Number);
   return new Date(y, m-1, d).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
 }
+function dateToYMD(d) {
+  if(!(d instanceof Date) || isNaN(d)) return null;
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Tasks (from the Do List, not the calendar tables) that have a deadline
+// AND are assigned to a manager show up on the manager dashboard's merged
+// calendar automatically — derived live from `tasks`/`users`, never
+// duplicated into rally_calendar_events, so editing/completing/deleting
+// the task in the Do List is instantly reflected here with no sync step.
+function calTaskEntriesForDay(dateStr) {
+  if(typeof tasks === 'undefined' || !Array.isArray(tasks)) return [];
+  return tasks
+    .filter(t => !t.done && t.deadline && t.assignedTo != null && dateToYMD(t.deadline) === dateStr)
+    .map(t => {
+      const assignee = users.find(u => u.id === t.assignedTo);
+      if(!assignee || assignee.role !== 'manager') return null;
+      return { _type:'task', id: t.id, title: t.text, mgr_name: assignee.name, start_date: dateStr, end_date: dateStr };
+    })
+    .filter(Boolean);
+}
 
 async function loadCalendarEvents() {
   try {
@@ -6740,7 +6761,10 @@ function calEntriesForDay(dateStr) {
     const type = calSubView === 'events' ? 'event' : 'pto';
     list = (calSubView === 'events' ? calEvents : ptoEntries).map(e => ({...e, _type:type}));
   }
-  return list.filter(e => dateStr >= e.start_date && dateStr <= (e.end_date || e.start_date));
+  const filtered = list.filter(e => dateStr >= e.start_date && dateStr <= (e.end_date || e.start_date));
+  // Do List tasks (deadline + manager assigned) only surface on the merged
+  // manager-dashboard calendar — not the associate hub's toggle view.
+  return _calMergedMode ? filtered.concat(calTaskEntriesForDay(dateStr)) : filtered;
 }
 
 function renderCalGrid() {
@@ -6759,18 +6783,23 @@ function renderCalGrid() {
     const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const entries = calEntriesForDay(dateStr);
     const dayEvents = entries.filter(e => e._type === 'event');
+    const dayTasks = entries.filter(e => e._type === 'task');
     const dayPto = entries.filter(e => e._type === 'pto');
     const isToday = dateStr === todayStr;
-    const shownEvents = dayEvents.slice(0,6);
+    const dayNonPto = [...dayEvents, ...dayTasks];
+    const shownNonPto = dayNonPto.slice(0,6);
 
-    const eventsHtml = shownEvents.map(e => {
+    const eventsHtml = shownNonPto.map(e => {
+      if(e._type === 'task') {
+        return `<div class="cal-pill" style="background:var(--cal-task);color:#fff;" title="Task: ${calEsc(e.title)} — assigned to ${calEsc(e.mgr_name)}" onclick="openTaskModal(${e.id});event.stopPropagation();">${calEsc(e.title)} <span class="cal-pill-mod">· Task · ${calEsc(e.mgr_name)}</span></div>`;
+      }
       const cat = CAL_CAT_BY_KEY[e.category];
       const categoryTag = _calMergedMode ? ` <span class="cal-pill-mod">· ${calEsc(cat?.tag || cat?.label || e.category)}</span>` : '';
       const modSuffix = e.mod_name ? ` <span class="cal-pill-mod">· ${calEsc(e.mod_name)}</span>` : '';
       const hasFlag = e.notes || e.resource_link;
       const calloutDot = hasFlag ? `<span class="cal-callout-dot" title="${e.notes ? 'Special callout: '+calEsc(e.notes) : 'Has a resource link'}"></span>` : '';
       return `<div class="cal-pill" style="background:${cat?.color||'#999'};color:${cat?.textColor||'#fff'};" title="${calEsc(e.title)}${e.mod_name ? ' — MOD: '+calEsc(e.mod_name) : ''}${e.notes ? ' — ⚠ '+calEsc(e.notes) : ''}" onclick="viewCalEntry('event','${e.id}',event)">${calloutDot}${calEsc(e.title)}${categoryTag}${modSuffix}</div>`;
-    }).join('') + (dayEvents.length>6 ? `<div class="cal-more">+${dayEvents.length-6} more</div>` : '');
+    }).join('') + (dayNonPto.length>6 ? `<div class="cal-more">+${dayNonPto.length-6} more</div>` : '');
 
     const ptoHtml = dayPto.length ? `
       <div class="cal-pto-block">
