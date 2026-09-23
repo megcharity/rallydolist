@@ -801,6 +801,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="fg full"><label>Title</label><input id="ann-title-input" type="text" placeholder="e.g. New menu item starting Monday"/></div>
     <div class="fg full"><label>Details</label><textarea id="ann-body-input" rows="4" placeholder="What managers need to know…"></textarea></div>
+    <div class="fg full"><label>Go Live Date <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — leave blank to post immediately)</span></label><input id="ann-golive-input" type="date"/></div>
+    <div class="fg full"><label>Who needs to confirm this? <span style="font-weight:400;color:rgba(23,72,84,.4);">(all managers checked by default)</span></label>
+      <div id="ann-required-mgrs" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;background:var(--cream);"></div>
+    </div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveAnnouncement()">Post</button>
       <button class="modal-btn secondary" onclick="closeAnnouncementForm()">Cancel</button>
@@ -2153,17 +2157,27 @@ async function loadAnnouncements() {
   } catch(e) { console.warn('Announcements load failed', e); }
 }
 
-// Only the Ops Managers need to sign off on an announcement — not every
-// manager. Hardcoded by name (GM's explicit list); update this array if
-// who's an Ops Manager changes.
-const OPS_MANAGER_NAMES = ['Kevin', 'Murphy', 'Vic'];
-function annActiveManagers() { return users.filter(u => u.role === 'manager' && OPS_MANAGER_NAMES.includes(u.name)); }
+// Who needs to sign off is chosen per-announcement at posting time (a
+// jsonb array of manager names on the row itself), not a hardcoded list.
+// "Fully read" is still computed live by cross-referencing that list
+// against the CURRENT active manager roster — a required manager who
+// leaves the company still drops out automatically.
+function annRequiredManagers(a) {
+  const required = new Set(Array.isArray(a.required_managers) ? a.required_managers : []);
+  return users.filter(u => u.role === 'manager' && required.has(u.name));
+}
 function annReadersOf(id) { return announcementReads.filter(r => r.announcement_id === id).map(r => r.manager_name); }
 function annIsFullyRead(id) {
+  const a = announcements.find(x => x.id === id);
+  if(!a) return false;
   const readers = new Set(annReadersOf(id));
-  const mgrs = annActiveManagers();
+  const mgrs = annRequiredManagers(a);
   return mgrs.length > 0 && mgrs.every(m => readers.has(m.name));
 }
+// Null/blank go_live_date means "live immediately" (matches rows from
+// before this field existed). A future date holds it back entirely —
+// invisible everywhere, not just excluded from sign-off — until that day.
+function annIsLive(a) { return !a.go_live_date || a.go_live_date <= getTodayStr(); }
 
 // Compact click-to-expand badge on the Calendar — detail (title, body,
 // roster, mark-as-read) lives in the modal opened by
@@ -2171,24 +2185,25 @@ function annIsFullyRead(id) {
 async function renderAnnouncementAlert() {
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  const active = announcements.filter(a => !annIsFullyRead(a.id));
+  const active = announcements.filter(a => annIsLive(a) && !annIsFullyRead(a.id));
   if(!active.length) { wrap.innerHTML = ''; return; }
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
 
 function renderAnnouncementViewBody() {
-  const active = announcements.filter(a => !annIsFullyRead(a.id));
+  const active = announcements.filter(a => annIsLive(a) && !annIsFullyRead(a.id));
   const me = currentManagerName();
-  const iAmOpsManager = OPS_MANAGER_NAMES.includes(me);
   const body = document.getElementById('ann-view-body');
   if(!body) return;
   if(!active.length) { closeAnnouncementViewModal(); return; }
   body.innerHTML = active.map(a => {
+    const requiredMgrs = annRequiredManagers(a);
     const readers = new Set(annReadersOf(a.id));
-    const roster = annActiveManagers().map(m => `<span class="ann-roster-chip ${readers.has(m.name)?'read':'unread'}">${readers.has(m.name)?'✓':'○'} ${calEsc(m.name)}</span>`).join('');
+    const roster = requiredMgrs.map(m => `<span class="ann-roster-chip ${readers.has(m.name)?'read':'unread'}">${readers.has(m.name)?'✓':'○'} ${calEsc(m.name)}</span>`).join('');
     const iRead = readers.has(me);
-    const actionHtml = !iAmOpsManager
-      ? `<div style="font-size:12px;color:rgba(23,72,84,.45);">Awaiting confirmation from Ops Managers.</div>`
+    const iAmRequired = requiredMgrs.some(m => m.name === me);
+    const actionHtml = !iAmRequired
+      ? `<div style="font-size:12px;color:rgba(23,72,84,.45);">Awaiting confirmation from the selected managers.</div>`
       : iRead
         ? `<div style="font-size:12px;font-weight:700;color:var(--olive);">✓ You've confirmed</div>`
         : `<button class="modal-btn primary" style="width:auto;padding:8px 16px;" onclick="markAnnouncementRead(${a.id})">✓ Mark as Read</button>`;
@@ -2209,6 +2224,16 @@ function closeAnnouncementViewModal(ev) { if(ev && ev.target.id !== 'announcemen
 function openAnnouncementForm() {
   document.getElementById('ann-title-input').value = '';
   document.getElementById('ann-body-input').value = '';
+  document.getElementById('ann-golive-input').value = '';
+  // All current managers checked by default — a deliberate opt-out, not
+  // opt-in, since most announcements are for everyone; narrow it down for
+  // the occasional targeted one.
+  const mgrWrap = document.getElementById('ann-required-mgrs');
+  const mgrs = users.filter(u => u.role === 'manager');
+  mgrWrap.innerHTML = mgrs.map(m => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--teal);cursor:pointer;">
+      <input type="checkbox" class="ann-req-cb" value="${calEsc(m.name)}" checked/> ${calEsc(m.name)}
+    </label>`).join('') || `<div style="font-size:12px;color:rgba(23,72,84,.4);">No managers on the roster yet.</div>`;
   document.getElementById('announcement-form-modal').style.display = 'flex';
 }
 function closeAnnouncementForm(ev) { if(ev && ev.target.id !== 'announcement-form-modal') return; document.getElementById('announcement-form-modal').style.display = 'none'; }
@@ -2216,11 +2241,14 @@ function closeAnnouncementForm(ev) { if(ev && ev.target.id !== 'announcement-for
 async function saveAnnouncement() {
   const title = document.getElementById('ann-title-input').value.trim();
   const body = document.getElementById('ann-body-input').value.trim();
+  const goLive = document.getElementById('ann-golive-input').value || null;
+  const requiredManagers = Array.from(document.querySelectorAll('.ann-req-cb:checked')).map(cb => cb.value);
   if(!title) { showToast('Enter a title'); return; }
+  if(!requiredManagers.length) { showToast('Select at least one manager to confirm this'); return; }
   const SUPA = window.RALLY_SUPABASE_URL;
   const me = currentManagerName();
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me }) });
+    const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me, go_live_date: goLive, required_managers: requiredManagers }) });
     const rows = await res.json();
     const newId = Array.isArray(rows) && rows[0] && rows[0].id;
     // The author obviously "read" their own post — mark it immediately so
@@ -2231,7 +2259,7 @@ async function saveAnnouncement() {
     closeAnnouncementForm();
     await loadAnnouncements();
     renderAnnouncementAlert();
-    showToast('Announcement posted ✓');
+    showToast(goLive && goLive > getTodayStr() ? `Announcement scheduled for ${goLive} ✓` : 'Announcement posted ✓');
   } catch(e) {
     console.warn('Announcement save failed', e);
     showToast('⚠ Post failed — check connection');
@@ -2269,7 +2297,7 @@ async function renderAnnouncementsArchiveTab() {
   const isCurrentWeek = alDateToYMD(weekStart) === alDateToYMD(alMondayOf(new Date()));
 
   const archived = announcements.filter(a => {
-    if(!annIsFullyRead(a.id)) return false;
+    if(!annIsLive(a) || !annIsFullyRead(a.id)) return false;
     const d = new Date(a.created_at);
     return d >= weekStart && d < new Date(weekEnd.getTime() + 86400000);
   });
