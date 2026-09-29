@@ -172,6 +172,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .modal-inst{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:13px;color:var(--teal);line-height:1.6;margin-bottom:12px;white-space:pre-wrap;}
 .modal-link{display:flex;align-items:center;gap:8px;background:rgba(23,72,84,.05);border:1px solid var(--border);border-radius:6px;padding:10px 12px;text-decoration:none;color:var(--teal);font-weight:600;font-size:13px;margin-bottom:14px;}
 .modal-link:hover{background:rgba(23,72,84,.1);}
+.cf-doc-chip{display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(23,72,84,.05);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;font-weight:600;color:var(--teal);}
+.cf-doc-chip a{color:var(--teal);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .modal-actions{display:flex;gap:10px;}
 .modal-btn{flex:1;padding:11px;border-radius:7px;border:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;}
 .modal-btn:hover{opacity:.88;}
@@ -756,6 +758,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <a id="cv-link" href="#" target="_blank" rel="noopener" class="modal-link">🔗 Open Resource Link</a>
       <button class="btn-sm" onclick="copyCalLink()" style="width:100%;margin-bottom:14px;">📋 Copy Link</button>
     </div>
+    <div id="cv-doc-row" style="display:none;">
+      <a id="cv-doc" href="#" target="_blank" rel="noopener" class="modal-link">📄 <span id="cv-doc-name"></span></a>
+    </div>
     <div class="modal-actions" id="cv-actions"></div>
   </div>
 </div>
@@ -780,6 +785,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="fg full" id="cf-callout-row"><label>🔴 Special Callout <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — shows a dot on the calendar)</span></label><textarea id="cf-callout" rows="2" placeholder="Something important the team needs to know about this event"></textarea></div>
     <div class="fg full" id="cf-link-row"><label>Resource Link <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — floor plan, menu, doc, etc.)</span></label><input id="cf-link" type="url" placeholder="https://..."/></div>
+    <div class="fg full" id="cf-doc-row"><label>Attach a Document <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — PDF, image, Word doc, etc.)</span></label>
+      <input id="cf-doc-file" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" onchange="calHandleDocInput(event)" style="display:none;"/>
+      <div id="cf-doc-preview"></div>
+    </div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveCalForm()">Save</button>
       <button class="modal-btn secondary" onclick="closeCalFormModal()">Cancel</button>
@@ -7151,6 +7160,9 @@ let calSubView = 'events'; // 'events' | 'pto' — only used in the associate hu
 function isGM() { return currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director'; }
 let _calFormEditId = null;
 let _calFormEditTableType = null; // 'event' | 'pto' | null — which table the row being edited came from; null for a brand-new entry
+let _calPendingDocFile = null;    // File object chosen but not yet uploaded
+let _calExistingDoc = null;       // { url, name } already saved on the entry being edited, or null
+let _calDocRemoved = false;       // true if the user explicitly cleared an existing document
 let _calRenderTarget = 'cal-hub-body'; // id of the body div currently showing the calendar — there are two mount points (associate hub + manager dashboard)
 let _calMergedMode = false; // true on the manager dashboard: one combined calendar (events + PTO together) instead of the associate hub's toggle-between-two-views
 
@@ -7481,6 +7493,14 @@ function viewCalEntry(type, id, ev) {
   } else {
     linkRow.style.display = 'none';
   }
+  const docRow = document.getElementById('cv-doc-row');
+  if(isEvent && entry.document_url) {
+    docRow.style.display = '';
+    document.getElementById('cv-doc').href = entry.document_url;
+    document.getElementById('cv-doc-name').textContent = entry.document_name || 'Document';
+  } else {
+    docRow.style.display = 'none';
+  }
 
   document.getElementById('cv-actions').innerHTML = isGM()
     ? `<button class="modal-btn primary" onclick="closeCalViewModal();openCalForm('${type}','${entry.id}')">✏ Edit</button>
@@ -7521,6 +7541,12 @@ function openCalForm(tableType, id, prefillDate) {
   document.getElementById('cf-callout').value = (entry && tableType==='event') ? (entry.notes || '') : '';
   document.getElementById('cf-link').value = (entry && tableType==='event') ? (entry.resource_link || '') : '';
 
+  _calPendingDocFile = null;
+  _calDocRemoved = false;
+  _calExistingDoc = (entry && tableType==='event' && entry.document_url) ? { url: entry.document_url, name: entry.document_name || 'Document' } : null;
+  document.getElementById('cf-doc-file').value = '';
+  renderCalDocPreview();
+
   calToggleModRow();
   document.getElementById('cal-form-modal').style.display = 'flex';
 }
@@ -7529,6 +7555,51 @@ function calToggleModRow() {
   document.getElementById('cf-mod-row').style.display = isPto ? 'none' : '';
   document.getElementById('cf-callout-row').style.display = isPto ? 'none' : '';
   document.getElementById('cf-link-row').style.display = isPto ? 'none' : '';
+  document.getElementById('cf-doc-row').style.display = isPto ? 'none' : '';
+}
+// ── Calendar event document attach (file input -> Storage on save) ──
+function calHandleDocInput(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  _calPendingDocFile = file;
+  _calDocRemoved = false;
+  renderCalDocPreview();
+}
+function calRemoveDoc() {
+  _calPendingDocFile = null;
+  _calExistingDoc = null;
+  _calDocRemoved = true;
+  document.getElementById('cf-doc-file').value = '';
+  renderCalDocPreview();
+}
+function renderCalDocPreview() {
+  const box = document.getElementById('cf-doc-preview');
+  if(!box) return;
+  if(_calPendingDocFile) {
+    box.innerHTML = `<div class="cf-doc-chip"><span>📄 ${calEsc(_calPendingDocFile.name)}</span><button type="button" class="btn-sm" onclick="calRemoveDoc()">Remove</button></div>`;
+  } else if(_calExistingDoc) {
+    box.innerHTML = `<div class="cf-doc-chip"><a href="${_calExistingDoc.url}" target="_blank" rel="noopener">📄 ${calEsc(_calExistingDoc.name)}</a><button type="button" class="btn-sm" onclick="calRemoveDoc()">Remove</button></div>`;
+  } else {
+    box.innerHTML = `<button type="button" class="btn-sm" onclick="document.getElementById('cf-doc-file').click()">📎 Choose File</button>`;
+  }
+}
+async function uploadPendingCalDoc() {
+  if(!_calPendingDocFile) return null;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+  const token = (window.RallyAuth && window.RallyAuth.token()) || KEY;
+  const file = _calPendingDocFile;
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  try {
+    const res = await fetch(`${SUPA}/storage/v1/object/calendar-docs/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    if(!res.ok) { showToast('⚠ Document failed to upload'); return null; }
+    return { url: `${SUPA}/storage/v1/object/public/calendar-docs/${path}`, name: file.name };
+  } catch(e) { console.warn('Document upload failed', e); showToast('⚠ Document failed to upload'); return null; }
 }
 function copyCalLink() {
   const url = document.getElementById('cv-link').dataset.url || '';
@@ -7555,10 +7626,18 @@ async function saveCalForm() {
   const modName = document.getElementById('cf-mod').value || null;
   const callout = document.getElementById('cf-callout').value.trim() || null;
   const resourceLink = document.getElementById('cf-link').value.trim() || null;
+
+  let uploadedDoc = null;
+  if(!isPto && _calPendingDocFile) {
+    uploadedDoc = await uploadPendingCalDoc();
+    if(!uploadedDoc) return; // upload failed — toast already shown, don't save a half-done entry
+  }
+  const finalDoc = isPto ? null : (uploadedDoc || (_calDocRemoved ? null : _calExistingDoc));
+
   const newTable = isPto ? 'rally_pto' : 'rally_calendar_events';
   const payload = isPto
     ? { staff_name: desc, start_date: start, end_date: end, created_by: createdBy }
-    : { title: desc, category: selectedType, mod_name: modName, notes: callout, resource_link: resourceLink, start_date: start, end_date: end, created_by: createdBy };
+    : { title: desc, category: selectedType, mod_name: modName, notes: callout, resource_link: resourceLink, document_url: finalDoc?.url || null, document_name: finalDoc?.name || null, start_date: start, end_date: end, created_by: createdBy };
 
   try {
     if(_calFormEditId && _calFormEditTableType) {
