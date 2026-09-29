@@ -376,8 +376,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-dow-cell{background:rgba(42,120,214,.12);color:var(--cal-header-blue);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;padding:7px 0;border-radius:6px;}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
 .cal-cell{position:relative;min-height:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:6px 8px;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:3px;}
-.cal-task-badge{position:absolute;top:5px;right:5px;background:var(--cal-task);color:#fff;font-size:8px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;padding:3px 6px;border-radius:5px;cursor:pointer;line-height:1.3;box-shadow:0 1px 3px rgba(0,0,0,.15);z-index:2;}
+.cal-task-badge{position:absolute;top:5px;right:5px;display:flex;align-items:center;gap:3px;background:var(--cal-task);color:#fff;font-size:8px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;padding:3px 6px;border-radius:5px;cursor:pointer;line-height:1.3;box-shadow:0 1px 3px rgba(0,0,0,.15);z-index:2;}
 .cal-task-badge:hover{opacity:.88;}
+.cal-task-avs{display:flex;align-items:center;}
+.cal-task-av{width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:0;border:1px solid rgba(255,255,255,.6);margin-right:-3px;flex-shrink:0;}
+.cal-task-av:last-child{margin-right:0;}
 .cal-cell:hover{border-color:var(--teal);}
 .cal-cell.empty{background:transparent;border:none;cursor:default;min-height:0;}
 .cal-cell.today{border-color:var(--olive);border-width:2px;}
@@ -7175,7 +7178,7 @@ function calTaskEntriesForDay(dateStr) {
     .map(t => {
       const assignee = users.find(u => u.id === t.assignedTo);
       if(!assignee || assignee.role !== 'manager') return null;
-      return { _type:'task', id: t.id, title: t.text, mgr_name: assignee.name, start_date: dateStr, end_date: dateStr };
+      return { _type:'task', id: t.id, title: t.text, mgr_id: assignee.id, mgr_name: assignee.name, start_date: dateStr, end_date: dateStr };
     })
     .filter(Boolean);
 }
@@ -7339,8 +7342,21 @@ function renderCalGrid() {
 
     // Tasks (deadline + manager assigned) get a compact corner badge instead
     // of a pill per task — busy days with several events would otherwise get
-    // crowded fast. See calShowDayTasks() for what the badge opens.
-    const taskBadgeHtml = dayTasks.length ? `<div class="cal-task-badge" onclick="calShowDayTasks('${dateStr}',event)">📋 ${dayTasks.length>1 ? dayTasks.length+' Tasks Due' : 'Task Due'}</div>` : '';
+    // crowded fast. See calShowDayTasks() for what the badge opens. Each
+    // unique assignee gets their own colored initials avatar (same
+    // AVATAR_COLORS/AVATAR_TEXT hash used everywhere else) right on the
+    // badge, so a manager can spot "that's mine" at a glance without
+    // opening the picker.
+    let taskBadgeHtml = '';
+    if(dayTasks.length) {
+      const seenMgr = new Set();
+      const uniqueAssignees = dayTasks.filter(t => { if(seenMgr.has(t.mgr_id)) return false; seenMgr.add(t.mgr_id); return true; });
+      const avsHtml = uniqueAssignees.slice(0,3).map(t => {
+        const avIdx = (t.mgr_name.charCodeAt(0)||0) % AVATAR_COLORS.length;
+        return `<span class="cal-task-av" style="background:${AVATAR_TEXT[avIdx]};color:#fff;" title="${calEsc(t.mgr_name)}">${initials(t.mgr_name)}</span>`;
+      }).join('');
+      taskBadgeHtml = `<div class="cal-task-badge" onclick="calShowDayTasks('${dateStr}',event)"><span class="cal-task-avs">${avsHtml}</span>${dayTasks.length>1 ? dayTasks.length+' Due' : 'Due'}</div>`;
+    }
 
     cells += `
       <div class="cal-cell${isToday?' today':''}" onclick="calDayClick('${dateStr}')">
