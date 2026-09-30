@@ -27,6 +27,7 @@ window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
   --cal-training:#4a3aa7; --cal-holiday:#e34948; --cal-pto:#1d6070;
   --cal-header-blue:#2a78d6; /* day-of-week header box — independent of Large Event's color */
   --cal-task:#a83279; /* Do List tasks with a deadline + manager assigned, shown on the calendar */
+  --cal-birthday:#c98a00; /* recurring team birthdays */
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--teal);min-height:100vh;}
@@ -396,6 +397,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-pto-label{font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cal-pto);margin-bottom:3px;}
 .cal-pto-names{display:flex;flex-wrap:wrap;gap:3px;}
 .cal-pto-chip{font-size:10px;font-weight:700;color:#fff;background:var(--cal-pto);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
+.cal-bday-block{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;}
+.cal-bday-chip{font-size:10px;font-weight:700;color:#fff;background:var(--cal-birthday);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
 
 /* ── CHECKLIST HUB BODY ── */
 .cl-hub{padding:16px 16px 80px;}
@@ -792,6 +795,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveCalForm()">Save</button>
       <button class="modal-btn secondary" onclick="closeCalFormModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BIRTHDAY ADD/EDIT MODAL (GM only) -->
+<div id="bday-form-modal" class="modal-ov" style="display:none;" onclick="closeBirthdayFormModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:400px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="bf-title">Add Birthday</div>
+      <button class="modal-close" onclick="closeBirthdayFormModal()">×</button>
+    </div>
+    <div class="fg full"><label>Name</label><input id="bf-name" type="text" placeholder="e.g. Megan Charity"/></div>
+    <div class="fg full"><label>Birthday <span style="font-weight:400;color:rgba(23,72,84,.4);">(recurs every year — no birth year is stored)</span></label><input id="bf-date" type="date"/></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="saveBirthdayForm()">Save</button>
+      <button class="modal-btn secondary" onclick="closeBirthdayFormModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -7154,7 +7173,7 @@ const CAL_CATEGORIES = [
 const CAL_CAT_BY_KEY = Object.fromEntries(CAL_CATEGORIES.map(c => [c.key, c]));
 const PTO_COLOR = 'var(--cal-pto)';
 
-let calEvents = [], ptoEntries = [];
+let calEvents = [], ptoEntries = [], birthdays = [];
 let calViewMonth = new Date(); calViewMonth.setDate(1);
 let calSubView = 'events'; // 'events' | 'pto' — only used in the associate hub's toggle mode
 function isGM() { return currentRole === 'manager' || currentRole === 'owner' || currentRole === 'director'; }
@@ -7261,6 +7280,23 @@ async function loadPto() {
     if(!res.ok) console.warn('PTO load failed', data);
   } catch(e) { console.warn('PTO load failed', e); ptoEntries = []; }
 }
+async function loadBirthdays() {
+  try {
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?select=*&order=month.asc,day.asc`, { headers: CAL_HDRS() });
+    const data = await res.json();
+    birthdays = (res.ok && Array.isArray(data)) ? data : [];
+    if(!res.ok) console.warn('Birthdays load failed', data);
+  } catch(e) { console.warn('Birthdays load failed', e); birthdays = []; }
+}
+// Birthdays recur every year — matched on month/day only (no birth year is
+// tracked), so the same row surfaces on this date in every month view,
+// past or future, without needing one row per year.
+function calBirthdaysForDay(dateStr) {
+  const [, mm, dd] = dateStr.split('-').map(Number);
+  return birthdays
+    .filter(b => b.month === mm && b.day === dd)
+    .map(b => ({ _type:'birthday', id: b.id, name: b.name, month: b.month, day: b.day }));
+}
 
 function renderCalendarHub(targetId, merged) {
   if(targetId) _calRenderTarget = targetId;
@@ -7309,9 +7345,12 @@ function calEntriesForDay(dateStr) {
     list = (calSubView === 'events' ? calEvents : ptoEntries).map(e => ({...e, _type:type}));
   }
   const filtered = list.filter(e => dateStr >= e.start_date && dateStr <= (e.end_date || e.start_date));
-  // Do List tasks (deadline + manager assigned) only surface on the merged
-  // manager-dashboard calendar — not the associate hub's toggle view.
-  return _calMergedMode ? filtered.concat(calTaskEntriesForDay(dateStr)) : filtered;
+  // Birthdays show on both the associate hub and the manager dashboard —
+  // everyone benefits from knowing whose birthday it is. Do List tasks
+  // (deadline + manager assigned) only surface on the merged manager-
+  // dashboard calendar — not the associate hub's toggle view.
+  const withBdays = filtered.concat(calBirthdaysForDay(dateStr));
+  return _calMergedMode ? withBdays.concat(calTaskEntriesForDay(dateStr)) : withBdays;
 }
 
 function renderCalGrid() {
@@ -7332,6 +7371,7 @@ function renderCalGrid() {
     const dayEvents = entries.filter(e => e._type === 'event');
     const dayTasks = entries.filter(e => e._type === 'task');
     const dayPto = entries.filter(e => e._type === 'pto');
+    const dayBdays = entries.filter(e => e._type === 'birthday');
     const isToday = dateStr === todayStr;
     const shownEvents = dayEvents.slice(0,6);
 
@@ -7350,6 +7390,11 @@ function renderCalGrid() {
         <div class="cal-pto-names">
           ${dayPto.map(p => `<div class="cal-pto-chip" title="${calEsc(p.staff_name)}" onclick="viewCalEntry('pto','${p.id}',event)">${calEsc(p.staff_name)}</div>`).join('')}
         </div>
+      </div>` : '';
+
+    const bdayHtml = dayBdays.length ? `
+      <div class="cal-bday-block">
+        ${dayBdays.map(b => `<div class="cal-bday-chip" title="${calEsc(b.name)}" onclick="viewBirthday(${b.id},event)">🎂 ${calEsc(b.name)}</div>`).join('')}
       </div>` : '';
 
     // Tasks (deadline + manager assigned) get a compact corner badge instead
@@ -7375,13 +7420,18 @@ function renderCalGrid() {
         ${taskBadgeHtml}
         <div class="cal-daynum">${day}</div>
         <div class="cal-entries">${eventsHtml}</div>
+        ${bdayHtml}
         ${ptoHtml}
       </div>`;
   }
 
   // Merged (manager) mode adds entries by clicking a day, not a nav button —
   // see calDayClick(). The toggle (associate) mode keeps its explicit button.
-  const addButtons = (!isGM() || _calMergedMode) ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`;
+  // Birthdays get their own button in both modes since they don't belong to
+  // either the events/PTO toggle or the merged calendar's day-click choice
+  // (added there too, see calShowAddChoice()) — always reachable.
+  const addButtons = !isGM() ? '' : (_calMergedMode ? '' : `<button class="cal-add-btn" onclick="openCalForm('${calSubView==='events'?'event':'pto'}')">+ Add</button>`)
+    + `<button class="cal-add-btn" style="background:var(--cal-birthday);" onclick="openBirthdayForm()">🎂 Add Birthday</button>`;
 
   // Merged (manager) mode drops the color legend — each pill now names its
   // own category directly (see categoryTag above), so the key is redundant.
@@ -7420,6 +7470,7 @@ function calShowAddChoice(dateStr) {
     <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:16px;">${fmtCalDate(dateStr)}</div>
     <button style="width:100%;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();openCalForm(null,null,'${dateStr}');">📅 Add Calendar Entry</button>
     <button style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--cal-task);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();calAddTaskForDate('${dateStr}');">📋 Add Task</button>
+    <button style="width:100%;padding:12px;border:none;border-radius:8px;background:var(--cal-birthday);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();openBirthdayForm(null,'${dateStr}');">🎂 Add Birthday</button>
     <button style="width:100%;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;" onclick="this.closest('[style*=fixed]').remove()">Cancel</button>
   </div>`;
   document.body.appendChild(overlay);
@@ -7681,9 +7732,91 @@ async function deleteCalEntry(type, id) {
   }
 }
 
+let _bdayFormEditId = null;
+// prefillDateStr (optional) comes from a day-click in merged mode — only
+// used to seed the date picker on a brand-new birthday, ignored when
+// editing an existing one.
+function openBirthdayForm(id, prefillDateStr) {
+  if(!isGM()) return;
+  _bdayFormEditId = id || null;
+  const b = id ? birthdays.find(x => String(x.id) === String(id)) : null;
+  document.getElementById('bf-title').textContent = id ? 'Edit Birthday' : 'Add Birthday';
+  document.getElementById('bf-name').value = b ? b.name : '';
+  if(b) {
+    document.getElementById('bf-date').value = `2000-${String(b.month).padStart(2,'0')}-${String(b.day).padStart(2,'0')}`;
+  } else {
+    document.getElementById('bf-date').value = prefillDateStr ? `2000-${prefillDateStr.slice(5)}` : '';
+  }
+  document.getElementById('bday-form-modal').style.display = 'flex';
+}
+function closeBirthdayFormModal(ev) { if(ev && ev.target.id !== 'bday-form-modal') return; document.getElementById('bday-form-modal').style.display = 'none'; }
+async function saveBirthdayForm() {
+  if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
+  const name = document.getElementById('bf-name').value.trim();
+  if(!name) { showToast('Enter a name'); return; }
+  const dateVal = document.getElementById('bf-date').value;
+  if(!dateVal) { showToast('Pick a date'); return; }
+  const [, mm, dd] = dateVal.split('-').map(Number);
+  const createdBy = (window.RallyAuth && window.RallyAuth.email()) || null;
+  const payload = { name, month: mm, day: dd, created_by: createdBy };
+  try {
+    if(_bdayFormEditId) {
+      await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${_bdayFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    } else {
+      await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    }
+    await loadBirthdays();
+    closeBirthdayFormModal();
+    renderCalGrid();
+    showToast('Saved ✓');
+  } catch(e) {
+    console.warn('Birthday save failed', e);
+    showToast('⚠ Save failed — check connection');
+  }
+}
+async function deleteBirthday(id) {
+  if(!isGM()) return;
+  if(!confirm('Remove this birthday?')) return;
+  try {
+    await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    await loadBirthdays();
+    renderCalGrid();
+    const overlay = document.getElementById('bday-view-overlay');
+    if(overlay) overlay.remove();
+    showToast('Removed');
+  } catch(e) {
+    console.warn('Birthday delete failed', e);
+    showToast('⚠ Delete failed');
+  }
+}
+// Small popup rather than the full cal-view-modal — a birthday only ever
+// has a name and a recurring date, none of the category/notes/link/doc
+// fields an event or PTO entry can carry.
+function viewBirthday(id, ev) {
+  if(ev) ev.stopPropagation();
+  const b = birthdays.find(x => String(x.id) === String(id));
+  if(!b) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'bday-view-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  const monthName = new Date(2000, b.month-1, 1).toLocaleDateString('en-US', {month:'long'});
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:300px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;">
+    <div style="font-size:32px;margin-bottom:6px;">🎂</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:2px;">${calEsc(b.name)}</div>
+    <div style="font-size:13px;color:rgba(23,72,84,.5);margin-bottom:16px;">${monthName} ${b.day}</div>
+    ${isGM() ? `
+      <button style="width:100%;padding:10px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="this.closest('[style*=fixed]').remove();openBirthdayForm(${b.id});">✏ Edit</button>
+      <button style="width:100%;padding:10px;border:none;border-radius:8px;background:rgba(220,80,60,.08);color:#c04020;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px;" onclick="deleteBirthday(${b.id});">✕ Remove</button>` : ''}
+    <button style="width:100%;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.5);font-size:13px;cursor:pointer;font-family:inherit;" onclick="this.closest('[style*=fixed]').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadCalendarEvents();
   loadPto();
+  loadBirthdays();
 });
 </script>
 
