@@ -835,7 +835,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div id="announcement-form-modal" class="modal-ov" style="display:none;" onclick="closeAnnouncementForm(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
     <div class="modal-hdr">
-      <div class="modal-title">New Announcement</div>
+      <div class="modal-title" id="ann-form-title">New Announcement</div>
       <button class="modal-close" onclick="closeAnnouncementForm()">×</button>
     </div>
     <div class="fg full"><label>Title</label><input id="ann-title-input" type="text" placeholder="e.g. New menu item starting Monday"/></div>
@@ -845,7 +845,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div id="ann-required-mgrs" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;padding:10px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;background:var(--cream);"></div>
     </div>
     <div class="modal-actions">
-      <button class="modal-btn primary" onclick="saveAnnouncement()">Post</button>
+      <button class="modal-btn primary" id="ann-save-btn" onclick="saveAnnouncement()">Post</button>
       <button class="modal-btn secondary" onclick="closeAnnouncementForm()">Cancel</button>
     </div>
   </div>
@@ -2192,6 +2192,7 @@ async function deleteAdminLogEntry(id) {
 let announcements = [];
 let announcementReads = [];
 let _annWeekStart = null; // reuses alMondayOf/alDateToYMD/alWeekLabel from Admin Log's week-nav helpers
+let _annFormEditId = null; // id being edited in announcement-form-modal, or null for a brand-new post
 
 async function loadAnnouncements() {
   const SUPA = window.RALLY_SUPABASE_URL;
@@ -2228,6 +2229,12 @@ function annIsFullyRead(id) {
 // before this field existed). A future date holds it back entirely —
 // invisible everywhere, not just excluded from sign-off — until that day.
 function annIsLive(a) { return !a.go_live_date || a.go_live_date <= getTodayStr(); }
+// "Resolved" = no longer needs attention — either every required manager
+// confirmed it naturally, or a manager force-closed it early (stale,
+// posted by mistake, waiting on someone who's left, etc). Both act the
+// same everywhere this is checked; force-closing is reversible via
+// reopenAnnouncement() since annIsFullyRead() alone never flips back.
+function annIsResolved(a) { return annIsFullyRead(a.id) || !!a.force_closed; }
 
 // Compact click-to-expand badge on the Calendar — detail (title, body,
 // roster, mark-as-read) lives in the modal opened by
@@ -2235,13 +2242,13 @@ function annIsLive(a) { return !a.go_live_date || a.go_live_date <= getTodayStr(
 async function renderAnnouncementAlert() {
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  const active = announcements.filter(a => annIsLive(a) && !annIsFullyRead(a.id));
+  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
   if(!active.length) { wrap.innerHTML = ''; return; }
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
 
 function renderAnnouncementViewBody() {
-  const active = announcements.filter(a => annIsLive(a) && !annIsFullyRead(a.id));
+  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
   const me = currentManagerName();
   const body = document.getElementById('ann-view-body');
   if(!body) return;
@@ -2257,11 +2264,17 @@ function renderAnnouncementViewBody() {
       : iRead
         ? `<div style="font-size:12px;font-weight:700;color:var(--olive);">✓ You've confirmed</div>`
         : `<button class="modal-btn primary" style="width:auto;padding:8px 16px;" onclick="markAnnouncementRead(${a.id})">✓ Mark as Read</button>`;
+    const mgrActionsHtml = isGM() ? `
+      <div style="display:flex;gap:8px;margin-top:10px;border-top:1px solid rgba(23,72,84,.08);padding-top:10px;">
+        <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
+        <button class="btn-sm" style="color:#c04020;border-color:rgba(220,80,60,.3);" onclick="forceCloseAnnouncement(${a.id})">⏹ Force Close</button>
+      </div>` : '';
     return `<div class="ann-card">
       <div class="ann-title">${calEsc(a.title)}</div>
       ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
       <div class="ann-roster">${roster}</div>
       ${actionHtml}
+      ${mgrActionsHtml}
     </div>`;
   }).join('');
 }
@@ -2271,18 +2284,27 @@ function openAnnouncementViewModal() {
 }
 function closeAnnouncementViewModal(ev) { if(ev && ev.target.id !== 'announcement-view-modal') return; document.getElementById('announcement-view-modal').style.display = 'none'; }
 
-function openAnnouncementForm() {
-  document.getElementById('ann-title-input').value = '';
-  document.getElementById('ann-body-input').value = '';
-  document.getElementById('ann-golive-input').value = '';
-  // All current managers checked by default — a deliberate opt-out, not
-  // opt-in, since most announcements are for everyone; narrow it down for
-  // the occasional targeted one.
+// id (optional) edits an existing announcement in place — pre-fills every
+// field including which managers were originally selected — instead of
+// the blank/all-checked defaults used when posting a brand-new one.
+function openAnnouncementForm(id) {
+  _annFormEditId = id || null;
+  const a = id ? announcements.find(x => x.id === id) : null;
+  document.getElementById('ann-form-title').textContent = a ? 'Edit Announcement' : 'New Announcement';
+  document.getElementById('ann-save-btn').textContent = a ? 'Save Changes' : 'Post';
+  document.getElementById('ann-title-input').value = a ? a.title : '';
+  document.getElementById('ann-body-input').value = a ? (a.body || '') : '';
+  document.getElementById('ann-golive-input').value = a ? (a.go_live_date || '') : '';
+  // All current managers checked by default on a new post — a deliberate
+  // opt-out, not opt-in, since most announcements are for everyone;
+  // narrow it down for the occasional targeted one. Editing an existing
+  // post instead restores exactly who was selected originally.
+  const requiredSet = new Set(a && Array.isArray(a.required_managers) ? a.required_managers : null);
   const mgrWrap = document.getElementById('ann-required-mgrs');
   const mgrs = users.filter(u => u.role === 'manager');
   mgrWrap.innerHTML = mgrs.map(m => `
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--teal);cursor:pointer;">
-      <input type="checkbox" class="ann-req-cb" value="${calEsc(m.name)}" checked/> ${calEsc(m.name)}
+      <input type="checkbox" class="ann-req-cb" value="${calEsc(m.name)}" ${(!a || requiredSet.has(m.name))?'checked':''}/> ${calEsc(m.name)}
     </label>`).join('') || `<div style="font-size:12px;color:rgba(23,72,84,.4);">No managers on the roster yet.</div>`;
   document.getElementById('announcement-form-modal').style.display = 'flex';
 }
@@ -2298,18 +2320,25 @@ async function saveAnnouncement() {
   const SUPA = window.RALLY_SUPABASE_URL;
   const me = currentManagerName();
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me, go_live_date: goLive, required_managers: requiredManagers }) });
-    const rows = await res.json();
-    const newId = Array.isArray(rows) && rows[0] && rows[0].id;
-    // The author obviously "read" their own post — mark it immediately so
-    // they don't show up as an outstanding unread on their own alert.
-    if(newId) {
-      await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ announcement_id: newId, manager_name: me }) });
+    if(_annFormEditId) {
+      await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ title, body, go_live_date: goLive, required_managers: requiredManagers }) });
+    } else {
+      const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me, go_live_date: goLive, required_managers: requiredManagers }) });
+      const rows = await res.json();
+      const newId = Array.isArray(rows) && rows[0] && rows[0].id;
+      // The author obviously "read" their own post — mark it immediately so
+      // they don't show up as an outstanding unread on their own alert.
+      if(newId) {
+        await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ announcement_id: newId, manager_name: me }) });
+      }
     }
+    const wasEdit = !!_annFormEditId;
     closeAnnouncementForm();
     await loadAnnouncements();
     renderAnnouncementAlert();
-    showToast(goLive && goLive > getTodayStr() ? `Announcement scheduled for ${goLive} ✓` : 'Announcement posted ✓');
+    if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
+    renderAnnouncementsArchiveTab();
+    showToast(wasEdit ? 'Announcement updated ✓' : (goLive && goLive > getTodayStr() ? `Announcement scheduled for ${goLive} ✓` : 'Announcement posted ✓'));
   } catch(e) {
     console.warn('Announcement save failed', e);
     showToast('⚠ Post failed — check connection');
@@ -2347,7 +2376,7 @@ async function renderAnnouncementsArchiveTab() {
   const isCurrentWeek = alDateToYMD(weekStart) === alDateToYMD(alMondayOf(new Date()));
 
   const archived = announcements.filter(a => {
-    if(!annIsLive(a) || !annIsFullyRead(a.id)) return false;
+    if(!annIsLive(a) || !annIsResolved(a)) return false;
     const d = new Date(a.created_at);
     return d >= weekStart && d < new Date(weekEnd.getTime() + 86400000);
   });
@@ -2367,15 +2396,58 @@ async function renderAnnouncementsArchiveTab() {
     return;
   }
 
-  body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}` + archived.map(a => `
-    <div class="ann-card">
+  body.innerHTML = `<div style="padding:16px 16px 80px;">${navHtml}` + archived.map(a => {
+    const naturallyRead = annIsFullyRead(a.id);
+    const statusHtml = naturallyRead
+      ? `<div style="font-size:11px;color:var(--olive);font-weight:600;">✓ Confirmed by all managers</div>`
+      : `<div style="font-size:11px;color:#c04020;font-weight:600;">⏹ Force-closed</div>`;
+    const mgrActionsHtml = isGM() ? `
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
+        ${!naturallyRead ? `<button class="btn-sm" onclick="reopenAnnouncement(${a.id})">↺ Reopen</button>` : ''}
+      </div>` : '';
+    return `<div class="ann-card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
         <div class="ann-title" style="margin-bottom:0;">${calEsc(a.title)}</div>
         <div style="font-size:11px;color:rgba(23,72,84,.4);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
       </div>
       ${a.body ? `<div class="ann-body" style="margin-bottom:4px;">${calEsc(a.body)}</div>` : ''}
-      <div style="font-size:11px;color:var(--olive);font-weight:600;">✓ Confirmed by all managers</div>
-    </div>`).join('') + `</div>`;
+      ${statusHtml}
+      ${mgrActionsHtml}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+// Closes an announcement early regardless of read-receipt status — stale
+// post, posted by mistake, waiting on a required manager who's slow to
+// confirm, etc. Reversible via reopenAnnouncement() if closed by mistake.
+async function forceCloseAnnouncement(id) {
+  if(!confirm('Force close this announcement? It will move to the archive even though not everyone has confirmed reading it.')) return;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: true }) });
+    await loadAnnouncements();
+    renderAnnouncementAlert();
+    if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
+    renderAnnouncementsArchiveTab();
+    showToast('Announcement closed ✓');
+  } catch(e) {
+    console.warn('Force close failed', e);
+    showToast('⚠ Could not close — check connection');
+  }
+}
+async function reopenAnnouncement(id) {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: false }) });
+    await loadAnnouncements();
+    renderAnnouncementAlert();
+    renderAnnouncementsArchiveTab();
+    showToast('Announcement reopened ✓');
+  } catch(e) {
+    console.warn('Reopen failed', e);
+    showToast('⚠ Could not reopen — check connection');
+  }
 }
 
 // ── SHIFT REPORT ──────────────────────────────────────────────────────────
