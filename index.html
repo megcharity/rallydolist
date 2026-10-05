@@ -599,6 +599,52 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cl-editor-select:focus{border-color:var(--teal);}
 .cl-editor-saving{font-size:11px;color:var(--olive);font-weight:600;opacity:0;transition:opacity .3s;}
 .cl-editor-saving.show{opacity:1;}
+
+/* ── Inventory ───────────────────────────────────────────────────────── */
+.inv-wrap{padding:16px 16px 80px;}
+.inv-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(248,154,28,.1);border:1.5px solid rgba(248,154,28,.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;cursor:pointer;transition:background .15s;}
+.inv-banner:hover{background:rgba(248,154,28,.17);}
+.inv-banner.due{background:rgba(245,134,100,.12);border-color:rgba(245,134,100,.45);}
+.inv-banner .inv-banner-txt{font-size:13px;font-weight:700;color:#b87000;}
+.inv-banner.due .inv-banner-txt{color:#c0491f;}
+.inv-banner .inv-banner-sub{font-size:11.5px;color:rgba(23,72,84,.5);font-weight:500;margin-top:1px;}
+.inv-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.inv-controls-left{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.inv-week-input{padding:7px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--teal);background:#fff;}
+.inv-search{padding:8px 13px;border:1.5px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--teal);min-width:180px;background:#fff;}
+.inv-filter-btn{font-family:inherit;font-size:12.5px;font-weight:600;color:rgba(23,72,84,.55);background:#fff;border:1.5px solid var(--border);border-radius:7px;padding:6px 12px;cursor:pointer;}
+.inv-filter-btn.on{background:var(--teal);color:#fff;border-color:var(--teal);}
+.inv-add-btn{font-family:inherit;font-size:12.5px;font-weight:700;color:#fff;background:var(--teal);border:none;border-radius:7px;padding:8px 14px;cursor:pointer;}
+.inv-save-btn{font-family:inherit;font-size:13px;font-weight:700;color:#fff;background:var(--olive);border:none;border-radius:8px;padding:10px 18px;cursor:pointer;margin-top:12px;}
+.inv-table-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:12px;background:#fff;}
+.inv-table{width:100%;border-collapse:collapse;min-width:760px;}
+.inv-table thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(23,72,84,.4);font-weight:700;padding:10px 12px;border-bottom:1.5px solid var(--border);white-space:nowrap;}
+.inv-table thead th.num{text-align:right;}
+.inv-table tbody tr{border-bottom:1px solid rgba(23,72,84,.07);}
+.inv-table tbody tr.inv-cat-head td{padding:10px 12px 5px;border-bottom:none;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;color:#b87000;background:var(--cream);}
+.inv-table td{padding:8px 12px;font-size:13px;vertical-align:middle;}
+.inv-table td.num{text-align:right;}
+.inv-table .inv-pname{font-weight:700;color:var(--teal);}
+.inv-table .inv-flagline{display:block;font-size:10.5px;color:#c0491f;font-weight:600;margin-top:1px;}
+.inv-count-input,.inv-order-input{width:62px;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:right;font-family:'DM Sans',sans-serif;}
+.inv-order-input{color:rgba(23,72,84,.55);}
+.inv-crit{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:100px;white-space:nowrap;}
+.inv-crit::before{content:'';width:6px;height:6px;border-radius:50%;}
+.inv-crit.High{background:rgba(245,134,100,.15);color:#c0491f;}
+.inv-crit.High::before{background:var(--coral);}
+.inv-crit.Medium{background:rgba(248,154,28,.15);color:#b87000;}
+.inv-crit.Medium::before{background:var(--amber);}
+.inv-crit.Low{background:rgba(78,98,44,.13);color:var(--olive);}
+.inv-crit.Low::before{background:var(--olive);}
+.inv-archive-btn{background:none;border:none;color:rgba(23,72,84,.3);font-size:15px;cursor:pointer;padding:2px 6px;}
+.inv-archive-btn:hover{color:#c0491f;}
+.inv-spark{display:block;}
+.inv-spark .line{fill:none;stroke:rgba(23,72,84,.35);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.inv-spark .dot{fill:var(--amber);}
+.inv-delta{display:inline-flex;align-items:center;gap:3px;font-weight:700;font-size:12.5px;padding:2px 7px;border-radius:6px;}
+.inv-delta.up{background:rgba(248,154,28,.15);color:#b87000;}
+.inv-delta.down{background:rgba(23,72,84,.08);color:rgba(23,72,84,.55);}
+.inv-delta.flat{color:rgba(23,72,84,.35);font-weight:500;}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script>emailjs.init('Xv8PW_nj-tZKsC279');</script>
@@ -815,6 +861,50 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- INVENTORY ITEM ADD/EDIT MODAL (GM only) -->
+<div id="inv-item-form-modal" class="modal-ov" style="display:none;" onclick="closeInvItemForm(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="if-title">Add Item</div>
+      <button class="modal-close" onclick="closeInvItemForm()">×</button>
+    </div>
+    <div class="fg full"><label>Name</label><input id="if-name" type="text" placeholder="e.g. Hendrick's Gin"/></div>
+    <div class="fg full"><label>Category</label><input id="if-category" type="text" list="if-category-list" placeholder="e.g. House Gin"/><datalist id="if-category-list"></datalist></div>
+    <div class="form-grid">
+      <div class="fg"><label>Criticality</label>
+        <select id="if-criticality">
+          <option value="High">High</option>
+          <option value="Medium" selected>Medium</option>
+          <option value="Low">Low</option>
+        </select>
+      </div>
+      <div class="fg"><label>Starting Par</label><input id="if-par" type="number" min="0" step="1" value="0"/></div>
+    </div>
+    <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
+    <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="if-item-code" type="text"/></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="saveInvItem()">Save</button>
+      <button class="modal-btn secondary" onclick="closeInvItemForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTORY PAR REVIEW MODAL (GM only) -->
+<div id="inv-review-modal" class="modal-ov" style="display:none;" onclick="closeInvReviewModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:640px;width:94vw;">
+    <div class="modal-hdr">
+      <div class="modal-title">🔔 Par Level Review</div>
+      <button class="modal-close" onclick="closeInvReviewModal()">×</button>
+    </div>
+    <div style="font-size:12.5px;color:rgba(23,72,84,.55);margin-bottom:12px;">Based on each item's trailing 4 weeks of usage. Edit any number before approving — nothing changes until you approve.</div>
+    <div id="inv-review-body" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="approveInvReview()">Approve Changes</button>
+      <button class="modal-btn secondary" onclick="closeInvReviewModal()">Not Now</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADMIN LOG ADD/EDIT MODAL -->
 <div id="adminlog-form-modal" class="modal-ov" style="display:none;" onclick="closeAdminLogForm(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
@@ -994,6 +1084,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
+    <button class="nav-tab" onclick="showMgrTab('inventory',this)">Inventory</button>
     <button class="nav-tab" onclick="showMgrTab('tasks',this)">Tasks</button>
   </div>
   <div id="mgr-tab-tasks" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
@@ -1026,6 +1117,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
   <div id="mgr-tab-adminlog" style="flex:1;overflow-y:auto;display:none;">
     <div class="mgr-body" id="adminlog-body"></div>
+  </div>
+  <div id="mgr-tab-inventory" style="flex:1;flex-direction:column;overflow:hidden;display:none;">
+    <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
+      <button id="inv-view-bar-btn" class="task-view-btn active" onclick="switchInvView('bar')">Bar</button>
+    </div>
+    <div class="mgr-body" id="inv-bar-body"></div>
   </div>
 </div>
 
@@ -1782,6 +1879,8 @@ function showMgrTab(tab, el) {
   if(tab === 'calendar') renderCalendarHub('mgr-cal-hub-body', true);
   document.getElementById('mgr-tab-adminlog').style.display = tab === 'adminlog' ? 'block' : 'none';
   if(tab === 'adminlog') renderAdminLogTab();
+  document.getElementById('mgr-tab-inventory').style.display = tab === 'inventory' ? 'flex' : 'none';
+  if(tab === 'inventory') switchInvView('bar');
 
   // "+ Add Task" (header button + floating button) only makes sense on the
   // Tasks tab — hide it everywhere else on the manager dashboard.
@@ -7885,10 +7984,395 @@ function viewBirthday(id, ev) {
   overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
 }
 
+// ── INVENTORY (Ops → Inventory → Bar) ────────────────────────────────────
+const INV_SUPA = window.RALLY_SUPABASE_URL;
+const INV_KEY  = window.RALLY_SUPABASE_ANON_KEY;
+function INV_HDRS() { return { 'apikey': INV_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || INV_KEY}`, 'Content-Type': 'application/json' }; }
+
+let invItems = [];        // rally_inventory_items — active AND archived, filtered client-side
+let invCounts = [];       // rally_inventory_counts — every item's full weekly history
+let invReviewState = {};  // { [sub_tab]: { sub_tab, last_reviewed_at } }
+let invView = 'bar';
+let invFilter = 'all';    // 'all' | 'needs-count' | 'flagged'
+let invWeekEnding = null; // YYYY-MM-DD currently selected in the count-entry column
+let _invItemFormEditId = null;
+
+async function loadInventoryItems() {
+  try {
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?select=*&order=category.asc,name.asc`, { headers: INV_HDRS() });
+    const data = await res.json();
+    invItems = (res.ok && Array.isArray(data)) ? data : [];
+    if(!res.ok) console.warn('Inventory items load failed', data);
+  } catch(e) { console.warn('Inventory items load failed', e); invItems = []; }
+}
+async function loadInventoryCounts() {
+  try {
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts?select=*&order=week_ending.asc`, { headers: INV_HDRS() });
+    const data = await res.json();
+    invCounts = (res.ok && Array.isArray(data)) ? data : [];
+    if(!res.ok) console.warn('Inventory counts load failed', data);
+  } catch(e) { console.warn('Inventory counts load failed', e); invCounts = []; }
+}
+async function loadInventoryReviewState() {
+  try {
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state?select=*`, { headers: INV_HDRS() });
+    const data = await res.json();
+    invReviewState = {};
+    if(res.ok && Array.isArray(data)) data.forEach(r => { invReviewState[r.sub_tab] = r; });
+    if(!res.ok) console.warn('Inventory review state load failed', data);
+  } catch(e) { console.warn('Inventory review state load failed', e); invReviewState = {}; }
+}
+
+function switchInvView(view) {
+  invView = view;
+  document.getElementById('inv-view-bar-btn').classList.toggle('active', view === 'bar');
+  document.getElementById('inv-bar-body').style.display = view === 'bar' ? 'block' : 'none';
+  if(view === 'bar') renderInvBarTab();
+}
+
+// Reconstructs each week-to-week usage interval for one item, chronological
+// oldest-first: usage = (last week's on-hand + what was ordered) - this
+// week's on-hand. A transition where either side is missing data yields
+// usage:null rather than being skipped, so callers can tell "no data" apart
+// from "zero usage". Mirrors the one-off analysis exactly (see the
+// published Par Level Review artifact) so results stay consistent with
+// what Meg already reviewed and confirmed.
+function invWeeklyUsageSeries(itemId) {
+  const rows = invCounts.filter(c => c.item_id === itemId).slice().sort((a,b) => a.week_ending.localeCompare(b.week_ending));
+  const usages = [];
+  for(let i=0; i<rows.length-1; i++) {
+    const cw = rows[i].current_count, ow = rows[i].order_qty, cw1 = rows[i+1].current_count;
+    const usage = (typeof cw === 'number' && typeof ow === 'number' && typeof cw1 === 'number')
+      ? Math.round((cw + ow - cw1) * 1000) / 1000
+      : null;
+    usages.push({ week: rows[i+1].week_ending, usage });
+  }
+  return usages;
+}
+
+const INV_SAFETY = { High: 1.75, Medium: 1.4, Low: 1.1 };
+
+// True rolling window: always the most recent 4 usable weeks at the moment
+// it's called, falling back to all available history when fewer than 2 of
+// the last 4 have usable data. Floored at 0 per-week — a negative
+// reconstructed usage is count/data-entry noise (a recount, an un-logged
+// delivery), not real negative consumption, same rule validated in the
+// one-off analysis.
+function invRollingAvg4wk(itemId) {
+  const series = invWeeklyUsageSeries(itemId);
+  const valid = series.filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
+  const last4 = series.slice(-4).filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
+  const basis = last4.length >= 2 ? last4 : valid;
+  if(!basis.length) return null;
+  return basis.reduce((a,b) => a+b, 0) / basis.length;
+}
+
+function invRecommendedPar(item) {
+  const avg = invRollingAvg4wk(item.id);
+  if(avg === null) return null;
+  const mult = INV_SAFETY[item.criticality] || INV_SAFETY.Medium;
+  let rec = Math.ceil(avg * mult);
+  if((item.criticality === 'High' || item.criticality === 'Medium') && avg > 0 && rec < 1) rec = 1;
+  return rec;
+}
+
+// Data-quality flags computed from the FULL unclamped history (not the
+// floored rolling basis used for the par recommendation itself) — matches
+// the one-off analysis: a negative average means the raw counts went
+// negative somewhere, which is a data artifact worth a recount, not
+// something the floored par math should silently absorb.
+function invFlagsFor(item) {
+  const series = invWeeklyUsageSeries(item.id);
+  const raw = series.filter(s => s.usage !== null).map(s => s.usage);
+  const flags = [];
+  const weeksWithData = invCounts.filter(c => c.item_id === item.id && typeof c.current_count === 'number').length;
+  if(weeksWithData < 6) flags.push('Limited history');
+  if(raw.length) {
+    const mean = raw.reduce((a,b) => a+b, 0) / raw.length;
+    if(mean < 0) flags.push('Negative usage detected');
+    if(raw.length > 1 && mean) {
+      const variance = raw.reduce((a,b) => a + (b-mean)*(b-mean), 0) / raw.length;
+      const stdev = Math.sqrt(variance);
+      if((stdev / Math.abs(mean)) > 1.5) flags.push('Highly variable usage');
+    }
+  }
+  return flags;
+}
+
+function invSparkline(itemId) {
+  const series = invWeeklyUsageSeries(itemId).slice(-8);
+  const vals = series.map(s => s.usage);
+  const present = vals.filter(v => v !== null);
+  if(!present.length) return '<span style="color:rgba(23,72,84,.35);font-size:11px;">no data</span>';
+  const w = 90, h = 24, pad = 3;
+  const lo = Math.min(0, ...present), hi = Math.max(...present, 0.01);
+  const span = (hi - lo) || 1;
+  const n = vals.length;
+  const x = i => pad + (i/(Math.max(n-1,1))) * (w - pad*2);
+  const y = v => h - pad - ((v - lo)/span) * (h - pad*2);
+  let segs = [], cur = [];
+  vals.forEach((v,i) => { if(v === null) { if(cur.length) segs.push(cur); cur=[]; } else cur.push([x(i), y(v)]); });
+  if(cur.length) segs.push(cur);
+  const lines = segs.map(seg => '<path class="line" d="' + seg.map((p,i)=>(i===0?'M':'L')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ') + '"/>').join('');
+  const last = segs[segs.length-1];
+  const dot = last ? `<circle class="dot" cx="${last[last.length-1][0].toFixed(1)}" cy="${last[last.length-1][1].toFixed(1)}" r="2"/>` : '';
+  return `<svg class="inv-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${lines}${dot}</svg>`;
+}
+
+function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === 'bar'); }
+function invCountFor(itemId, weekEnding) { return invCounts.find(c => c.item_id === itemId && c.week_ending === weekEnding); }
+
+function invReviewDue() {
+  const state = invReviewState.bar;
+  if(!state) return true;
+  const last = new Date(state.last_reviewed_at + 'T00:00:00');
+  const due = new Date(last.getTime() + 28*86400000);
+  return new Date() >= due;
+}
+function invDaysUntilReview() {
+  const state = invReviewState.bar;
+  if(!state) return 0;
+  const last = new Date(state.last_reviewed_at + 'T00:00:00');
+  const due = new Date(last.getTime() + 28*86400000);
+  return Math.ceil((due - new Date()) / 86400000);
+}
+
+function renderInvBarTab() {
+  const body = document.getElementById('inv-bar-body');
+  if(!body) return;
+  if(!invWeekEnding) invWeekEnding = getTodayStr();
+
+  const due = invReviewDue();
+  const daysLeft = invDaysUntilReview();
+  const bannerHtml = `<div class="inv-banner${due?' due':''}" onclick="openInvReviewModal()">
+    <div><div class="inv-banner-txt">${due ? '⚠ Par review due now' : `🔔 Par review in ${daysLeft} day${daysLeft===1?'':'s'}`}</div>
+    <div class="inv-banner-sub">Click any time to review current vs. recommended pars</div></div>
+  </div>`;
+
+  const items = invActiveItems();
+  const cats = {};
+  items.forEach(it => { (cats[it.category || 'Uncategorized'] = cats[it.category || 'Uncategorized'] || []).push(it); });
+  const catNames = Object.keys(cats).sort();
+
+  let rows = '';
+  catNames.forEach(cat => {
+    rows += `<tr class="inv-cat-head"><td colspan="7">${calEsc(cat)}</td></tr>`;
+    cats[cat].sort((a,b) => a.name.localeCompare(b.name)).forEach(it => {
+      const flags = invFlagsFor(it);
+      const cnt = invCountFor(it.id, invWeekEnding);
+      const curVal = cnt && typeof cnt.current_count === 'number' ? cnt.current_count : '';
+      const ordVal = cnt && typeof cnt.order_qty === 'number' ? cnt.order_qty : '';
+      const needsCount = curVal === '';
+      const flagsHtml = flags.map(f => `<span class="inv-flagline">⚑ ${f}</span>`).join('');
+      rows += `<tr data-item-id="${it.id}" data-name="${calEsc(it.name).toLowerCase()}" data-needs-count="${needsCount}" data-flagged="${flags.length>0}">
+        <td><span class="inv-pname">${calEsc(it.name)}</span>${flagsHtml}</td>
+        <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
+        <td class="num">${it.par}</td>
+        <td class="num"><input class="inv-count-input" type="number" step="0.1" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
+        <td class="num"><input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}"/></td>
+        <td>${invSparkline(it.id)}</td>
+        <td class="num"><button class="inv-archive-btn" title="Archive item" onclick="archiveInvItem(${it.id})">✕</button></td>
+      </tr>`;
+    });
+  });
+
+  body.innerHTML = `<div class="inv-wrap">
+    ${bannerHtml}
+    <div class="inv-controls">
+      <div class="inv-controls-left">
+        <input class="inv-week-input" type="date" id="inv-week-input" value="${invWeekEnding}" onchange="invChangeWeek(this.value)"/>
+        <button class="inv-filter-btn ${invFilter==='all'?'on':''}" onclick="invSetFilter('all')">All</button>
+        <button class="inv-filter-btn ${invFilter==='needs-count'?'on':''}" onclick="invSetFilter('needs-count')">Needs Count</button>
+        <button class="inv-filter-btn ${invFilter==='flagged'?'on':''}" onclick="invSetFilter('flagged')">Flagged</button>
+        <input class="inv-search" type="text" id="inv-search" placeholder="Search a product…" oninput="invApplyFilters()"/>
+      </div>
+      <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
+    </div>
+    <div class="inv-table-wrap">
+      <table class="inv-table">
+        <thead><tr>
+          <th>Product</th><th>Criticality</th><th class="num">Par</th>
+          <th class="num">${fmtCalDate(invWeekEnding)} Count</th><th class="num">Order Qty</th>
+          <th>Trend</th><th></th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <button class="inv-save-btn" onclick="saveInvCounts()">Save This Week's Counts</button>
+  </div>`;
+
+  // datalist for the Add Item form's category field
+  const dl = document.getElementById('if-category-list');
+  if(dl) dl.innerHTML = catNames.map(c => `<option value="${calEsc(c)}"></option>`).join('');
+
+  invApplyFilters();
+}
+
+function invOnCountInput(itemId) {
+  const row = document.querySelector(`#inv-bar-body tr[data-item-id="${itemId}"]`);
+  if(!row) return;
+  const item = invItems.find(i => i.id === itemId);
+  const curInput = row.querySelector('.inv-count-input');
+  const ordInput = document.getElementById('inv-order-'+itemId);
+  const cur = parseFloat(curInput.value);
+  if(!isNaN(cur) && item) ordInput.value = Math.max(0, item.par - cur);
+}
+
+function invChangeWeek(val) { invWeekEnding = val; renderInvBarTab(); }
+function invSetFilter(f) { invFilter = f; invApplyFilters(); document.querySelectorAll('.inv-filter-btn').forEach(b => b.classList.remove('on')); const map={all:0,'needs-count':1,flagged:2}; document.querySelectorAll('.inv-filter-btn')[map[f]].classList.add('on'); }
+
+function invApplyFilters() {
+  const q = (document.getElementById('inv-search')?.value || '').trim().toLowerCase();
+  const rows = document.querySelectorAll('#inv-bar-body tbody tr:not(.inv-cat-head)');
+  rows.forEach(r => {
+    const matchQ = !q || r.dataset.name.includes(q);
+    const matchFilter = invFilter === 'all'
+      || (invFilter === 'needs-count' && r.dataset.needsCount === 'true')
+      || (invFilter === 'flagged' && r.dataset.flagged === 'true');
+    r.style.display = (matchQ && matchFilter) ? '' : 'none';
+  });
+  document.querySelectorAll('#inv-bar-body tbody tr.inv-cat-head').forEach(head => {
+    let sib = head.nextElementSibling, anyVisible = false;
+    while(sib && !sib.classList.contains('inv-cat-head')) { if(sib.style.display !== 'none') anyVisible = true; sib = sib.nextElementSibling; }
+    head.style.display = anyVisible ? '' : 'none';
+  });
+}
+
+async function saveInvCounts() {
+  const rows = document.querySelectorAll('#inv-bar-body tbody tr[data-item-id]');
+  const writes = [];
+  rows.forEach(r => {
+    const itemId = parseInt(r.dataset.itemId, 10);
+    const curInput = r.querySelector('.inv-count-input');
+    const ordInput = document.getElementById('inv-order-'+itemId);
+    const cur = curInput.value === '' ? null : parseFloat(curInput.value);
+    const ord = ordInput.value === '' ? null : parseFloat(ordInput.value);
+    if(cur === null && ord === null) return;
+    writes.push({ item_id: itemId, week_ending: invWeekEnding, current_count: cur, order_qty: ord, created_by: currentManagerName() });
+  });
+  if(!writes.length) { showToast('Nothing to save'); return; }
+  try {
+    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
+      method: 'POST',
+      headers: { ...INV_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(writes),
+    });
+    await loadInventoryCounts();
+    renderInvBarTab();
+    showToast(`Saved ${writes.length} count${writes.length===1?'':'s'} ✓`);
+  } catch(e) {
+    console.warn('Inventory count save failed', e);
+    showToast('⚠ Save failed — check connection');
+  }
+}
+
+function openInvItemForm(id) {
+  if(!isGM()) return;
+  _invItemFormEditId = id || null;
+  const item = id ? invItems.find(i => i.id === id) : null;
+  document.getElementById('if-title').textContent = id ? 'Edit Item' : 'Add Item';
+  document.getElementById('if-name').value = item ? item.name : '';
+  document.getElementById('if-category').value = item ? (item.category || '') : '';
+  document.getElementById('if-criticality').value = item ? item.criticality : 'Medium';
+  document.getElementById('if-par').value = item ? item.par : 0;
+  document.getElementById('if-batched').checked = !!(item && item.batched);
+  document.getElementById('if-item-code').value = item ? (item.item_code || '') : '';
+  document.getElementById('inv-item-form-modal').style.display = 'flex';
+}
+function closeInvItemForm(ev) { if(ev && ev.target.id !== 'inv-item-form-modal') return; document.getElementById('inv-item-form-modal').style.display = 'none'; }
+async function saveInvItem() {
+  if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
+  const name = document.getElementById('if-name').value.trim();
+  if(!name) { showToast('Enter a name'); return; }
+  const payload = {
+    name,
+    category: document.getElementById('if-category').value.trim() || null,
+    criticality: document.getElementById('if-criticality').value,
+    par: parseFloat(document.getElementById('if-par').value) || 0,
+    batched: document.getElementById('if-batched').checked,
+    item_code: document.getElementById('if-item-code').value.trim() || null,
+  };
+  try {
+    if(_invItemFormEditId) {
+      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${_invItemFormEditId}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+    } else {
+      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ ...payload, sub_tab:'bar', created_by: currentManagerName() }) });
+    }
+    closeInvItemForm();
+    await loadInventoryItems();
+    renderInvBarTab();
+    showToast('Saved ✓');
+  } catch(e) {
+    console.warn('Inventory item save failed', e);
+    showToast('⚠ Save failed — check connection');
+  }
+}
+async function archiveInvItem(id) {
+  if(!isGM()) return;
+  if(!confirm('Archive this item? It drops off the active list but its count history is kept.')) return;
+  try {
+    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ active:false }) });
+    await loadInventoryItems();
+    renderInvBarTab();
+    showToast('Archived');
+  } catch(e) {
+    console.warn('Inventory item archive failed', e);
+    showToast('⚠ Could not archive');
+  }
+}
+
+function openInvReviewModal() {
+  if(!isGM()) { showToast('View only — ask a manager to review par levels'); return; }
+  const items = invActiveItems();
+  const body = document.getElementById('inv-review-body');
+  body.innerHTML = items.map(it => {
+    const rec = invRecommendedPar(it);
+    const flags = invFlagsFor(it);
+    const delta = (rec === null) ? null : rec - it.par;
+    const deltaHtml = rec === null ? '<span style="color:rgba(23,72,84,.4);font-size:12px;">no data yet</span>'
+      : delta > 0 ? `<span class="inv-delta up">↑ +${delta}</span>`
+      : delta < 0 ? `<span class="inv-delta down">↓ ${delta}</span>`
+      : `<span class="inv-delta flat">— no change</span>`;
+    const flagsHtml = flags.map(f => `<span class="inv-flagline">⚑ ${f}</span>`).join('');
+    return `<div class="ann-card" data-item-id="${it.id}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div><div class="inv-pname">${calEsc(it.name)}</div>${flagsHtml}</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span style="font-size:12px;color:rgba(23,72,84,.5);">Current: ${it.par}</span>
+        ${deltaHtml}
+        <input class="inv-count-input" id="inv-rev-par-${it.id}" type="number" min="0" step="1" value="${rec===null?it.par:rec}" style="width:56px;"/>
+      </div>
+    </div>`;
+  }).join('') || '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">No active items to review.</div>';
+  document.getElementById('inv-review-modal').style.display = 'flex';
+}
+function closeInvReviewModal(ev) { if(ev && ev.target.id !== 'inv-review-modal') return; document.getElementById('inv-review-modal').style.display = 'none'; }
+async function approveInvReview() {
+  const items = invActiveItems();
+  const writes = [];
+  items.forEach(it => {
+    const input = document.getElementById('inv-rev-par-'+it.id);
+    if(!input) return;
+    const newPar = parseFloat(input.value);
+    if(!isNaN(newPar) && newPar !== it.par) writes.push({ id: it.id, par: newPar });
+  });
+  try {
+    await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
+    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:'bar', last_reviewed_at: getTodayStr() }) });
+    await Promise.all([loadInventoryItems(), loadInventoryReviewState()]);
+    closeInvReviewModal();
+    renderInvBarTab();
+    showToast(writes.length ? `${writes.length} par${writes.length===1?'':'s'} updated ✓` : 'Review complete — no changes needed ✓');
+  } catch(e) {
+    console.warn('Par review approve failed', e);
+    showToast('⚠ Could not save — check connection');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadCalendarEvents();
   loadPto();
   loadBirthdays();
+  Promise.all([loadInventoryItems(), loadInventoryCounts(), loadInventoryReviewState()]);
 });
 </script>
 
