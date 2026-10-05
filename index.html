@@ -7997,7 +7997,8 @@ let invReviewState = {};  // { [sub_tab]: { sub_tab, last_reviewed_at } }
 let invView = 'bar';
 let invFilter = 'all';    // 'all' | 'needs-count' | 'flagged'
 let invWeekEnding = null; // YYYY-MM-DD currently selected in the count-entry column
-let invExportOpen = false; // whether the inline "Export History" date-range row is expanded
+let invExportStart = null; // YYYY-MM-DD — persists across re-renders once the manager picks a range
+let invExportEnd = null;
 let _invItemFormEditId = null;
 
 async function loadInventoryItems() {
@@ -8179,6 +8180,12 @@ function renderInvBarTab() {
     });
   });
 
+  const histDates = invCounts.map(c => c.week_ending).sort();
+  const histMin = histDates[0] || getTodayStr();
+  const histMax = histDates[histDates.length-1] || getTodayStr();
+  if(invExportStart === null) invExportStart = histMin;
+  if(invExportEnd === null) invExportEnd = histMax;
+
   body.innerHTML = `<div class="inv-wrap">
     ${bannerHtml}
     <div class="inv-controls">
@@ -8189,12 +8196,13 @@ function renderInvBarTab() {
         <button class="inv-filter-btn ${invFilter==='flagged'?'on':''}" onclick="invSetFilter('flagged')">Flagged</button>
         <input class="inv-search" type="text" id="inv-search" placeholder="Search a product…" oninput="invApplyFilters()"/>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="inv-add-btn" style="background:var(--olive);" onclick="toggleInvExport()">📥 Export${invExportOpen?' ▲':' ▼'}</button>
-        <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
-      </div>
+      <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
     </div>
-    ${invExportOpen ? invExportRowHtml() : ''}
+    <div class="inv-export-row">
+      <div class="fg" style="margin-bottom:0;"><label>From</label><input type="date" id="inv-export-start" value="${invExportStart}" onchange="invExportStart=this.value"/></div>
+      <div class="fg" style="margin-bottom:0;"><label>To</label><input type="date" id="inv-export-end" value="${invExportEnd}" onchange="invExportEnd=this.value"/></div>
+      <button class="inv-add-btn" style="background:var(--olive);" onclick="downloadInvHistory()">📥 Export This Range</button>
+    </div>
     <div class="inv-table-wrap">
       <table class="inv-table">
         <thead><tr>
@@ -8329,21 +8337,10 @@ async function archiveInvItem(id) {
 }
 
 // ── Export history to CSV (opens directly in Excel) ──────────────────────
-// Rendered inline in the normal page flow (not a position:fixed overlay) —
-// a fixed-position layer sitting above a native <input type="date"> is a
-// known source of "I can't pick a date" complaints on iPad/mobile Safari,
-// where the browser's own date-picker control can get stuck behind it.
-function toggleInvExport() { invExportOpen = !invExportOpen; renderInvBarTab(); }
-function invExportRowHtml() {
-  const dates = invCounts.map(c => c.week_ending).sort();
-  const minDate = dates[0] || getTodayStr();
-  const maxDate = dates[dates.length-1] || getTodayStr();
-  return `<div class="inv-export-row">
-    <div class="fg" style="margin-bottom:0;"><label>From</label><input type="date" id="inv-export-start" value="${minDate}"/></div>
-    <div class="fg" style="margin-bottom:0;"><label>To</label><input type="date" id="inv-export-end" value="${maxDate}"/></div>
-    <button class="inv-save-btn" style="margin-top:0;" onclick="downloadInvHistory()">Download Excel (CSV)</button>
-  </div>`;
-}
+// The From/To range pickers are always visible above the table (not
+// behind a toggle, and not a position:fixed overlay — a fixed layer above
+// a native <input type="date"> is a known cause of the picker becoming
+// unresponsive on iPad/mobile Safari). Select the range, then Export.
 function invCsvField(v) {
   if(v === null || v === undefined) return '';
   const s = String(v);
