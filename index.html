@@ -1123,8 +1123,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div id="mgr-tab-inventory" style="flex:1;flex-direction:column;overflow:hidden;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;flex-shrink:0;">
       <button id="inv-view-bar-btn" class="task-view-btn active" onclick="switchInvView('bar')">Bar</button>
+      <button id="inv-view-beerwine-btn" class="task-view-btn" onclick="switchInvView('beerwine')">Beer &amp; Wine</button>
     </div>
     <div class="mgr-body" id="inv-bar-body"></div>
+    <div class="mgr-body" id="inv-beerwine-body" style="display:none;"></div>
   </div>
 </div>
 
@@ -8027,11 +8029,21 @@ async function loadInventoryReviewState() {
   } catch(e) { console.warn('Inventory review state load failed', e); invReviewState = {}; }
 }
 
+// 'bar' and 'beerwine' today — each new sub-tab just needs its own button
+// id (inv-view-{X}-btn), body div (inv-{X}-body), and a human label in
+// INV_SUBTAB_LABEL; every render/CRUD/review function below reads
+// invView rather than a hardcoded sub-tab name.
+const INV_SUBTABS = ['bar', 'beerwine'];
+const INV_SUBTAB_LABEL = { bar: 'Bar', beerwine: 'Beer & Wine' };
 function switchInvView(view) {
   invView = view;
-  document.getElementById('inv-view-bar-btn').classList.toggle('active', view === 'bar');
-  document.getElementById('inv-bar-body').style.display = view === 'bar' ? 'block' : 'none';
-  if(view === 'bar') renderInvBarTab();
+  INV_SUBTABS.forEach(v => {
+    const btn = document.getElementById('inv-view-'+v+'-btn');
+    const body = document.getElementById('inv-'+v+'-body');
+    if(btn) btn.classList.toggle('active', v === view);
+    if(body) body.style.display = v === view ? 'block' : 'none';
+  });
+  renderInvSubTab();
 }
 
 // Reconstructs each week-to-week usage interval for one item, chronological
@@ -8193,26 +8205,30 @@ function invSparkline(itemId) {
   return `<svg class="inv-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${lines}${dot}</svg>`;
 }
 
-function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === 'bar'); }
+// Every one of these reads invView (which sub-tab is currently showing)
+// rather than taking a sub-tab argument — matches the one-sub-tab-visible-
+// at-a-time UI model, and keeps every call site below unchanged as new
+// sub-tabs get added.
+function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === invView); }
 function invCountFor(itemId, weekEnding) { return invCounts.find(c => c.item_id === itemId && c.week_ending === weekEnding); }
 
 function invReviewDue() {
-  const state = invReviewState.bar;
+  const state = invReviewState[invView];
   if(!state) return true;
   const last = new Date(state.last_reviewed_at + 'T00:00:00');
   const due = new Date(last.getTime() + 28*86400000);
   return new Date() >= due;
 }
 function invDaysUntilReview() {
-  const state = invReviewState.bar;
+  const state = invReviewState[invView];
   if(!state) return 0;
   const last = new Date(state.last_reviewed_at + 'T00:00:00');
   const due = new Date(last.getTime() + 28*86400000);
   return Math.ceil((due - new Date()) / 86400000);
 }
 
-function renderInvBarTab() {
-  const body = document.getElementById('inv-bar-body');
+function renderInvSubTab() {
+  const body = document.getElementById('inv-'+invView+'-body');
   if(!body) return;
   if(!invWeekEnding) invWeekEnding = getTodayStr();
 
@@ -8294,7 +8310,7 @@ function renderInvBarTab() {
 }
 
 function invOnCountInput(itemId) {
-  const row = document.querySelector(`#inv-bar-body tr[data-item-id="${itemId}"]`);
+  const row = document.querySelector(`#inv-${invView}-body tr[data-item-id="${itemId}"]`);
   if(!row) return;
   const item = invItems.find(i => i.id === itemId);
   const curInput = row.querySelector('.inv-count-input');
@@ -8303,12 +8319,12 @@ function invOnCountInput(itemId) {
   if(!isNaN(cur) && item) ordInput.value = Math.max(0, item.par - cur);
 }
 
-function invChangeWeek(val) { invWeekEnding = val; renderInvBarTab(); }
+function invChangeWeek(val) { invWeekEnding = val; renderInvSubTab(); }
 function invSetFilter(f) { invFilter = f; invApplyFilters(); document.querySelectorAll('.inv-filter-btn').forEach(b => b.classList.remove('on')); const map={all:0,'needs-count':1,flagged:2}; document.querySelectorAll('.inv-filter-btn')[map[f]].classList.add('on'); }
 
 function invApplyFilters() {
   const q = (document.getElementById('inv-search')?.value || '').trim().toLowerCase();
-  const rows = document.querySelectorAll('#inv-bar-body tbody tr:not(.inv-cat-head)');
+  const rows = document.querySelectorAll(`#inv-${invView}-body tbody tr:not(.inv-cat-head)`);
   rows.forEach(r => {
     const matchQ = !q || r.dataset.name.includes(q);
     const matchFilter = invFilter === 'all'
@@ -8316,7 +8332,7 @@ function invApplyFilters() {
       || (invFilter === 'flagged' && r.dataset.flagged === 'true');
     r.style.display = (matchQ && matchFilter) ? '' : 'none';
   });
-  document.querySelectorAll('#inv-bar-body tbody tr.inv-cat-head').forEach(head => {
+  document.querySelectorAll(`#inv-${invView}-body tbody tr.inv-cat-head`).forEach(head => {
     let sib = head.nextElementSibling, anyVisible = false;
     while(sib && !sib.classList.contains('inv-cat-head')) { if(sib.style.display !== 'none') anyVisible = true; sib = sib.nextElementSibling; }
     head.style.display = anyVisible ? '' : 'none';
@@ -8324,7 +8340,7 @@ function invApplyFilters() {
 }
 
 async function saveInvCounts() {
-  const rows = document.querySelectorAll('#inv-bar-body tbody tr[data-item-id]');
+  const rows = document.querySelectorAll(`#inv-${invView}-body tbody tr[data-item-id]`);
   const writes = [];
   rows.forEach(r => {
     const itemId = parseInt(r.dataset.itemId, 10);
@@ -8343,7 +8359,7 @@ async function saveInvCounts() {
       body: JSON.stringify(writes),
     });
     await loadInventoryCounts();
-    renderInvBarTab();
+    renderInvSubTab();
     showToast(`Saved ${writes.length} count${writes.length===1?'':'s'} ✓`);
   } catch(e) {
     console.warn('Inventory count save failed', e);
@@ -8381,11 +8397,11 @@ async function saveInvItem() {
     if(_invItemFormEditId) {
       await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${_invItemFormEditId}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     } else {
-      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ ...payload, sub_tab:'bar', created_by: currentManagerName() }) });
+      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ ...payload, sub_tab:invView, created_by: currentManagerName() }) });
     }
     closeInvItemForm();
     await loadInventoryItems();
-    renderInvBarTab();
+    renderInvSubTab();
     showToast('Saved ✓');
   } catch(e) {
     console.warn('Inventory item save failed', e);
@@ -8398,7 +8414,7 @@ async function archiveInvItem(id) {
   try {
     await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ active:false }) });
     await loadInventoryItems();
-    renderInvBarTab();
+    renderInvSubTab();
     showToast('Archived');
   } catch(e) {
     console.warn('Inventory item archive failed', e);
@@ -8490,7 +8506,7 @@ function closeInvReviewModal(ev) { if(ev && ev.target.id !== 'inv-review-modal')
 // / the shift report (600px centered table, #174854 header bar, cream
 // stat cells) — email clients strip <style> blocks and custom fonts, so
 // this intentionally does NOT reuse the in-app CSS custom properties.
-function invBuildReportHTML(changes, flaggedUnchanged, highlights, approvedBy, rangeLabel, totalReviewed) {
+function invBuildReportHTML(changes, flaggedUnchanged, highlights, approvedBy, rangeLabel, totalReviewed, subTabLabel) {
   const statCell = (label, value, dark) => `
     <td style="text-align:center;padding:0 6px;">
       <div style="background:${dark?'#174854':'#f0e9da'};border-radius:8px;padding:12px 6px;">
@@ -8543,7 +8559,7 @@ function invBuildReportHTML(changes, flaggedUnchanged, highlights, approvedBy, r
   <tr><td style="background:#174854;padding:28px 32px;text-align:center;">
     <div style="font-size:11px;letter-spacing:0.18em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:6px;">Rally · Inventory</div>
     <div style="font-size:26px;font-weight:500;color:#fbf6ed;margin-bottom:4px;">4-Week Par Review</div>
-    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${rangeLabel} · Bar</div>
+    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${rangeLabel} · ${subTabLabel}</div>
   </td></tr>
 
   <tr><td style="padding:24px 32px 0;">
@@ -8589,13 +8605,14 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
     const dates = invCounts.map(c => c.week_ending).sort();
     const rangeLabel = dates.length ? `${fmtCalDate(dates[0])} – ${fmtCalDate(dates[dates.length-1])}` : '';
     const highlights = invComputeHighlights(items);
-    const html = invBuildReportHTML(changes, flaggedUnchanged, highlights, currentManagerName(), rangeLabel, items.length);
+    const subTabLabel = INV_SUBTAB_LABEL[invView] || invView;
+    const html = invBuildReportHTML(changes, flaggedUnchanged, highlights, currentManagerName(), rangeLabel, items.length, subTabLabel);
     const payload = {
       service_id: CL_REPORT_SERVICE_ID,
       template_id: CL_REPORT_TEMPLATE_ID,
       user_id: CL_REPORT_PUBLIC_KEY,
       template_params: {
-        subject: `Bar Inventory — 4-Week Par Review (${rangeLabel})`,
+        subject: `${subTabLabel} Inventory — 4-Week Par Review (${rangeLabel})`,
         message: html,
         to_email: INV_REPORT_EMAILS,
       },
@@ -8622,7 +8639,7 @@ async function approveInvReview() {
   });
   try {
     await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:'bar', last_reviewed_at: getTodayStr() }) });
+    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:invView, last_reviewed_at: getTodayStr() }) });
 
     // Stakeholder report, built from the PRE-reload snapshot (items still
     // holds the old par values here — exactly what's needed for an
@@ -8641,7 +8658,7 @@ async function approveInvReview() {
 
     await Promise.all([loadInventoryItems(), loadInventoryReviewState()]);
     closeInvReviewModal();
-    renderInvBarTab();
+    renderInvSubTab();
     showToast(writes.length ? `${writes.length} par${writes.length===1?'':'s'} updated ✓` : 'Review complete — no changes needed ✓');
   } catch(e) {
     console.warn('Par review approve failed', e);
