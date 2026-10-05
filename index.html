@@ -628,8 +628,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-table td.num{text-align:right;}
 .inv-table .inv-pname{font-weight:700;color:var(--teal);}
 .inv-table .inv-flagline{display:block;font-size:10.5px;color:#c0491f;font-weight:600;margin-top:1px;}
-.inv-count-input,.inv-order-input{width:62px;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:right;font-family:'DM Sans',sans-serif;}
+.inv-count-input,.inv-order-input,.inv-units-input{width:62px;padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;text-align:right;font-family:'DM Sans',sans-serif;}
 .inv-order-input{color:rgba(23,72,84,.55);}
+.inv-units-input{color:rgba(23,72,84,.55);}
 .inv-crit{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:100px;white-space:nowrap;}
 .inv-crit::before{content:'';width:6px;height:6px;border-radius:50%;}
 .inv-crit.High{background:rgba(245,134,100,.15);color:#c0491f;}
@@ -8047,15 +8048,35 @@ function switchInvView(view) {
 }
 
 // Reconstructs each week-to-week usage interval for one item, chronological
-// oldest-first: usage = (last week's on-hand + what was ordered) - this
-// week's on-hand. A transition where either side is missing data yields
-// usage:null rather than being skipped, so callers can tell "no data" apart
-// from "zero usage". Mirrors the one-off analysis exactly (see the
-// published Par Level Review artifact) so results stay consistent with
-// what Meg already reviewed and confirmed.
+// oldest-first. Two distinct models, chosen by item type:
+//
+// Bar/liquor and loose-bottle items (the original model): usage = (last
+// week's on-hand + what was ordered) - this week's on-hand, mirroring the
+// one-off Par Level Review analysis exactly. A genuine negative result
+// here means a bad count — there's real separate order data to subtract.
+//
+// Case-packed and keg items NEVER have a separate order number recorded
+// (a case delivery or a fresh keg just shows up as an on-hand INCREASE,
+// not an "order" field) — so usage there is floored at 0 per week: an
+// increase means a delivery/fresh keg arrived, not negative consumption.
+// Case-tracked on-hand is converted to raw units (cases × pack size +
+// loose units) before diffing so a part-case of loose cans isn't lost;
+// callers that need "par units" (cases, or 1 for kegs) divide back out.
 function invWeeklyUsageSeries(itemId) {
+  const item = invItems.find(i => i.id === itemId);
   const rows = invCounts.filter(c => c.item_id === itemId).slice().sort((a,b) => a.week_ending.localeCompare(b.week_ending));
   const usages = [];
+  const caseTracked = invIsCaseTracked(item), kegTracked = invIsKegTracked(item);
+  if(caseTracked || kegTracked) {
+    const psize = caseTracked ? invPackSize(item) : 1;
+    for(let i=0; i<rows.length-1; i++) {
+      const a = typeof rows[i].current_count === 'number' ? rows[i].current_count*psize + (rows[i].secondary_count||0) : null;
+      const b = typeof rows[i+1].current_count === 'number' ? rows[i+1].current_count*psize + (rows[i+1].secondary_count||0) : null;
+      const usage = (a !== null && b !== null) ? Math.max(0, Math.round((a-b)*1000)/1000) : null;
+      usages.push({ week: rows[i+1].week_ending, usage });
+    }
+    return usages;
+  }
   for(let i=0; i<rows.length-1; i++) {
     const cw = rows[i].current_count, ow = rows[i].order_qty, cw1 = rows[i+1].current_count;
     const usage = (typeof cw === 'number' && typeof ow === 'number' && typeof cw1 === 'number')
@@ -8081,6 +8102,8 @@ const INV_SAFETY = { High: 1.75, Medium: 1.4, Low: 1.1 };
 // since a genuine negative usage week doesn't just get silently clamped
 // away from a "did consumption actually drop" read.
 function invAvgUsageRaw(itemId, lastN) {
+  const item = invItems.find(i => i.id === itemId);
+  const psize = invIsCaseTracked(item) ? invPackSize(item) : 1;
   const series = invWeeklyUsageSeries(itemId);
   // Slice to the last N chronological transitions FIRST, then drop nulls
   // within that window — matches invRollingAvg4wk()'s order of operations.
@@ -8089,7 +8112,11 @@ function invAvgUsageRaw(itemId, lastN) {
   const windowed = lastN ? series.slice(-lastN) : series;
   const basis = windowed.filter(s => s.usage !== null).map(s => s.usage);
   if(!basis.length) return null;
-  return basis.reduce((a,b) => a+b, 0) / basis.length;
+  // invWeeklyUsageSeries() reports case-tracked usage in raw units (cases
+  // × pack size + loose units) — divide back out so this returns "par
+  // units" (cases, or 1-for-1 for kegs/bottles) like everything else that
+  // compares against item.par.
+  return (basis.reduce((a,b) => a+b, 0) / basis.length) / psize;
 }
 
 // Plain-language "At a Glance" content for the stakeholder report: the
@@ -8145,15 +8172,23 @@ function invComputeHighlights(items) {
 // delivery), not real negative consumption, same rule validated in the
 // one-off analysis.
 function invRollingAvg4wk(itemId) {
+  const item = invItems.find(i => i.id === itemId);
+  const psize = invIsCaseTracked(item) ? invPackSize(item) : 1;
   const series = invWeeklyUsageSeries(itemId);
   const valid = series.filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
   const last4 = series.slice(-4).filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
   const basis = last4.length >= 2 ? last4 : valid;
   if(!basis.length) return null;
-  return basis.reduce((a,b) => a+b, 0) / basis.length;
+  // Same unit conversion as invAvgUsageRaw() — this must return "par
+  // units" (cases, or 1-for-1 for kegs/bottles) since invRecommendedPar()
+  // multiplies it straight through by the safety factor to get a new par.
+  return (basis.reduce((a,b) => a+b, 0) / basis.length) / psize;
 }
 
 function invRecommendedPar(item) {
+  // Kegs always keep one on tap — that's a rotation slot, not a usage-
+  // computed quantity (there's no "order a fraction of a keg" concept).
+  if(invIsKegTracked(item)) return 1;
   const avg = invRollingAvg4wk(item.id);
   if(avg === null) return null;
   const mult = INV_SAFETY[item.criticality] || INV_SAFETY.Medium;
@@ -8209,6 +8244,18 @@ function invSparkline(itemId) {
 // rather than taking a sub-tab argument — matches the one-sub-tab-visible-
 // at-a-time UI model, and keeps every call site below unchanged as new
 // sub-tabs get added.
+// Case-packed items (item_code like "x24", "x12"...) are counted two ways
+// on the source spreadsheet each week: full cases on hand, plus loose
+// cans/bottles left from a broken case — so par for these is set in
+// CASES, and the weekly entry needs both numbers. Kegs ("50L keg"/"Keg")
+// get a single fraction-remaining number and no order concept at all
+// (you swap a whole keg, never reorder a fraction). Everything else
+// (Bar/liquor, wine sold loose by the bottle) keeps the original single
+// current-count + order-qty model.
+function invIsCaseTracked(item) { return !!(item && item.item_code && /^x\d+$/.test(item.item_code.trim())); }
+function invPackSize(item) { const m = item && item.item_code && item.item_code.trim().match(/^x(\d+)$/); return m ? parseInt(m[1], 10) : 1; }
+function invIsKegTracked(item) { return !!(item && item.item_code && /keg/i.test(item.item_code)); }
+
 function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === invView); }
 function invCountFor(itemId, weekEnding) { return invCounts.find(c => c.item_id === itemId && c.week_ending === weekEnding); }
 
@@ -8246,20 +8293,37 @@ function renderInvSubTab() {
 
   let rows = '';
   catNames.forEach(cat => {
-    rows += `<tr class="inv-cat-head"><td colspan="7">${calEsc(cat)}</td></tr>`;
+    rows += `<tr class="inv-cat-head"><td colspan="8">${calEsc(cat)}</td></tr>`;
     cats[cat].sort((a,b) => a.name.localeCompare(b.name)).forEach(it => {
       const flags = invFlagsFor(it);
       const cnt = invCountFor(it.id, invWeekEnding);
+      const caseTracked = invIsCaseTracked(it);
+      const kegTracked = invIsKegTracked(it);
       const curVal = cnt && typeof cnt.current_count === 'number' ? cnt.current_count : '';
+      const secVal = cnt && typeof cnt.secondary_count === 'number' ? cnt.secondary_count : '';
       const ordVal = cnt && typeof cnt.order_qty === 'number' ? cnt.order_qty : '';
       const needsCount = curVal === '';
       const flagsHtml = flags.map(f => `<span class="inv-flagline">⚑ ${f}</span>`).join('');
+      const parLabel = caseTracked ? `${it.par} cs` : it.par;
+      const dash = '<span style="color:rgba(23,72,84,.25);">—</span>';
+      // Case-packed: Par is in cases, so both a loose-unit count AND an
+      // editable case-order suggestion are shown. Kegs: a single fraction-
+      // remaining number, no order concept (you swap the whole keg).
+      // Everything else: the original current + order-qty model.
+      const unitsCell = caseTracked
+        ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}"/>`
+        : dash;
+      const orderCell = caseTracked
+        ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}"/>`
+        : kegTracked ? dash
+        : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}"/>`;
       rows += `<tr data-item-id="${it.id}" data-name="${calEsc(it.name).toLowerCase()}" data-needs-count="${needsCount}" data-flagged="${flags.length>0}">
         <td><span class="inv-pname">${calEsc(it.name)}</span>${flagsHtml}</td>
         <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
-        <td class="num">${it.par}</td>
-        <td class="num"><input class="inv-count-input" type="number" step="0.1" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
-        <td class="num"><input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}"/></td>
+        <td class="num">${parLabel}</td>
+        <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
+        <td class="num">${unitsCell}</td>
+        <td class="num">${orderCell}</td>
         <td>${invSparkline(it.id)}</td>
         <td class="num"><button class="inv-archive-btn" title="Archive item" onclick="archiveInvItem(${it.id})">✕</button></td>
       </tr>`;
@@ -8293,7 +8357,7 @@ function renderInvSubTab() {
       <table class="inv-table">
         <thead><tr>
           <th>Product</th><th>Criticality</th><th class="num">Par</th>
-          <th class="num">${fmtCalDate(invWeekEnding)} Count</th><th class="num">Order Qty</th>
+          <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">Loose Units</th><th class="num">Order</th>
           <th>Trend</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
@@ -8315,6 +8379,7 @@ function invOnCountInput(itemId) {
   const item = invItems.find(i => i.id === itemId);
   const curInput = row.querySelector('.inv-count-input');
   const ordInput = document.getElementById('inv-order-'+itemId);
+  if(!ordInput) return; // kegs have no order field at all
   const cur = parseFloat(curInput.value);
   if(!isNaN(cur) && item) ordInput.value = Math.max(0, item.par - cur);
 }
@@ -8345,11 +8410,13 @@ async function saveInvCounts() {
   rows.forEach(r => {
     const itemId = parseInt(r.dataset.itemId, 10);
     const curInput = r.querySelector('.inv-count-input');
-    const ordInput = document.getElementById('inv-order-'+itemId);
+    const unitsInput = r.querySelector('.inv-units-input'); // case-tracked rows only
+    const ordInput = document.getElementById('inv-order-'+itemId); // null for kegs
     const cur = curInput.value === '' ? null : parseFloat(curInput.value);
-    const ord = ordInput.value === '' ? null : parseFloat(ordInput.value);
-    if(cur === null && ord === null) return;
-    writes.push({ item_id: itemId, week_ending: invWeekEnding, current_count: cur, order_qty: ord, created_by: currentManagerName() });
+    const sec = (unitsInput && unitsInput.value !== '') ? parseFloat(unitsInput.value) : null;
+    const ord = (ordInput && ordInput.value !== '') ? parseFloat(ordInput.value) : null;
+    if(cur === null && sec === null && ord === null) return;
+    writes.push({ item_id: itemId, week_ending: invWeekEnding, current_count: cur, secondary_count: sec, order_qty: ord, created_by: currentManagerName() });
   });
   if(!writes.length) { showToast('Nothing to save'); return; }
   try {
@@ -8447,12 +8514,12 @@ function buildInvHistoryCsv(startDate, endDate) {
     .sort((a,b) => (a.item.category||'').localeCompare(b.item.category||'')
       || a.item.name.localeCompare(b.item.name)
       || a.count.week_ending.localeCompare(b.count.week_ending));
-  const header = ['Category','Item','Criticality','Week Ending','Current Count','Order Qty','Par (as of export)','Status'];
+  const header = ['Category','Item','Criticality','Week Ending','Current Count','Loose Units','Order Qty','Par (as of export)','Status'];
   const lines = [header.map(invCsvField).join(',')];
   rows.forEach(({item, count}) => {
     lines.push([
       item.category || '', item.name, item.criticality, count.week_ending,
-      count.current_count ?? '', count.order_qty ?? '', item.par,
+      count.current_count ?? '', count.secondary_count ?? '', count.order_qty ?? '', item.par,
       item.active ? 'Active' : 'Archived',
     ].map(invCsvField).join(','));
   });
