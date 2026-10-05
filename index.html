@@ -616,6 +616,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-filter-btn.on{background:var(--teal);color:#fff;border-color:var(--teal);}
 .inv-add-btn{font-family:inherit;font-size:12.5px;font-weight:700;color:#fff;background:var(--teal);border:none;border-radius:7px;padding:8px 14px;cursor:pointer;}
 .inv-save-btn{font-family:inherit;font-size:13px;font-weight:700;color:#fff;background:var(--olive);border:none;border-radius:8px;padding:10px 18px;cursor:pointer;margin-top:12px;}
+.inv-export-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;background:var(--cream);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px;}
+.inv-export-row .fg{min-width:150px;}
 .inv-table-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:12px;background:#fff;}
 .inv-table{width:100%;border-collapse:collapse;min-width:760px;}
 .inv-table thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(23,72,84,.4);font-weight:700;padding:10px 12px;border-bottom:1.5px solid var(--border);white-space:nowrap;}
@@ -7995,6 +7997,7 @@ let invReviewState = {};  // { [sub_tab]: { sub_tab, last_reviewed_at } }
 let invView = 'bar';
 let invFilter = 'all';    // 'all' | 'needs-count' | 'flagged'
 let invWeekEnding = null; // YYYY-MM-DD currently selected in the count-entry column
+let invExportOpen = false; // whether the inline "Export History" date-range row is expanded
 let _invItemFormEditId = null;
 
 async function loadInventoryItems() {
@@ -8187,10 +8190,11 @@ function renderInvBarTab() {
         <input class="inv-search" type="text" id="inv-search" placeholder="Search a product…" oninput="invApplyFilters()"/>
       </div>
       <div style="display:flex;gap:8px;">
-        <button class="inv-add-btn" style="background:var(--olive);" onclick="openInvExportPicker()">📥 Export</button>
+        <button class="inv-add-btn" style="background:var(--olive);" onclick="toggleInvExport()">📥 Export${invExportOpen?' ▲':' ▼'}</button>
         <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
       </div>
     </div>
+    ${invExportOpen ? invExportRowHtml() : ''}
     <div class="inv-table-wrap">
       <table class="inv-table">
         <thead><tr>
@@ -8325,22 +8329,20 @@ async function archiveInvItem(id) {
 }
 
 // ── Export history to CSV (opens directly in Excel) ──────────────────────
-function openInvExportPicker() {
+// Rendered inline in the normal page flow (not a position:fixed overlay) —
+// a fixed-position layer sitting above a native <input type="date"> is a
+// known source of "I can't pick a date" complaints on iPad/mobile Safari,
+// where the browser's own date-picker control can get stuck behind it.
+function toggleInvExport() { invExportOpen = !invExportOpen; renderInvBarTab(); }
+function invExportRowHtml() {
   const dates = invCounts.map(c => c.week_ending).sort();
   const minDate = dates[0] || getTodayStr();
   const maxDate = dates[dates.length-1] || getTodayStr();
-  const overlay = document.createElement('div');
-  overlay.id = 'inv-export-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
-  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:300px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
-    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:14px;">Export History</div>
-    <div class="fg full"><label>From</label><input type="date" id="inv-export-start" value="${minDate}"/></div>
-    <div class="fg full"><label>To</label><input type="date" id="inv-export-end" value="${maxDate}"/></div>
-    <button class="modal-btn primary" style="width:100%;margin-bottom:8px;" onclick="downloadInvHistory()">Download CSV</button>
-    <button class="modal-btn secondary" style="width:100%;" onclick="document.getElementById('inv-export-overlay').remove()">Cancel</button>
+  return `<div class="inv-export-row">
+    <div class="fg" style="margin-bottom:0;"><label>From</label><input type="date" id="inv-export-start" value="${minDate}"/></div>
+    <div class="fg" style="margin-bottom:0;"><label>To</label><input type="date" id="inv-export-end" value="${maxDate}"/></div>
+    <button class="inv-save-btn" style="margin-top:0;" onclick="downloadInvHistory()">Download Excel (CSV)</button>
   </div>`;
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
 }
 function invCsvField(v) {
   if(v === null || v === undefined) return '';
@@ -8388,8 +8390,6 @@ function downloadInvHistory() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  const overlay = document.getElementById('inv-export-overlay');
-  if(overlay) overlay.remove();
   showToast(`Exported ${rowCount} row${rowCount===1?'':'s'} ✓`);
 }
 
