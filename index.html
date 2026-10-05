@@ -397,6 +397,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .cal-pto-label{font-size:8px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--cal-pto);margin-bottom:3px;}
 .cal-pto-names{display:flex;flex-wrap:wrap;gap:3px;}
 .cal-pto-chip{font-size:10px;font-weight:700;color:#fff;background:var(--cal-pto);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
+.cal-pto-chip.requested{background:transparent;color:var(--cal-pto);border:1.5px dashed var(--cal-pto);padding:1px 6px;}
 .cal-bday-block{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;}
 .cal-bday-chip{font-size:10px;font-weight:700;color:#fff;background:var(--cal-birthday);padding:2px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;cursor:pointer;}
 
@@ -834,6 +835,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="form-grid">
       <div class="fg"><label>Start Date</label><input id="cf-start" type="date"/></div>
       <div class="fg"><label>End Date</label><input id="cf-end" type="date"/></div>
+    </div>
+    <div class="fg full" id="cf-pto-status-row" style="display:none;"><label>Status</label>
+      <select id="cf-pto-status">
+        <option value="requested">⏳ Requested — not yet confirmed</option>
+        <option value="confirmed">✓ Confirmed</option>
+      </select>
     </div>
     <div class="fg full" id="cf-callout-row"><label>🔴 Special Callout <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — shows a dot on the calendar)</span></label><textarea id="cf-callout" rows="2" placeholder="Something important the team needs to know about this event"></textarea></div>
     <div class="fg full" id="cf-link-row"><label>Resource Link <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — floor plan, menu, doc, etc.)</span></label><input id="cf-link" type="url" placeholder="https://..."/></div>
@@ -7564,7 +7571,11 @@ function renderCalGrid() {
       <div class="cal-pto-block">
         <div class="cal-pto-label">🏖 PTO</div>
         <div class="cal-pto-names">
-          ${dayPto.map(p => `<div class="cal-pto-chip" title="${calEsc(p.staff_name)}" onclick="viewCalEntry('pto','${p.id}',event)">${calEsc(p.staff_name)}</div>`).join('')}
+          ${dayPto.map(p => {
+            const requested = p.status === 'requested';
+            const title = requested ? `${p.staff_name} — ⏳ Requested, not yet confirmed` : p.staff_name;
+            return `<div class="cal-pto-chip${requested?' requested':''}" title="${calEsc(title)}" onclick="viewCalEntry('pto','${p.id}',event)">${requested?'⏳ ':''}${calEsc(p.staff_name)}</div>`;
+          }).join('')}
         </div>
       </div>` : '';
 
@@ -7701,10 +7712,14 @@ function viewCalEntry(type, id, ev) {
 
   document.getElementById('cv-title').textContent = isEvent ? entry.title : entry.staff_name;
   const entryCat = isEvent ? CAL_CAT_BY_KEY[entry.category] : null;
+  const ptoRequested = !isEvent && entry.status === 'requested';
   document.getElementById('cv-badges').innerHTML = (isEvent
     ? `<span class="wchip" style="background:${entryCat?.color||'#999'};color:${entryCat?.textColor||'#fff'};border:none;">${entryCat?.label||entry.category}</span>`
     : `<span class="wchip" style="background:${PTO_COLOR};color:#fff;border:none;">PTO</span>`)
-    + (isEvent && entry.mod_name ? `<span class="wchip">MOD: ${calEsc(entry.mod_name)}</span>` : '');
+    + (isEvent && entry.mod_name ? `<span class="wchip">MOD: ${calEsc(entry.mod_name)}</span>` : '')
+    + (!isEvent ? (ptoRequested
+        ? `<span class="wchip" style="background:transparent;color:#92590a;border:1.5px dashed #92590a;">⏳ Requested</span>`
+        : `<span class="wchip" style="background:rgba(78,98,44,.1);color:#4e622c;border:1.5px solid rgba(78,98,44,.3);">✓ Confirmed</span>`) : '');
   document.getElementById('cv-dates').textContent = entry.start_date === entry.end_date
     ? fmtCalDate(entry.start_date)
     : `${fmtCalDate(entry.start_date)} – ${fmtCalDate(entry.end_date)}`;
@@ -7730,7 +7745,8 @@ function viewCalEntry(type, id, ev) {
   }
 
   document.getElementById('cv-actions').innerHTML = isGM()
-    ? `<button class="modal-btn primary" onclick="closeCalViewModal();openCalForm('${type}','${entry.id}')">✏ Edit</button>
+    ? `${ptoRequested ? `<button class="modal-btn" style="background:rgba(78,98,44,.1);color:#4e622c;border:1.5px solid rgba(78,98,44,.3);" onclick="confirmPto(${entry.id})">✓ Confirm</button>` : ''}
+       <button class="modal-btn primary" onclick="closeCalViewModal();openCalForm('${type}','${entry.id}')">✏ Edit</button>
        <button class="modal-btn" style="background:rgba(220,80,60,.06);color:#c04020;border:1.5px solid rgba(220,80,60,.2);" onclick="deleteCalEntry('${type}','${entry.id}')">✕ Delete</button>`
     : `<button class="modal-btn secondary" style="flex:1;" onclick="closeCalViewModal()">Close</button>`;
 
@@ -7767,6 +7783,9 @@ function openCalForm(tableType, id, prefillDate) {
   document.getElementById('cf-end').value = entry ? (entry.end_date || entry.start_date) : (prefillDate || getTodayStr());
   document.getElementById('cf-callout').value = (entry && tableType==='event') ? (entry.notes || '') : '';
   document.getElementById('cf-link').value = (entry && tableType==='event') ? (entry.resource_link || '') : '';
+  // New requests default to "Requested" (not yet confirmed) — editing an
+  // existing entry shows whatever its real status is.
+  document.getElementById('cf-pto-status').value = entry ? (entry.status || 'confirmed') : 'requested';
 
   _calPendingDocFile = null;
   _calDocRemoved = false;
@@ -7783,6 +7802,7 @@ function calToggleModRow() {
   document.getElementById('cf-callout-row').style.display = isPto ? 'none' : '';
   document.getElementById('cf-link-row').style.display = isPto ? 'none' : '';
   document.getElementById('cf-doc-row').style.display = isPto ? 'none' : '';
+  document.getElementById('cf-pto-status-row').style.display = isPto ? '' : 'none';
 }
 // ── Calendar event document attach (file input -> Storage on save) ──
 function calHandleDocInput(ev) {
@@ -7861,9 +7881,10 @@ async function saveCalForm() {
   }
   const finalDoc = isPto ? null : (uploadedDoc || (_calDocRemoved ? null : _calExistingDoc));
 
+  const ptoStatus = document.getElementById('cf-pto-status').value;
   const newTable = isPto ? 'rally_pto' : 'rally_calendar_events';
   const payload = isPto
-    ? { staff_name: desc, start_date: start, end_date: end, created_by: createdBy }
+    ? { staff_name: desc, start_date: start, end_date: end, status: ptoStatus, created_by: createdBy }
     : { title: desc, category: selectedType, mod_name: modName, notes: callout, resource_link: resourceLink, document_url: finalDoc?.url || null, document_name: finalDoc?.name || null, start_date: start, end_date: end, created_by: createdBy };
 
   try {
@@ -7905,6 +7926,23 @@ async function deleteCalEntry(type, id) {
   } catch(e) {
     console.warn('Calendar delete failed', e);
     showToast('⚠ Delete failed');
+  }
+}
+
+// One-click status flip for a pending PTO request — any manager can
+// confirm, same shared-PIN trust model as the rest of Calendar. Doesn't
+// reopen the full edit form since nothing else about the entry changes.
+async function confirmPto(id) {
+  if(!isGM()) return;
+  try {
+    await fetch(`${CAL_SUPA}/rest/v1/rally_pto?id=eq.${id}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ status: 'confirmed' }) });
+    await loadPto();
+    closeCalViewModal();
+    renderCalGrid();
+    showToast('PTO confirmed ✓');
+  } catch(e) {
+    console.warn('PTO confirm failed', e);
+    showToast('⚠ Could not confirm — check connection');
   }
 }
 
