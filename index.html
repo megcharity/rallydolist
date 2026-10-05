@@ -642,6 +642,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-crit.Low::before{background:var(--olive);}
 .inv-archive-btn{background:none;border:none;color:rgba(23,72,84,.3);font-size:15px;cursor:pointer;padding:2px 6px;}
 .inv-archive-btn:hover{color:#c0491f;}
+.inv-edit-btn{background:none;border:none;color:rgba(23,72,84,.3);font-size:13px;cursor:pointer;padding:2px 6px;}
+.inv-edit-btn:hover{color:var(--teal);}
+.inv-par-val{cursor:pointer;border-bottom:1px dashed rgba(23,72,84,.3);}
+.inv-par-val:hover{color:var(--teal);border-bottom-color:var(--teal);}
 .inv-spark{display:block;}
 .inv-spark .line{fill:none;stroke:rgba(23,72,84,.35);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .inv-spark .dot{fill:var(--amber);}
@@ -888,7 +892,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
           <option value="Low">Low</option>
         </select>
       </div>
-      <div class="fg"><label>Starting Par</label><input id="if-par" type="number" min="0" step="1" value="0"/></div>
+      <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="0" step="1" value="0"/></div>
     </div>
     <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
     <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="if-item-code" type="text"/></div>
@@ -8358,12 +8362,15 @@ function renderInvSubTab() {
       rows += `<tr data-item-id="${it.id}" data-name="${calEsc(it.name).toLowerCase()}" data-needs-count="${needsCount}" data-flagged="${flags.length>0}">
         <td><span class="inv-pname">${calEsc(it.name)}</span>${flagsHtml}</td>
         <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
-        <td class="num">${parLabel}</td>
+        <td class="num"><span class="inv-par-val" title="Click to override the par" onclick="openInvItemForm(${it.id})">${parLabel}</span></td>
         <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
         <td class="num">${unitsCell}</td>
         <td class="num">${orderCell}</td>
         <td>${invSparkline(it.id)}</td>
-        <td class="num"><button class="inv-archive-btn" title="Archive item" onclick="archiveInvItem(${it.id})">✕</button></td>
+        <td class="num">
+          <button class="inv-edit-btn" title="Edit item (name, par, criticality...)" onclick="openInvItemForm(${it.id})">✏</button>
+          <button class="inv-archive-btn" title="Archive item" onclick="archiveInvItem(${it.id})">✕</button>
+        </td>
       </tr>`;
     });
   });
@@ -8481,6 +8488,7 @@ function openInvItemForm(id) {
   document.getElementById('if-category').value = item ? (item.category || '') : '';
   document.getElementById('if-criticality').value = item ? item.criticality : 'Medium';
   document.getElementById('if-par').value = item ? item.par : 0;
+  document.getElementById('if-par-label').textContent = item && invIsCaseTracked(item) ? 'Case Par' : (item ? 'Par' : 'Starting Par');
   document.getElementById('if-batched').checked = !!(item && item.batched);
   document.getElementById('if-item-code').value = item ? (item.item_code || '') : '';
   document.getElementById('inv-item-form-modal').style.display = 'flex';
