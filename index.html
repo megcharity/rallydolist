@@ -8054,7 +8054,77 @@ function invWeeklyUsageSeries(itemId) {
   return usages;
 }
 
+// Stakeholder distribution for the automatic 4-week par review report —
+// separate from OPS_TEAM_EMAILS (daily checklist report) and from
+// announcement sign-off (in-app managers only). Megan Charity, Barrett
+// Worthington, Murphy McConnell, Laura Fusato.
+const INV_REPORT_EMAILS = 'meg@rallypickleball.com,barrett@rallypickleball.com,mmcconnell@rallypickleball.com,lfusato@rallypickleball.com';
+
 const INV_SAFETY = { High: 1.75, Medium: 1.4, Low: 1.1 };
+
+// Unclamped average usage (no floor-at-0) over the last N usable weeks, or
+// all of them if N is omitted — for trend narration (spike/drop detection),
+// NOT the par formula. invRollingAvg4wk() floors negatives because you
+// can't order a negative bottle count; here we want the real signed trend,
+// since a genuine negative usage week doesn't just get silently clamped
+// away from a "did consumption actually drop" read.
+function invAvgUsageRaw(itemId, lastN) {
+  const series = invWeeklyUsageSeries(itemId);
+  // Slice to the last N chronological transitions FIRST, then drop nulls
+  // within that window — matches invRollingAvg4wk()'s order of operations.
+  // Filtering nulls before slicing would silently reach further back in
+  // history to fill the window, which is a different (wrong) quantity.
+  const windowed = lastN ? series.slice(-lastN) : series;
+  const basis = windowed.filter(s => s.usage !== null).map(s => s.usage);
+  if(!basis.length) return null;
+  return basis.reduce((a,b) => a+b, 0) / basis.length;
+}
+
+// Plain-language "At a Glance" content for the stakeholder report: the
+// single biggest spike and drop (excluding anything already flagged as
+// noisy — a flagged item's swing isn't a trustworthy headline), an
+// overall bar-wide volume trend, a multi-item category rollup, and any
+// item whose usage is now running ahead of its own (just-set) par.
+function invComputeHighlights(items) {
+  const candidates = items
+    .filter(it => invFlagsFor(it).length === 0)
+    .map(it => {
+      const last4 = invAvgUsageRaw(it.id, 4);
+      const allAvg = invAvgUsageRaw(it.id, null);
+      if(last4 === null || allAvg === null) return null;
+      if(Math.abs(allAvg) < 0.15 && Math.abs(last4) < 0.15) return null;
+      const denom = Math.max(Math.abs(allAvg), 0.3);
+      return { item: it, last4, allAvg, pct: (last4-allAvg)/denom*100 };
+    })
+    .filter(Boolean)
+    .sort((a,b) => b.pct - a.pct);
+  const spike = candidates[0] || null;
+  const drop = candidates.length ? candidates[candidates.length-1] : null;
+
+  const totalLast4 = items.reduce((sum,it) => sum + Math.max(0, invAvgUsageRaw(it.id,4) ?? 0), 0);
+  const totalAll = items.reduce((sum,it) => sum + Math.max(0, invAvgUsageRaw(it.id,null) ?? 0), 0);
+  const overallPct = totalAll > 0 ? (totalLast4-totalAll)/totalAll*100 : null;
+
+  const catTotals = {};
+  items.forEach(it => {
+    const cat = it.category || 'Uncategorized';
+    const c = catTotals[cat] = catTotals[cat] || {last4:0, all:0, n:0};
+    c.last4 += Math.max(0, invAvgUsageRaw(it.id,4) ?? 0);
+    c.all += Math.max(0, invAvgUsageRaw(it.id,null) ?? 0);
+    c.n++;
+  });
+  const topCategory = Object.entries(catTotals)
+    .filter(([,c]) => c.n >= 2 && c.all > 0)
+    .map(([cat,c]) => ({ cat, pct: (c.last4-c.all)/c.all*100, n:c.n }))
+    .sort((a,b) => Math.abs(b.pct)-Math.abs(a.pct))[0] || null;
+
+  const atRisk = items.filter(it => {
+    const last4 = invAvgUsageRaw(it.id,4);
+    return last4 !== null && last4 > it.par;
+  });
+
+  return { spike, drop, overallPct, topCategory, atRisk };
+}
 
 // True rolling window: always the most recent 4 usable weeks at the moment
 // it's called, falling back to all available history when fewer than 2 of
@@ -8415,6 +8485,132 @@ function openInvReviewModal() {
   document.getElementById('inv-review-modal').style.display = 'flex';
 }
 function closeInvReviewModal(ev) { if(ev && ev.target.id !== 'inv-review-modal') return; document.getElementById('inv-review-modal').style.display = 'none'; }
+// ── Stakeholder report (sent automatically on every review approval) ────
+// Same inline-styled table-email conventions as buildDailyChecklistReportHTML
+// / the shift report (600px centered table, #174854 header bar, cream
+// stat cells) — email clients strip <style> blocks and custom fonts, so
+// this intentionally does NOT reuse the in-app CSS custom properties.
+function invBuildReportHTML(changes, flaggedUnchanged, highlights, approvedBy, rangeLabel, totalReviewed) {
+  const statCell = (label, value, dark) => `
+    <td style="text-align:center;padding:0 6px;">
+      <div style="background:${dark?'#174854':'#f0e9da'};border-radius:8px;padding:12px 6px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:${dark?'rgba(251,246,237,0.55)':'#174854'};margin-bottom:4px;">${label}</div>
+        <div style="font-size:20px;font-weight:500;color:${dark?'#fbf6ed':'#174854'};">${value}</div>
+      </div>
+    </td>`;
+  const pct = n => (n>0?'+':'') + Math.round(n) + '%';
+
+  const hlLines = [];
+  if(highlights.overallPct !== null) hlLines.push(`Bar-wide usage is <b>${pct(highlights.overallPct)}</b> over the trailing 4 weeks compared to the 12-week average.`);
+  if(highlights.spike) hlLines.push(`Biggest increase: <b>${calEsc(highlights.spike.item.name)}</b> usage is up <b>${pct(highlights.spike.pct)}</b> vs. its historical average.`);
+  if(highlights.drop) hlLines.push(`Biggest decrease: <b>${calEsc(highlights.drop.item.name)}</b> usage is down <b>${pct(Math.abs(highlights.drop.pct))}</b> over the same stretch.`);
+  if(highlights.topCategory) hlLines.push(`<b>${calEsc(highlights.topCategory.cat)}</b> trended ${highlights.topCategory.pct>=0?'up':'down'} <b>${pct(Math.abs(highlights.topCategory.pct))}</b> as a group (${highlights.topCategory.n} items).`);
+  hlLines.push(highlights.atRisk.length
+    ? `⚠ Running ahead of par even after this review: <b>${highlights.atRisk.map(it=>calEsc(it.name)).join(', ')}</b> — worth a closer look.`
+    : `No item's usage is currently running ahead of its newly-set par.`);
+  const highlightsHtml = hlLines.map(l => `<div style="font-size:13px;color:#174854;line-height:1.6;margin-bottom:8px;">${l}</div>`).join('');
+
+  const changeRow = c => `
+    <tr>
+      <td style="padding:8px 0;font-size:13px;color:#174854;border-bottom:1px solid #e8e0d4;">${calEsc(c.name)}<div style="font-size:11px;color:#999;">${calEsc(c.category||'')}</div></td>
+      <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${c.criticality}</td>
+      <td style="padding:8px 0;font-size:13px;font-weight:600;color:#174854;border-bottom:1px solid #e8e0d4;text-align:right;white-space:nowrap;">${c.oldPar} → ${c.newPar} <span style="color:${c.delta>0?'#92590a':'#4e622c'};">(${c.delta>0?'+':''}${c.delta})</span></td>
+    </tr>`;
+  const shownChanges = changes.slice(0, 10);
+  const changesTable = shownChanges.length ? `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Crit.</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th></tr>
+      ${shownChanges.map(changeRow).join('')}
+    </table>
+    ${changes.length>10 ? `<div style="font-size:12px;color:#999;margin-top:8px;">+ ${changes.length-10} more — <a href="https://rallydolist.netlify.app" style="color:#174854;">see the full list in the app</a></div>` : ''}
+  ` : `<div style="font-size:13px;color:#999;">No par changes this cycle.</div>`;
+
+  const shownFlagged = flaggedUnchanged.slice(0, 10);
+  const flaggedList = shownFlagged.length ? `
+    <table width="100%" cellpadding="0" cellspacing="0">
+      ${shownFlagged.map(f => `<tr><td style="padding:5px 0;font-size:13px;color:#174854;">${calEsc(f.name)}</td><td style="padding:5px 0;font-size:11.5px;color:#a6420f;text-align:right;">${calEsc(f.flags.join(', '))}</td></tr>`).join('')}
+    </table>
+    ${flaggedUnchanged.length>10 ? `<div style="font-size:12px;color:#999;margin-top:8px;">+ ${flaggedUnchanged.length-10} more — <a href="https://rallydolist.netlify.app" style="color:#174854;">see the full list in the app</a></div>` : ''}
+  ` : `<div style="font-size:13px;color:#999;">Nothing flagged this cycle.</div>`;
+
+  return `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0e8;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;">
+
+  <tr><td style="background:#174854;padding:28px 32px;text-align:center;">
+    <div style="font-size:11px;letter-spacing:0.18em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:6px;">Rally · Inventory</div>
+    <div style="font-size:26px;font-weight:500;color:#fbf6ed;margin-bottom:4px;">4-Week Par Review</div>
+    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${rangeLabel} · Bar</div>
+  </td></tr>
+
+  <tr><td style="padding:24px 32px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      ${statCell('Reviewed', totalReviewed, false)}
+      ${statCell('Raised', changes.filter(c=>c.delta>0).length, false)}
+      ${statCell('Lowered', changes.filter(c=>c.delta<0).length, false)}
+      ${statCell('Flagged', flaggedUnchanged.length, true)}
+    </tr></table>
+  </td></tr>
+
+  <tr><td style="padding:20px 32px 0;">
+    <div style="border-left:3px solid #FAC775;padding-left:14px;">
+      <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#854F0B;margin-bottom:10px;">At A Glance</div>
+      ${highlightsHtml}
+    </div>
+  </td></tr>
+
+  <tr><td style="padding:22px 32px 0;">
+    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#174854;opacity:0.5;margin-bottom:10px;">Par Changes This Cycle</div>
+    ${changesTable}
+  </td></tr>
+
+  <tr><td style="padding:22px 32px 24px;">
+    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#a6420f;margin-bottom:10px;">Flagged For Attention — No Change Applied</div>
+    ${flaggedList}
+  </td></tr>
+
+  <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
+    <div style="font-size:11px;color:#999;">Approved by ${calEsc(approvedBy)} &nbsp;·&nbsp; This is a record of what was already approved, not a request for action.</div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
+  if(INV_REPORT_EMAILS.includes('PASTE_')) { console.warn('Inventory report: recipient list not configured — skipping send.'); return; }
+  try {
+    const dates = invCounts.map(c => c.week_ending).sort();
+    const rangeLabel = dates.length ? `${fmtCalDate(dates[0])} – ${fmtCalDate(dates[dates.length-1])}` : '';
+    const highlights = invComputeHighlights(items);
+    const html = invBuildReportHTML(changes, flaggedUnchanged, highlights, currentManagerName(), rangeLabel, items.length);
+    const payload = {
+      service_id: CL_REPORT_SERVICE_ID,
+      template_id: CL_REPORT_TEMPLATE_ID,
+      user_id: CL_REPORT_PUBLIC_KEY,
+      template_params: {
+        subject: `Bar Inventory — 4-Week Par Review (${rangeLabel})`,
+        message: html,
+        to_email: INV_REPORT_EMAILS,
+      },
+    };
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    if(res.ok) console.log('Inventory par review report email sent ✓');
+    else { console.warn('Inventory report email failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Par review saved, but the report email failed to send'); }
+  } catch(e) {
+    console.warn('Inventory report email failed', e);
+    showToast('⚠ Par review saved, but the report email failed to send');
+  }
+}
+
 async function approveInvReview() {
   const items = invActiveItems();
   const writes = [];
@@ -8427,6 +8623,22 @@ async function approveInvReview() {
   try {
     await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
     await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:'bar', last_reviewed_at: getTodayStr() }) });
+
+    // Stakeholder report, built from the PRE-reload snapshot (items still
+    // holds the old par values here — exactly what's needed for an
+    // "old → new" changes table) — fire-and-forget-ish but still awaited
+    // so a failed send surfaces its own toast rather than racing the
+    // success toast below.
+    const byId = {}; items.forEach(it => byId[it.id] = it);
+    const changesSummary = writes.map(w => {
+      const it = byId[w.id];
+      return { id: w.id, name: it.name, category: it.category, criticality: it.criticality, oldPar: it.par, newPar: w.par, delta: w.par - it.par };
+    }).sort((a,b) => Math.abs(b.delta) - Math.abs(a.delta));
+    const flaggedUnchanged = items
+      .filter(it => !writes.some(w => w.id === it.id) && invFlagsFor(it).length > 0)
+      .map(it => ({ id: it.id, name: it.name, flags: invFlagsFor(it) }));
+    await sendInvParReviewReport(changesSummary, flaggedUnchanged, items);
+
     await Promise.all([loadInventoryItems(), loadInventoryReviewState()]);
     closeInvReviewModal();
     renderInvBarTab();
