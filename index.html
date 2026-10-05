@@ -8186,7 +8186,10 @@ function renderInvBarTab() {
         <button class="inv-filter-btn ${invFilter==='flagged'?'on':''}" onclick="invSetFilter('flagged')">Flagged</button>
         <input class="inv-search" type="text" id="inv-search" placeholder="Search a product…" oninput="invApplyFilters()"/>
       </div>
-      <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
+      <div style="display:flex;gap:8px;">
+        <button class="inv-add-btn" style="background:var(--olive);" onclick="openInvExportPicker()">📥 Export</button>
+        <button class="inv-add-btn" onclick="openInvItemForm()">+ Add Item</button>
+      </div>
     </div>
     <div class="inv-table-wrap">
       <table class="inv-table">
@@ -8319,6 +8322,75 @@ async function archiveInvItem(id) {
     console.warn('Inventory item archive failed', e);
     showToast('⚠ Could not archive');
   }
+}
+
+// ── Export history to CSV (opens directly in Excel) ──────────────────────
+function openInvExportPicker() {
+  const dates = invCounts.map(c => c.week_ending).sort();
+  const minDate = dates[0] || getTodayStr();
+  const maxDate = dates[dates.length-1] || getTodayStr();
+  const overlay = document.createElement('div');
+  overlay.id = 'inv-export-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `<div style="background:#fff;border-radius:14px;padding:22px;width:300px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:14px;">Export History</div>
+    <div class="fg full"><label>From</label><input type="date" id="inv-export-start" value="${minDate}"/></div>
+    <div class="fg full"><label>To</label><input type="date" id="inv-export-end" value="${maxDate}"/></div>
+    <button class="modal-btn primary" style="width:100%;margin-bottom:8px;" onclick="downloadInvHistory()">Download CSV</button>
+    <button class="modal-btn secondary" style="width:100%;" onclick="document.getElementById('inv-export-overlay').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+function invCsvField(v) {
+  if(v === null || v === undefined) return '';
+  const s = String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+// Tidy (one row per item per counted week) rather than the spreadsheet's
+// original wide layout — easier to filter/pivot in Excel. Pure function
+// (no DOM/download side effects) so it's directly testable; Par reflects
+// today's value, not a point-in-time snapshot (this app doesn't track par
+// history), hence the explicit "as of export" label.
+function buildInvHistoryCsv(startDate, endDate) {
+  const itemsById = {};
+  invItems.forEach(i => { itemsById[i.id] = i; });
+  const rows = invCounts
+    .filter(c => c.week_ending >= startDate && c.week_ending <= endDate)
+    .map(c => ({ item: itemsById[c.item_id], count: c }))
+    .filter(r => r.item)
+    .sort((a,b) => (a.item.category||'').localeCompare(b.item.category||'')
+      || a.item.name.localeCompare(b.item.name)
+      || a.count.week_ending.localeCompare(b.count.week_ending));
+  const header = ['Category','Item','Criticality','Week Ending','Current Count','Order Qty','Par (as of export)','Status'];
+  const lines = [header.map(invCsvField).join(',')];
+  rows.forEach(({item, count}) => {
+    lines.push([
+      item.category || '', item.name, item.criticality, count.week_ending,
+      count.current_count ?? '', count.order_qty ?? '', item.par,
+      item.active ? 'Active' : 'Archived',
+    ].map(invCsvField).join(','));
+  });
+  return { csv: lines.join('\n'), rowCount: rows.length };
+}
+function downloadInvHistory() {
+  const start = document.getElementById('inv-export-start').value;
+  const end = document.getElementById('inv-export-end').value;
+  if(!start || !end) { showToast('Pick both dates'); return; }
+  const { csv, rowCount } = buildInvHistoryCsv(start, end);
+  if(!rowCount) { showToast('No history in that range'); return; }
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rally-inventory-history_${start}_to_${end}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  const overlay = document.getElementById('inv-export-overlay');
+  if(overlay) overlay.remove();
+  showToast(`Exported ${rowCount} row${rowCount===1?'':'s'} ✓`);
 }
 
 function openInvReviewModal() {
