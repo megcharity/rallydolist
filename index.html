@@ -896,6 +896,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
     <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="if-item-code" type="text"/></div>
+    <div class="fg full"><label>Vendor <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — who you order this from)</span></label><input id="if-vendor" type="text" list="if-vendor-list" placeholder="e.g. ABC"/><datalist id="if-vendor-list"></datalist></div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveInvItem()">Save</button>
       <button class="modal-btn secondary" onclick="closeInvItemForm()">Cancel</button>
@@ -8135,6 +8136,12 @@ function invWeeklyUsageSeries(itemId) {
 // Worthington, Murphy McConnell, Laura Fusato.
 const INV_REPORT_EMAILS = 'meg@rallypickleball.com,barrett@rallypickleball.com,mmcconnell@rallypickleball.com,lfusato@rallypickleball.com';
 
+// Recipient(s) for the weekly order-list email (fires on "Submit Order").
+// Defaulted to the same stakeholder list as the 4-week par review — confirm
+// with Meg whether the weekly order list should go to a narrower list (e.g.
+// just the director who actually places orders).
+const INV_ORDER_EMAILS = INV_REPORT_EMAILS;
+
 const INV_SAFETY = { High: 1.75, Medium: 1.4, Low: 1.1 };
 
 // Unclamped average usage (no floor-at-0) over the last N usable weeks, or
@@ -8412,12 +8419,17 @@ function renderInvSubTab() {
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <button class="inv-save-btn" onclick="saveInvCounts()">Save This Week's Counts</button>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="inv-save-btn" onclick="saveInvCounts()">Save This Week's Counts</button>
+      <button class="inv-save-btn" style="background:var(--olive);" onclick="submitInvOrder()">📦 Submit Order</button>
+    </div>
   </div>`;
 
   // datalist for the Add Item form's category field
   const dl = document.getElementById('if-category-list');
   if(dl) dl.innerHTML = catNames.map(c => `<option value="${calEsc(c)}"></option>`).join('');
+  const vdl = document.getElementById('if-vendor-list');
+  if(vdl) vdl.innerHTML = [...new Set(invItems.filter(i=>i.vendor).map(i=>i.vendor))].sort().map(v => `<option value="${calEsc(v)}"></option>`).join('');
 
   invApplyFilters();
 }
@@ -8495,6 +8507,7 @@ function openInvItemForm(id) {
   document.getElementById('if-par-label').textContent = item && invIsCaseTracked(item) ? 'Case Par' : (item ? 'Par' : 'Starting Par');
   document.getElementById('if-batched').checked = !!(item && item.batched);
   document.getElementById('if-item-code').value = item ? (item.item_code || '') : '';
+  document.getElementById('if-vendor').value = item ? (item.vendor || '') : '';
   document.getElementById('inv-item-form-modal').style.display = 'flex';
 }
 function closeInvItemForm(ev) { if(ev && ev.target.id !== 'inv-item-form-modal') return; document.getElementById('inv-item-form-modal').style.display = 'none'; }
@@ -8509,6 +8522,7 @@ async function saveInvItem() {
     par: parseFloat(document.getElementById('if-par').value) || 0,
     batched: document.getElementById('if-batched').checked,
     item_code: document.getElementById('if-item-code').value.trim() || null,
+    vendor: document.getElementById('if-vendor').value.trim() || null,
   };
   try {
     if(_invItemFormEditId) {
@@ -8742,6 +8756,123 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
   } catch(e) {
     console.warn('Inventory report email failed', e);
     showToast('⚠ Par review saved, but the report email failed to send');
+  }
+}
+
+function invFmtQty(n) { return (Math.round(n * 10) / 10).toString(); }
+
+// Pulls this week's order quantities across BOTH sub-tabs (Bar + Beer &
+// Wine) — the order email is one weekly list, not per sub-tab — and groups
+// them by each item's vendor. Kegs are skipped: there's no "order a
+// fraction of a keg" concept, you swap the whole thing.
+function invBuildOrderGroups(weekEnding) {
+  const items = invItems.filter(i => i.active && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
+  const groups = {};
+  const unassigned = [];
+  items.forEach(it => {
+    if(invIsKegTracked(it)) return;
+    const cnt = invCountFor(it.id, weekEnding);
+    if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
+    const caseTracked = invIsCaseTracked(it);
+    const row = {
+      name: it.name,
+      orderLabel: caseTracked ? `${invFmtQty(cnt.order_qty)} cs` : `${invFmtQty(cnt.order_qty)} btl`,
+      parLabel: caseTracked ? `${it.par} cs` : String(it.par),
+      onHandLabel: caseTracked
+        ? `${cnt.current_count || 0} cs${typeof cnt.secondary_count === 'number' ? ', ' + cnt.secondary_count + ' loose' : ''}`
+        : (typeof cnt.current_count === 'number' ? String(cnt.current_count) : '—'),
+    };
+    if(it.vendor) (groups[it.vendor] = groups[it.vendor] || []).push(row);
+    else unassigned.push(row);
+  });
+  return { groups, unassigned };
+}
+
+function invBuildOrderEmailHTML(weekEnding, groups, unassigned, submittedBy) {
+  const vendorNames = Object.keys(groups).sort();
+  const totalItems = vendorNames.reduce((n, v) => n + groups[v].length, 0) + unassigned.length;
+  const rowHtml = r => `
+    <tr>
+      <td style="padding:8px 0;font-size:13px;color:#174854;border-bottom:1px solid #e8e0d4;">${calEsc(r.name)}</td>
+      <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.parLabel)}</td>
+      <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.onHandLabel)}</td>
+      <td style="padding:8px 0;font-size:13px;font-weight:600;color:#174854;border-bottom:1px solid #e8e0d4;text-align:right;white-space:nowrap;">${calEsc(r.orderLabel)}</td>
+    </tr>`;
+  const vendorSection = v => `
+  <tr><td style="padding:20px 32px 0;">
+    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4e622c;margin-bottom:10px;">${calEsc(v)}</div>
+    <table width="100%" cellpadding="0" cellspacing="0">
+      <tr><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">On Hand</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Order</th></tr>
+      ${groups[v].map(rowHtml).join('')}
+    </table>
+  </td></tr>`;
+  const unassignedSection = unassigned.length ? `
+  <tr><td style="padding:20px 32px 0;">
+    <div style="border:1.5px dashed #c04020;border-radius:8px;padding:14px 16px;">
+      <div style="font-size:12px;font-weight:600;color:#a6420f;margin-bottom:8px;">⚠ No vendor set</div>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${unassigned.map(r => `<tr><td style="padding:4px 0;font-size:13px;color:#174854;">${calEsc(r.name)}</td><td style="padding:4px 0;font-size:13px;font-weight:600;color:#174854;text-align:right;">${calEsc(r.orderLabel)}</td></tr>`).join('')}
+      </table>
+      <div style="font-size:11.5px;color:#a6420f;margin-top:8px;">Add a vendor to these items in the Inventory tab so they're grouped correctly next week.</div>
+    </div>
+  </td></tr>` : '';
+
+  return `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f5f0e8;font-family:'Helvetica Neue',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f0e8;padding:24px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;">
+
+  <tr><td style="background:#174854;padding:28px 32px;text-align:center;">
+    <div style="font-size:11px;letter-spacing:0.18em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:6px;">Rally · Inventory</div>
+    <div style="font-size:26px;font-weight:500;color:#fbf6ed;margin-bottom:4px;">Weekly Order List</div>
+    <div style="font-size:13px;color:rgba(251,246,237,0.6);">${fmtCalDate(weekEnding)} · submitted by ${calEsc(submittedBy)}</div>
+  </td></tr>
+
+  <tr><td style="padding:22px 32px 0;">
+    <div style="font-size:13px;color:#174854;line-height:1.6;">${totalItems} item${totalItems===1?'':'s'} need${totalItems===1?'s':''} ordering this week, grouped below by vendor — call it straight in from here.</div>
+  </td></tr>
+
+  ${vendorNames.map(vendorSection).join('')}
+  ${unassignedSection}
+
+  <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
+    <div style="font-size:11px;color:#999;">Submitted via Rally Do List · <a href="https://rallydolist.netlify.app" style="color:#174854;">see the full sheet in the app</a></div>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+async function submitInvOrder() {
+  if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
+  const { groups, unassigned } = invBuildOrderGroups(invWeekEnding);
+  const totalItems = Object.values(groups).reduce((n, rows) => n + rows.length, 0) + unassigned.length;
+  if(!totalItems) { showToast('Nothing needs ordering this week'); return; }
+  try {
+    const html = invBuildOrderEmailHTML(invWeekEnding, groups, unassigned, currentManagerName());
+    const payload = {
+      service_id: CL_REPORT_SERVICE_ID,
+      template_id: CL_REPORT_TEMPLATE_ID,
+      user_id: CL_REPORT_PUBLIC_KEY,
+      template_params: {
+        subject: `Weekly Order List — ${fmtCalDate(invWeekEnding)}`,
+        message: html,
+        to_email: INV_ORDER_EMAILS,
+      },
+    };
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    });
+    if(res.ok) { console.log('Weekly order email sent ✓'); showToast('Order list sent ✓'); }
+    else { console.warn('Order email failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not send the order email'); }
+  } catch(e) {
+    console.warn('Order email failed', e);
+    showToast('⚠ Could not send the order email');
   }
 }
 
