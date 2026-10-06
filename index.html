@@ -892,7 +892,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
           <option value="Low">Low</option>
         </select>
       </div>
-      <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="0" step="1" value="0"/></div>
+      <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="1" step="1" value="1"/></div>
     </div>
     <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
     <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="if-item-code" type="text"/></div>
@@ -8234,9 +8234,13 @@ function invRecommendedPar(item) {
   const avg = invRollingAvg4wk(item.id);
   if(avg === null) return null;
   const mult = INV_SAFETY[item.criticality] || INV_SAFETY.Medium;
-  let rec = Math.ceil(avg * mult);
-  if((item.criticality === 'High' || item.criticality === 'Medium') && avg > 0 && rec < 1) rec = 1;
-  return rec;
+  const rec = Math.ceil(avg * mult);
+  // Never recommend down to 0, regardless of criticality or how little
+  // usage has been observed — if it's worth tracking at all, it's worth
+  // keeping at least 1 on hand. (A par of 0 effectively means "don't
+  // bother stocking this," which contradicts the fact that it's on the
+  // list in the first place.)
+  return Math.max(1, rec);
 }
 
 // Data-quality flags computed from the FULL unclamped history (not the
@@ -8487,7 +8491,7 @@ function openInvItemForm(id) {
   document.getElementById('if-name').value = item ? item.name : '';
   document.getElementById('if-category').value = item ? (item.category || '') : '';
   document.getElementById('if-criticality').value = item ? item.criticality : 'Medium';
-  document.getElementById('if-par').value = item ? item.par : 0;
+  document.getElementById('if-par').value = item ? item.par : 1;
   document.getElementById('if-par-label').textContent = item && invIsCaseTracked(item) ? 'Case Par' : (item ? 'Par' : 'Starting Par');
   document.getElementById('if-batched').checked = !!(item && item.batched);
   document.getElementById('if-item-code').value = item ? (item.item_code || '') : '';
@@ -8498,11 +8502,15 @@ async function saveInvItem() {
   if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
   const name = document.getElementById('if-name').value.trim();
   if(!name) { showToast('Enter a name'); return; }
+  const par = parseFloat(document.getElementById('if-par').value);
+  // Policy: no tracked item keeps a 0 par — if it's not worth stocking at
+  // all, archive it instead of leaving it at 0.
+  if(isNaN(par) || par < 1) { showToast('Par must be at least 1 — archive the item instead if it shouldn\'t be stocked'); return; }
   const payload = {
     name,
     category: document.getElementById('if-category').value.trim() || null,
     criticality: document.getElementById('if-criticality').value,
-    par: parseFloat(document.getElementById('if-par').value) || 0,
+    par,
     batched: document.getElementById('if-batched').checked,
     item_code: document.getElementById('if-item-code').value.trim() || null,
   };
@@ -8607,7 +8615,7 @@ function openInvReviewModal() {
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
         <span style="font-size:12px;color:rgba(23,72,84,.5);">Current: ${it.par}</span>
         ${deltaHtml}
-        <input class="inv-count-input" id="inv-rev-par-${it.id}" type="number" min="0" step="1" value="${rec===null?it.par:rec}" style="width:56px;"/>
+        <input class="inv-count-input" id="inv-rev-par-${it.id}" type="number" min="1" step="1" value="${rec===null?it.par:rec}" style="width:56px;"/>
       </div>
     </div>`;
   }).join('') || '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">No active items to review.</div>';
@@ -8747,8 +8755,10 @@ async function approveInvReview() {
   items.forEach(it => {
     const input = document.getElementById('inv-rev-par-'+it.id);
     if(!input) return;
-    const newPar = parseFloat(input.value);
-    if(!isNaN(newPar) && newPar !== it.par) writes.push({ id: it.id, par: newPar });
+    let newPar = parseFloat(input.value);
+    if(isNaN(newPar)) return;
+    if(newPar < 1) newPar = 1; // no 0 pars — archive the item instead if it shouldn't be stocked
+    if(newPar !== it.par) writes.push({ id: it.id, par: newPar });
   });
   try {
     await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
