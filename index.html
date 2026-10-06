@@ -646,6 +646,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-edit-btn:hover{color:var(--teal);}
 .inv-par-val{cursor:pointer;border-bottom:1px dashed rgba(23,72,84,.3);}
 .inv-par-val:hover{color:var(--teal);border-bottom-color:var(--teal);}
+.inv-vendor-val{cursor:pointer;font-size:12.5px;color:rgba(23,72,84,.55);border-bottom:1px dashed rgba(23,72,84,.3);white-space:nowrap;}
+.inv-vendor-val:hover{color:var(--teal);border-bottom-color:var(--teal);}
+.inv-vendor-val.inv-vendor-unset{color:#c0491f;border-bottom-color:rgba(192,73,31,.4);font-weight:600;}
+.inv-vendor-val.inv-vendor-unset:hover{color:#a6420f;border-bottom-color:#a6420f;}
 .inv-spark{display:block;}
 .inv-spark .line{fill:none;stroke:rgba(23,72,84,.35);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
 .inv-spark .dot{fill:var(--amber);}
@@ -8344,7 +8348,7 @@ function renderInvSubTab() {
 
   let rows = '';
   catNames.forEach(cat => {
-    rows += `<tr class="inv-cat-head"><td colspan="8">${calEsc(cat)}</td></tr>`;
+    rows += `<tr class="inv-cat-head"><td colspan="9">${calEsc(cat)}</td></tr>`;
     cats[cat].sort((a,b) => a.name.localeCompare(b.name)).forEach(it => {
       const flags = invFlagsFor(it);
       const cnt = invCountFor(it.id, invWeekEnding);
@@ -8368,9 +8372,13 @@ function renderInvSubTab() {
         ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}"/>`
         : kegTracked ? dash
         : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}"/>`;
+      const vendorCell = it.vendor
+        ? `<span class="inv-vendor-val" title="Click to change the vendor" onclick="openInvItemForm(${it.id})">${calEsc(it.vendor)}</span>`
+        : `<span class="inv-vendor-val inv-vendor-unset" title="Click to set a vendor" onclick="openInvItemForm(${it.id})">+ Set vendor</span>`;
       rows += `<tr data-item-id="${it.id}" data-name="${calEsc(it.name).toLowerCase()}" data-needs-count="${needsCount}" data-flagged="${flags.length>0}">
         <td><span class="inv-pname">${calEsc(it.name)}</span>${flagsHtml}</td>
         <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
+        <td>${vendorCell}</td>
         <td class="num"><span class="inv-par-val" title="Click to override the par" onclick="openInvItemForm(${it.id})">${parLabel}</span></td>
         <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
         <td class="num">${unitsCell}</td>
@@ -8410,7 +8418,7 @@ function renderInvSubTab() {
     <div class="inv-table-wrap">
       <table class="inv-table">
         <thead><tr>
-          <th>Product</th><th>Criticality</th><th class="num">Par</th>
+          <th>Product</th><th>Criticality</th><th>Vendor</th><th class="num">Par</th>
           <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">Loose Units</th><th class="num">Order</th>
           <th>Trend</th><th></th>
         </tr></thead>
