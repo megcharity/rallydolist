@@ -627,6 +627,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-table thead th.num{text-align:right;}
 .inv-table tbody tr{border-bottom:1px solid rgba(23,72,84,.07);}
 .inv-table tbody tr.inv-cat-head td{padding:10px 12px 5px;border-bottom:none;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;color:#b87000;background:var(--cream);}
+.inv-table tbody tr.inv-section-head td{padding:14px 12px 4px;border-bottom:none;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--cream-dark);}
+.inv-table tbody tr.inv-section-head:first-child td{padding-top:4px;}
 .inv-table td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .inv-table td.num{text-align:right;}
 .inv-table .inv-pname{font-weight:700;color:var(--teal);}
@@ -2347,9 +2349,12 @@ function annIsFullyRead(id) {
   const mgrs = annRequiredManagers(a);
   return mgrs.length > 0 && mgrs.every(m => readers.has(m.name));
 }
-// Null/blank go_live_date means "live immediately" (matches rows from
-// before this field existed). A future date holds it back entirely —
-// invisible everywhere, not just excluded from sign-off — until that day.
+// go_live_date is purely informational now (2026-10-06) — it used to hide
+// the whole announcement until that date, which made posting ahead of a
+// known launch day (e.g. "Flights go live Oct 12") look like the save had
+// silently failed, since nothing appeared anywhere, even to the poster.
+// Announcements now show immediately; this just labels the card with
+// when the change actually takes effect.
 function annIsLive(a) { return !a.go_live_date || a.go_live_date <= getTodayStr(); }
 // "Resolved" = no longer needs attention — either every required manager
 // confirmed it naturally, or a manager force-closed it early (stale,
@@ -2364,13 +2369,13 @@ function annIsResolved(a) { return annIsFullyRead(a.id) || !!a.force_closed; }
 async function renderAnnouncementAlert() {
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
+  const active = announcements.filter(a => !annIsResolved(a));
   if(!active.length) { wrap.innerHTML = ''; return; }
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
 
 function renderAnnouncementViewBody() {
-  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
+  const active = announcements.filter(a => !annIsResolved(a));
   const me = currentManagerName();
   const body = document.getElementById('ann-view-body');
   if(!body) return;
@@ -2391,8 +2396,12 @@ function renderAnnouncementViewBody() {
         <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
         <button class="btn-sm" style="color:#c04020;border-color:rgba(220,80,60,.3);" onclick="forceCloseAnnouncement(${a.id})">⏹ Force Close</button>
       </div>` : '';
+    const goLiveHtml = a.go_live_date
+      ? `<div style="font-size:11.5px;font-weight:600;color:${annIsLive(a) ? 'var(--olive)' : '#b87000'};margin-bottom:6px;">📅 ${annIsLive(a) ? 'Live since' : 'Going live'} ${fmtCalDate(a.go_live_date)}</div>`
+      : '';
     return `<div class="ann-card">
       <div class="ann-title">${calEsc(a.title)}</div>
+      ${goLiveHtml}
       ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
       <div class="ann-roster">${roster}</div>
       ${actionHtml}
@@ -2498,7 +2507,7 @@ async function renderAnnouncementsArchiveTab() {
   const isCurrentWeek = alDateToYMD(weekStart) === alDateToYMD(alMondayOf(new Date()));
 
   const archived = announcements.filter(a => {
-    if(!annIsLive(a) || !annIsResolved(a)) return false;
+    if(!annIsResolved(a)) return false;
     const d = new Date(a.created_at);
     return d >= weekStart && d < new Date(weekEnd.getTime() + 86400000);
   });
@@ -2528,11 +2537,13 @@ async function renderAnnouncementsArchiveTab() {
         <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
         ${!naturallyRead ? `<button class="btn-sm" onclick="reopenAnnouncement(${a.id})">↺ Reopen</button>` : ''}
       </div>` : '';
+    const goLiveHtml = a.go_live_date ? `<div style="font-size:11px;font-weight:600;color:#b87000;margin-bottom:4px;">📅 Live ${fmtCalDate(a.go_live_date)}</div>` : '';
     return `<div class="ann-card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
         <div class="ann-title" style="margin-bottom:0;">${calEsc(a.title)}</div>
         <div style="font-size:11px;color:rgba(23,72,84,.4);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
       </div>
+      ${goLiveHtml}
       ${a.body ? `<div class="ann-body" style="margin-bottom:4px;">${calEsc(a.body)}</div>` : ''}
       ${statusHtml}
       ${mgrActionsHtml}
