@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 window.RALLY_SUPABASE_URL = 'https://dndnkvxefjgcufllkkpj.supabase.co';
 window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 </script>
-<script src="/shared/auth.js"></script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Rally Do List</title>
@@ -627,8 +625,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-table thead th.num{text-align:right;}
 .inv-table tbody tr{border-bottom:1px solid rgba(23,72,84,.07);}
 .inv-table tbody tr.inv-cat-head td{padding:10px 12px 5px;border-bottom:none;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;color:#b87000;background:var(--cream);}
-.inv-table tbody tr.inv-section-head td{padding:14px 12px 4px;border-bottom:none;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--cream-dark);}
-.inv-table tbody tr.inv-section-head:first-child td{padding-top:4px;}
 .inv-table td{padding:8px 12px;font-size:13px;vertical-align:middle;}
 .inv-table td.num{text-align:right;}
 .inv-table .inv-pname{font-weight:700;color:var(--teal);}
@@ -1191,7 +1187,7 @@ async function flushSave(){
       method:'POST',
       headers:{
         'apikey':SUPA_KEY,
-        'Authorization':`Bearer ${window.RallyAuth.token()}`,
+        'Authorization':`Bearer ${SUPA_KEY}`,
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
@@ -1217,7 +1213,7 @@ function restoreDates(d){
 async function loadTeam(){
   try{
     const res=await fetch(`${SUPA_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
     });
     const rows=await res.json();
     console.log('rally_team rows:', rows);
@@ -1252,7 +1248,7 @@ async function loadData(){
   try{
     // Load tasks/points from rally_state
     const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}
     });
     const rows=await res.json();
     if(rows&&rows[0]&&rows[0].data){
@@ -1278,7 +1274,7 @@ async function loadData(){
 setInterval(async()=>{
   if(isSaving||saveTimer)return;
   try{
-    const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+    const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${SUPA_KEY}`}});
     const rows=await res.json();
     if(rows&&rows[0]){
       const d=restoreDates(rows[0].data);
@@ -2007,7 +2003,7 @@ async function renderScorecard() {
 
   try {
     const res = await fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`,
-      {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
     const rows = await res.json();
 
     if(!Array.isArray(rows) || !rows.length) {
@@ -2127,7 +2123,7 @@ async function renderClPhotosReview() {
 
   try {
     const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_opening&signed_off_at=not.is.null&select=date,manager_name,photo_urls,signed_off_at&order=date.desc&limit=60`,
-      { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}` } });
+      { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
     const rows = (await res.json()).filter(r => Array.isArray(r.photo_urls) && r.photo_urls.length);
 
     if(!rows.length) {
@@ -2349,12 +2345,9 @@ function annIsFullyRead(id) {
   const mgrs = annRequiredManagers(a);
   return mgrs.length > 0 && mgrs.every(m => readers.has(m.name));
 }
-// go_live_date is purely informational now (2026-10-06) — it used to hide
-// the whole announcement until that date, which made posting ahead of a
-// known launch day (e.g. "Flights go live Oct 12") look like the save had
-// silently failed, since nothing appeared anywhere, even to the poster.
-// Announcements now show immediately; this just labels the card with
-// when the change actually takes effect.
+// Null/blank go_live_date means "live immediately" (matches rows from
+// before this field existed). A future date holds it back entirely —
+// invisible everywhere, not just excluded from sign-off — until that day.
 function annIsLive(a) { return !a.go_live_date || a.go_live_date <= getTodayStr(); }
 // "Resolved" = no longer needs attention — either every required manager
 // confirmed it naturally, or a manager force-closed it early (stale,
@@ -2369,13 +2362,13 @@ function annIsResolved(a) { return annIsFullyRead(a.id) || !!a.force_closed; }
 async function renderAnnouncementAlert() {
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  const active = announcements.filter(a => !annIsResolved(a));
+  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
   if(!active.length) { wrap.innerHTML = ''; return; }
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
 
 function renderAnnouncementViewBody() {
-  const active = announcements.filter(a => !annIsResolved(a));
+  const active = announcements.filter(a => annIsLive(a) && !annIsResolved(a));
   const me = currentManagerName();
   const body = document.getElementById('ann-view-body');
   if(!body) return;
@@ -2396,12 +2389,8 @@ function renderAnnouncementViewBody() {
         <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
         <button class="btn-sm" style="color:#c04020;border-color:rgba(220,80,60,.3);" onclick="forceCloseAnnouncement(${a.id})">⏹ Force Close</button>
       </div>` : '';
-    const goLiveHtml = a.go_live_date
-      ? `<div style="font-size:11.5px;font-weight:600;color:${annIsLive(a) ? 'var(--olive)' : '#b87000'};margin-bottom:6px;">📅 ${annIsLive(a) ? 'Live since' : 'Going live'} ${fmtCalDate(a.go_live_date)}</div>`
-      : '';
     return `<div class="ann-card">
       <div class="ann-title">${calEsc(a.title)}</div>
-      ${goLiveHtml}
       ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
       <div class="ann-roster">${roster}</div>
       ${actionHtml}
@@ -2507,7 +2496,7 @@ async function renderAnnouncementsArchiveTab() {
   const isCurrentWeek = alDateToYMD(weekStart) === alDateToYMD(alMondayOf(new Date()));
 
   const archived = announcements.filter(a => {
-    if(!annIsResolved(a)) return false;
+    if(!annIsLive(a) || !annIsResolved(a)) return false;
     const d = new Date(a.created_at);
     return d >= weekStart && d < new Date(weekEnd.getTime() + 86400000);
   });
@@ -2537,13 +2526,11 @@ async function renderAnnouncementsArchiveTab() {
         <button class="btn-sm" onclick="openAnnouncementForm(${a.id})">✏ Edit</button>
         ${!naturallyRead ? `<button class="btn-sm" onclick="reopenAnnouncement(${a.id})">↺ Reopen</button>` : ''}
       </div>` : '';
-    const goLiveHtml = a.go_live_date ? `<div style="font-size:11px;font-weight:600;color:#b87000;margin-bottom:4px;">📅 Live ${fmtCalDate(a.go_live_date)}</div>` : '';
     return `<div class="ann-card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
         <div class="ann-title" style="margin-bottom:0;">${calEsc(a.title)}</div>
         <div style="font-size:11px;color:rgba(23,72,84,.4);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
       </div>
-      ${goLiveHtml}
       ${a.body ? `<div class="ann-body" style="margin-bottom:4px;">${calEsc(a.body)}</div>` : ''}
       ${statusHtml}
       ${mgrActionsHtml}
@@ -2597,7 +2584,7 @@ const SR_SUPA = window.RALLY_SUPABASE_URL;
 const SR_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 const SR_HDRS = (extra={}) => ({
   'apikey': SR_KEY,
-  'Authorization': `Bearer ${window.RallyAuth.token()}`,
+  'Authorization': `Bearer ${SR_KEY}`,
   'Content-Type': 'application/json',
   'Prefer': 'return=minimal',
   ...extra
@@ -2620,7 +2607,7 @@ async function srLoadCompData() {
     const yest = new Date(d); yest.setDate(d.getDate()-1);
     const lw   = new Date(d); lw.setDate(d.getDate()-7);
     const fmt  = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-    const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`};
+    const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`};
     const [r1,r2] = await Promise.all([
       fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(yest)}&order=id.desc&limit=1`,{headers:hdrs}),
       fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(lw)}&order=id.desc&limit=1`,{headers:hdrs})
@@ -2717,12 +2704,12 @@ async function srSave(lockAM = false) {
   const managerName = u ? u.name : (srData.am_locked_by || 'Manager');
   srData._manager = managerName; // store inside data jsonb
   const payload = { date: reportDate, data: srData };
-  const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${window.RallyAuth.token()}`, 'Content-Type':'application/json' };
+  const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${SR_KEY}`, 'Content-Type':'application/json' };
   try {
     // If we don't have an ID, check if a record for this report's date already exists (another manager may have created it)
     if(!srRecordId) {
       const chk = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${reportDate}&select=id&order=id.desc&limit=1`,
-        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
       const existing = await chk.json();
       if(Array.isArray(existing) && existing[0]) srRecordId = existing[0].id;
     }
@@ -3119,7 +3106,7 @@ async function renderShiftReportForm() {
   try {
     // First try to find today's report
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
-      {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     console.log('SR load:', rows);
@@ -3144,7 +3131,7 @@ async function renderShiftReportForm() {
       let yRows = [];
       try {
         const yRes = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${yStr}&order=id.desc&limit=1`,
-          {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+          {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${SR_KEY}`}});
         if(yRes.ok) yRows = await yRes.json();
       } catch(e) { console.warn('SR yesterday check failed', e); }
 
@@ -3213,7 +3200,7 @@ let srTeamByPos = {}; // { Host: [{id,name},...], Bartender: [...], ... }
 async function loadSrTeam() {
   try {
     const res = await fetch(`${window.RALLY_SUPABASE_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role`,
-      {headers:{'apikey':window.RALLY_SUPABASE_ANON_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':window.RALLY_SUPABASE_ANON_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     const rows = await res.json();
     console.log('SR team loaded:', rows);
     srTeamByPos = {};
@@ -3877,7 +3864,7 @@ async function srLoadTrailingAvg() {
     const today  = getTodayStr();
     const res = await fetch(
       SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+cutoffStr+'&date=lt.'+today+'&select=date,data&order=date.desc',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} }
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
     );
     const rows = await res.json();
 
@@ -3940,7 +3927,7 @@ async function srPickerDateChanged(date) {
   try {
     const res = await fetch(
       SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&limit=1',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} }
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} }
     );
     const rows = await res.json();
     if(Array.isArray(rows) && rows[0]) {
@@ -3980,7 +3967,7 @@ async function srLoadReportForDate(date, recordId) {
     const url = recordId
       ? SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+recordId+'&select=id,date,data&limit=1'
       : SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&order=id.desc&limit=1';
-    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} });
+    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+SR_KEY} });
     const rows = await res.json();
     if(!Array.isArray(rows)||!rows[0]) {
       panel.innerHTML =
@@ -4153,12 +4140,6 @@ const STREAK_MASCOT_B64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGEAAAB
 // entirely (confirmed via direct API test), so this feature needed its own.
 const CL_REPORT_SERVICE_ID  = 'service_yuz9zab'; // same EmailJS service as shift report
 const CL_REPORT_TEMPLATE_ID = 'template_viym33v';
-// Dedicated template for inventory emails (par review + weekly order), split
-// off from CL_REPORT_TEMPLATE_ID on 2026-10-06 — that template was shared
-// with the daily checklist report and carried a hardcoded Cc (Kevin, Vic)
-// meant only for the checklist, which silently leaked onto every inventory
-// email too. "Rally Inventory" is a clean duplicate with that Cc cleared.
-const INV_REPORT_TEMPLATE_ID = 'template_mau6cu9';
 // Must match the emailjs.init(...) call in <head> — duplicated here because
 // sendBeacon() below calls EmailJS's REST endpoint directly instead of going
 // through the emailjs SDK, so it needs the public key as plain data.
@@ -5581,7 +5562,7 @@ async function loadClProgressCache() {
     // Fetch ALL today's records (signed off and in-progress)
     let url = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&select=shift,items,signed_off_at&order=created_at.desc`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
-    const res = await fetch(url, { headers: {'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`} });
+    const res = await fetch(url, { headers: {'apikey':KEY,'Authorization':`Bearer ${KEY}`} });
     const rows = await res.json();
     if(!Array.isArray(rows)) return;
     clProgressCache = {};
@@ -5695,7 +5676,7 @@ async function startChecklist(key) {
     let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${getTodayStr()}&order=id.desc&limit=1`;
     if(name) url += `&manager_name=eq.${encodeURIComponent(name)}`;
 
-    const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}` } });
+    const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${KEY}` } });
     const rows = await res.json();
 
     if(Array.isArray(rows) && rows[0] && rows[0].items) {
@@ -5711,6 +5692,30 @@ async function startChecklist(key) {
       }
     }
   } catch(e) { console.warn('Could not restore checklist progress', e); }
+
+  // Manager Opening closes for the day at 1pm if not yet signed off — this
+  // is what makes "missed" unambiguous for the closing-time penalty flow.
+  if(key === 'manager_opening' && !isSignedOff && new Date().getHours() >= 13) {
+    lockOpeningChecklist();
+  }
+}
+
+function lockOpeningChecklist() {
+  const body = document.getElementById('cl-items-body');
+  if(body) body.innerHTML = `<div style="padding:40px 20px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:10px;">🔒</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:#174854;margin-bottom:6px;">Morning checklist window has closed</div>
+    <div style="font-size:13px;color:rgba(23,72,84,.55);max-width:320px;margin:0 auto;">The Manager Opening checklist closes at 1pm each day. It wasn't signed off in time today — this will be flagged when Closing is signed off.</div>
+  </div>`;
+  const signoffBtn = document.querySelector('.cl-signoff-btn');
+  if(signoffBtn) {
+    signoffBtn.textContent = '🔒 Closed for Today';
+    signoffBtn.disabled = true;
+    signoffBtn.style.opacity = '0.5';
+    signoffBtn.style.cursor = 'default';
+  }
+  const banner = document.getElementById('cl-signedoff-banner');
+  if(banner) banner.style.display = 'none';
 }
 
 function renderChecklist(signedOff = false) {
@@ -6019,7 +6024,7 @@ async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = n
       `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist?shift=eq.${currentChecklistKey}&date=eq.${getTodayStr()}&manager_name=eq.${encodeURIComponent(personName)}&signed_off_at=is.null&select=id&limit=1`,
       { headers: {
         'apikey': window.RALLY_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${window.RallyAuth.token()}`
+        'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`
       }}
     );
     const rows = await existing.json();
@@ -6027,7 +6032,7 @@ async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = n
 
     const SUPA = `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist`;
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-    const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`,'Content-Type':'application/json','Prefer':'return=minimal' };
+    const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal' };
 
     if(existingId) {
       // Update existing row
@@ -6076,33 +6081,23 @@ function calcChecklistCompletion(shiftKey, state) {
   const items = ALL_CHECKLISTS[shiftKey] || [];
   let done = 0;
   const flagged = [];
-  // Subset of `flagged` that's an actual reported issue (a rate-type item
-  // marked "needs work") rather than just an unchecked/missed checkbox.
-  // Used to gate the checklist streak — see isPerfectDay/isPerfectToday —
-  // so a simply-missed item doesn't break it the way a real flagged
-  // problem does.
-  const flaggedIssues = [];
   const naNotes = [];
   items.forEach(item => {
     const s = state[item.id] || {};
     if (item.type === 'check') {
       // N/A counts as complete (a legitimately inapplicable item shouldn't
-      // read as incomplete) but is tracked separately so it can still be
-      // surfaced as context, not silently hidden.
+      // read as incomplete or cost the streak) but is tracked separately so
+      // it can still be surfaced as context, not silently hidden.
       if (s.done || s.na) done++;
       else flagged.push({ section: item.section, text: item.text });
       if (s.na) naNotes.push({ section: item.section, text: item.text, note: s.naNote || '' });
     } else if (item.type === 'rate') {
       if (s.rating) done++;
-      if (s.rating === 'needs') {
-        const entry = { section: item.section, text: item.text, detail: s.issue || '' };
-        flagged.push(entry);
-        flaggedIssues.push(entry);
-      }
+      if (s.rating === 'needs') flagged.push({ section: item.section, text: item.text, detail: s.issue || '' });
     }
   });
   const total = items.length;
-  return { total, done, pct: total ? Math.round(done/total*100) : 0, flagged, flaggedIssues, naNotes };
+  return { total, done, pct: total ? Math.round(done/total*100) : 0, flagged, naNotes };
 }
 
 // Fetches the most recent SIGNED-OFF row for a given shift+date, regardless
@@ -6209,7 +6204,7 @@ function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <div>
           <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:${labelColor};margin-bottom:4px;">${label}</div>
-          <div style="font-size:14px;font-weight:500;color:#174854;">${displayName || '—'}${shiftKey === 'manager_opening' ? '' : ' · signed off ' + fmtTime(row.signed_off_at)}</div>
+          <div style="font-size:14px;font-weight:500;color:#174854;">${displayName || '—'} · signed off ${fmtTime(row.signed_off_at)}</div>
         </div>
         <div style="font-size:20px;font-weight:800;font-family:Cormorant Garamond,serif;color:${calc.pct===100?'var(--olive)':'#174854'};">${calc.pct}%</div>
       </div>
@@ -6487,7 +6482,7 @@ function buildDailyChecklistReportHTML(dateStr, closingDateStr, openingRow, clos
   // short of perfect stays exactly as serious as the rest of the report.
   // A new streak record upgrades this to a bigger celebration; a broken
   // streak gets its own quieter, sadder note instead — never both at once.
-  const isPerfectDay = !!openingRow && !!closingRow && openingCalc.flaggedIssues.length === 0 && closingCalc.flaggedIssues.length === 0;
+  const isPerfectDay = !!openingRow && !!closingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
   const streakLine = streakInfo.current > 1 ? ` &nbsp;·&nbsp; Day ${streakInfo.current} of the streak` : '';
   let celebrationBanner = '';
   if (streakInfo.isNewRecord) {
@@ -6568,7 +6563,7 @@ async function sendDailyChecklistReport(dateStr, closingPenaltyExtraFields) {
   // correcting a mistake, or a retry) must not double-count the streak.
   const openingCalc = openingRow ? calcChecklistCompletion('manager_opening', openingRow.items || {}) : null;
   const closingCalc = closingRow ? calcChecklistCompletion('manager_closing', closingRow.items || {}) : null;
-  const isPerfectToday = !!openingRow && !!closingRow && openingCalc.flaggedIssues.length === 0 && closingCalc.flaggedIssues.length === 0;
+  const isPerfectToday = !!openingRow && !!closingRow && openingCalc.flagged.length === 0 && closingCalc.flagged.length === 0;
   let isNewRecord = false, streakBroken = false, brokenStreakLength = 0;
   if (checklistStreak.lastDate !== dateStr) {
     if (isPerfectToday) {
@@ -6707,7 +6702,7 @@ async function submitWalkthroughScore(closingManagerName, overallRating, closeNo
   if(!score) return;
   const SUPA = window.RALLY_SUPABASE_URL;
   const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
   const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === overallRating) || null;
@@ -6897,7 +6892,7 @@ async function signOffChecklist() {
       const SUPA = window.RALLY_SUPABASE_URL;
       const KEY  = window.RALLY_SUPABASE_ANON_KEY;
       const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name,items&order=signed_off_at.desc&limit=1`,
-        {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+        {headers:{'apikey':KEY,'Authorization':`Bearer ${KEY}`}});
       const rows = await res.json();
       const row = Array.isArray(rows) && rows[0];
       if(row) autoCloser = (row.items && row.items.mod_name) || row.manager_name || '';
@@ -7146,10 +7141,7 @@ function goBackToHub() {
 
 const CL_SUPA      = window.RALLY_SUPABASE_URL;
 const CL_SUPA_KEY  = window.RALLY_SUPABASE_ANON_KEY;
-// Function, not a static object — Authorization must be evaluated fresh on
-// each call so it always carries the current signed-in session's token,
-// not whatever RallyAuth.token() returned once at page-load time.
-function CL_HDRS() { return { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}`, 'Content-Type': 'application/json' }; }
+const CL_HDRS      = { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${CL_SUPA_KEY}`, 'Content-Type': 'application/json' };
 
 // Label map for display
 const CL_LABELS = {
@@ -7186,7 +7178,7 @@ const CL_LABELS = {
 async function loadChecklistConfig() {
   try {
     const res = await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config?id=eq.all_checklists&select=data`, {
-      headers: CL_HDRS()
+      headers: CL_HDRS
     });
     if (!res.ok) return;
     const rows = await res.json();
@@ -7206,7 +7198,7 @@ async function saveChecklistConfig() {
   try {
     await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config`, {
       method: 'POST',
-      headers: { ...CL_HDRS(), 'Prefer': 'resolution=merge-duplicates' },
+      headers: { ...CL_HDRS, 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({ id: 'all_checklists', data: ALL_CHECKLISTS, updated_at: new Date().toISOString() })
     });
   } catch(e) {
@@ -8754,7 +8746,7 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
     const html = invBuildReportHTML(changes, flaggedUnchanged, highlights, currentManagerName(), rangeLabel, items.length, subTabLabel);
     const payload = {
       service_id: CL_REPORT_SERVICE_ID,
-      template_id: INV_REPORT_TEMPLATE_ID,
+      template_id: CL_REPORT_TEMPLATE_ID,
       user_id: CL_REPORT_PUBLIC_KEY,
       template_params: {
         subject: `${subTabLabel} Inventory — 4-Week Par Review (${rangeLabel})`,
@@ -8871,10 +8863,10 @@ async function submitInvOrder() {
     const html = invBuildOrderEmailHTML(invWeekEnding, groups, unassigned, currentManagerName());
     const payload = {
       service_id: CL_REPORT_SERVICE_ID,
-      template_id: INV_REPORT_TEMPLATE_ID,
+      template_id: CL_REPORT_TEMPLATE_ID,
       user_id: CL_REPORT_PUBLIC_KEY,
       template_params: {
-        subject: `Rally Weekly Beverage Order - ${fmtCalDate(invWeekEnding)}`,
+        subject: `Weekly Order List — ${fmtCalDate(invWeekEnding)}`,
         message: html,
         to_email: INV_ORDER_EMAILS,
       },
