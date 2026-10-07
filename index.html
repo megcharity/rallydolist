@@ -8160,11 +8160,29 @@ const INV_REPORT_EMAILS = 'meg@rallypickleball.com,barrett@rallypickleball.com,m
 // Megan Charity, Murphy McConnell, Laura Fusato.
 const INV_ORDER_EMAILS = 'meg@rallypickleball.com,mmcconnell@rallypickleball.com,lfusato@rallypickleball.com';
 
-const INV_SAFETY = { High: 1.75, Medium: 1.4, Low: 1.1 };
+// Service-level Z-scores, by criticality — the standard-deviations-of-
+// safety-stock multiplier for a target stockout risk, replacing the old
+// flat "always carry 1.75x average" style buffer. Deliberately tuned LOW
+// (~80/70/60% service level, not the textbook 97.5/90/80%) — checked
+// against real Bar history on 2026-10-06: at textbook Z-values this
+// formula came out LOOSER than the old flat multiplier for most items
+// (small 4-week samples + naturally lumpy liquor usage mean stdev runs
+// nearly as large as the mean itself, so a "safe" Z blows the buffer up).
+// These lower values were the ones that came out tighter-or-equal to the
+// old formula for every item tested, which is what was actually asked
+// for — still scales each item's buffer to its OWN observed volatility
+// rather than an identical multiplier on the mean, just without padding
+// everything up in the process. Loosen these if stockouts start showing
+// up on genuinely high-criticality items.
+const INV_SERVICE_Z = { High: 0.84, Medium: 0.52, Low: 0.25 };
+// Weeks of coverage the par needs to span before the next delivery lands.
+// Fixed at 1 (the weekly order/count cadence) for now — would only need to
+// vary per item if a vendor's lead time genuinely exceeded a week.
+const INV_COVERAGE_WEEKS = 1;
 
 // Unclamped average usage (no floor-at-0) over the last N usable weeks, or
 // all of them if N is omitted — for trend narration (spike/drop detection),
-// NOT the par formula. invRollingAvg4wk() floors negatives because you
+// NOT the par formula. invRollingStats4wk() floors negatives because you
 // can't order a negative bottle count; here we want the real signed trend,
 // since a genuine negative usage week doesn't just get silently clamped
 // away from a "did consumption actually drop" read.
@@ -8173,7 +8191,7 @@ function invAvgUsageRaw(itemId, lastN) {
   const psize = invIsCaseTracked(item) ? invPackSize(item) : 1;
   const series = invWeeklyUsageSeries(itemId);
   // Slice to the last N chronological transitions FIRST, then drop nulls
-  // within that window — matches invRollingAvg4wk()'s order of operations.
+  // within that window — matches invRollingStats4wk()'s order of operations.
   // Filtering nulls before slicing would silently reach further back in
   // history to fill the window, which is a different (wrong) quantity.
   const windowed = lastN ? series.slice(-lastN) : series;
@@ -8237,29 +8255,40 @@ function invComputeHighlights(items) {
 // the last 4 have usable data. Floored at 0 per-week — a negative
 // reconstructed usage is count/data-entry noise (a recount, an un-logged
 // delivery), not real negative consumption, same rule validated in the
-// one-off analysis.
-function invRollingAvg4wk(itemId) {
+// one-off analysis. Returns both the mean AND the standard deviation of
+// that window — invRecommendedPar() uses the stdev to size each item's
+// safety stock to its OWN observed volatility, instead of a flat
+// multiplier applied the same way to every item in a criticality tier
+// regardless of how steady or spiky it actually sells. stdev is 0 (not
+// null) when there's only 1 usable data point — nothing to measure
+// variability from yet, so no safety buffer beyond the bare average until
+// more history exists.
+function invRollingStats4wk(itemId) {
   const item = invItems.find(i => i.id === itemId);
   const psize = invIsCaseTracked(item) ? invPackSize(item) : 1;
   const series = invWeeklyUsageSeries(itemId);
   const valid = series.filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
   const last4 = series.slice(-4).filter(s => s.usage !== null).map(s => Math.max(0, s.usage));
-  const basis = last4.length >= 2 ? last4 : valid;
-  if(!basis.length) return null;
   // Same unit conversion as invAvgUsageRaw() — this must return "par
   // units" (cases, or 1-for-1 for kegs/bottles) since invRecommendedPar()
-  // multiplies it straight through by the safety factor to get a new par.
-  return (basis.reduce((a,b) => a+b, 0) / basis.length) / psize;
+  // works entirely in those units.
+  const basis = (last4.length >= 2 ? last4 : valid).map(v => v / psize);
+  if(!basis.length) return null;
+  const avg = basis.reduce((a,b) => a+b, 0) / basis.length;
+  const variance = basis.length > 1
+    ? basis.reduce((a,b) => a + (b-avg)*(b-avg), 0) / (basis.length - 1)
+    : 0;
+  return { avg, stdev: Math.sqrt(variance), n: basis.length };
 }
 
 function invRecommendedPar(item) {
   // Kegs always keep one on tap — that's a rotation slot, not a usage-
   // computed quantity (there's no "order a fraction of a keg" concept).
   if(invIsKegTracked(item)) return 1;
-  const avg = invRollingAvg4wk(item.id);
-  if(avg === null) return null;
-  const mult = INV_SAFETY[item.criticality] || INV_SAFETY.Medium;
-  const rec = Math.ceil(avg * mult);
+  const stats = invRollingStats4wk(item.id);
+  if(stats === null) return null;
+  const z = INV_SERVICE_Z[item.criticality] || INV_SERVICE_Z.Medium;
+  const rec = Math.ceil(stats.avg * INV_COVERAGE_WEEKS + z * stats.stdev * Math.sqrt(INV_COVERAGE_WEEKS));
   // Never recommend down to 0, regardless of criticality or how little
   // usage has been observed — if it's worth tracking at all, it's worth
   // keeping at least 1 on hand. (A par of 0 effectively means "don't
