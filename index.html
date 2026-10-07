@@ -8808,62 +8808,65 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
   }
 }
 
-function invFmtQty(n) { return (Math.round(n * 10) / 10).toString(); }
-
 // Pulls this week's order quantities across BOTH sub-tabs (Bar + Beer &
-// Wine) — the order email is one weekly list, not per sub-tab — and groups
-// them by each item's vendor. Kegs are skipped: there's no "order a
-// fraction of a keg" concept, you swap the whole thing.
+// Wine) — the order email is one weekly list, not per sub-tab — and
+// groups them by section (Bar / Beer & Wine), vendor shown per row.
+// Order quantities are rounded to the nearest whole unit: you can't buy
+// 0.2 of a bottle, and a shortfall under half a unit isn't worth
+// ordering. Checked against the source spreadsheet (Rally_Henri Liquor
+// Order Guide) — its own Order Qty column is the same unrounded
+// MAX(Par-OnHand,0), so this app was already matching it exactly; it
+// just needed the final number rounded for an actual order, not the
+// underlying math changed. A row whose order rounds to 0 is dropped
+// entirely. Kegs are skipped: there's no "order a fraction of a keg"
+// concept, you swap the whole thing.
 function invBuildOrderGroups(weekEnding) {
   const items = invItems.filter(i => i.active && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
-  const groups = {};
-  const unassigned = [];
+  const sections = { bar: [], beerwine: [] };
   items.forEach(it => {
     if(invIsKegTracked(it)) return;
     const cnt = invCountFor(it.id, weekEnding);
-    if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
+    if(!cnt || typeof cnt.order_qty !== 'number') return;
+    const orderQty = Math.round(cnt.order_qty);
+    if(orderQty <= 0) return;
     const caseTracked = invIsCaseTracked(it);
-    const row = {
+    sections[it.sub_tab].push({
       name: it.name,
-      orderLabel: caseTracked ? `${invFmtQty(cnt.order_qty)} cs` : `${invFmtQty(cnt.order_qty)} btl`,
+      vendor: it.vendor || null,
+      orderLabel: caseTracked ? `${orderQty} cs` : `${orderQty} btl`,
       parLabel: caseTracked ? `${it.par} cs` : String(it.par),
       onHandLabel: caseTracked
         ? `${cnt.current_count || 0} cs${typeof cnt.secondary_count === 'number' ? ', ' + cnt.secondary_count + ' loose' : ''}`
         : (typeof cnt.current_count === 'number' ? String(cnt.current_count) : '—'),
-    };
-    if(it.vendor) (groups[it.vendor] = groups[it.vendor] || []).push(row);
-    else unassigned.push(row);
+    });
   });
-  return { groups, unassigned };
+  Object.values(sections).forEach(rows => rows.sort((a,b) => (a.vendor||'￿').localeCompare(b.vendor||'￿') || a.name.localeCompare(b.name)));
+  return sections;
 }
 
-function invBuildOrderEmailHTML(weekEnding, groups, unassigned, submittedBy) {
-  const vendorNames = Object.keys(groups).sort();
-  const totalItems = vendorNames.reduce((n, v) => n + groups[v].length, 0) + unassigned.length;
+function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
+  const totalItems = INV_SUBTABS.reduce((n, st) => n + sections[st].length, 0);
   const rowHtml = r => `
     <tr>
       <td style="padding:8px 0;font-size:13px;color:#174854;border-bottom:1px solid #e8e0d4;">${calEsc(r.name)}</td>
+      <td style="padding:8px 0;font-size:12.5px;color:${r.vendor ? '#4e622c' : '#c0491f'};border-bottom:1px solid #e8e0d4;">${r.vendor ? calEsc(r.vendor) : '⚠ not set'}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.parLabel)}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.onHandLabel)}</td>
       <td style="padding:8px 0;font-size:13px;font-weight:600;color:#174854;border-bottom:1px solid #e8e0d4;text-align:right;white-space:nowrap;">${calEsc(r.orderLabel)}</td>
     </tr>`;
-  const vendorSection = v => `
+  const sectionBlock = st => sections[st].length ? `
   <tr><td style="padding:20px 32px 0;">
-    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4e622c;margin-bottom:10px;">${calEsc(v)}</div>
+    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4e622c;margin-bottom:10px;">${calEsc(INV_SUBTAB_LABEL[st])}</div>
     <table width="100%" cellpadding="0" cellspacing="0">
-      <tr><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">On Hand</th><th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Order</th></tr>
-      ${groups[v].map(rowHtml).join('')}
+      <tr>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Vendor</th>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">On Hand</th>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Order</th>
+      </tr>
+      ${sections[st].map(rowHtml).join('')}
     </table>
-  </td></tr>`;
-  const unassignedSection = unassigned.length ? `
-  <tr><td style="padding:20px 32px 0;">
-    <div style="border:1.5px dashed #c04020;border-radius:8px;padding:14px 16px;">
-      <div style="font-size:12px;font-weight:600;color:#a6420f;margin-bottom:8px;">⚠ No vendor set</div>
-      <table width="100%" cellpadding="0" cellspacing="0">
-        ${unassigned.map(r => `<tr><td style="padding:4px 0;font-size:13px;color:#174854;">${calEsc(r.name)}</td><td style="padding:4px 0;font-size:13px;font-weight:600;color:#174854;text-align:right;">${calEsc(r.orderLabel)}</td></tr>`).join('')}
-      </table>
-      <div style="font-size:11.5px;color:#a6420f;margin-top:8px;">Add a vendor to these items in the Inventory tab so they're grouped correctly next week.</div>
-    </div>
   </td></tr>` : '';
 
   return `<!DOCTYPE html>
@@ -8880,11 +8883,10 @@ function invBuildOrderEmailHTML(weekEnding, groups, unassigned, submittedBy) {
   </td></tr>
 
   <tr><td style="padding:22px 32px 0;">
-    <div style="font-size:13px;color:#174854;line-height:1.6;">${totalItems} item${totalItems===1?'':'s'} need${totalItems===1?'s':''} ordering this week, grouped below by vendor — call it straight in from here.</div>
+    <div style="font-size:13px;color:#174854;line-height:1.6;">${totalItems} item${totalItems===1?'':'s'} need${totalItems===1?'s':''} ordering this week, by section — vendor's right there in the list.</div>
   </td></tr>
 
-  ${vendorNames.map(vendorSection).join('')}
-  ${unassignedSection}
+  ${INV_SUBTABS.map(sectionBlock).join('')}
 
   <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
     <div style="font-size:11px;color:#999;">Submitted via Rally Do List · <a href="https://rallydolist.netlify.app" style="color:#174854;">see the full sheet in the app</a></div>
@@ -8899,11 +8901,11 @@ function invBuildOrderEmailHTML(weekEnding, groups, unassigned, submittedBy) {
 
 async function submitInvOrder() {
   if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
-  const { groups, unassigned } = invBuildOrderGroups(invWeekEnding);
-  const totalItems = Object.values(groups).reduce((n, rows) => n + rows.length, 0) + unassigned.length;
+  const sections = invBuildOrderGroups(invWeekEnding);
+  const totalItems = INV_SUBTABS.reduce((n, st) => n + sections[st].length, 0);
   if(!totalItems) { showToast('Nothing needs ordering this week'); return; }
   try {
-    const html = invBuildOrderEmailHTML(invWeekEnding, groups, unassigned, currentManagerName());
+    const html = invBuildOrderEmailHTML(invWeekEnding, sections, currentManagerName());
     const payload = {
       service_id: CL_REPORT_SERVICE_ID,
       template_id: INV_REPORT_TEMPLATE_ID,
