@@ -3237,63 +3237,16 @@ async function loadSrTeam() {
   } catch(e) { console.warn('SR team load failed', e); }
 }
 
-function srMultiCheck(key, positions, locked) {
-  const seen = new Set();
-  const candidates = [];
-  (Array.isArray(positions) ? positions : [positions]).forEach(pos => {
-    (srTeamByPos[pos] || []).forEach(m => {
-      if(!seen.has(m.name)) { seen.add(m.name); candidates.push(m.name); }
-    });
-  });
-
-  const selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
-  if(locked) return `<div class="sr-locked-val">${selected.join(', ')||'—'}</div>`;
-
-  if(!candidates.length) {
-    return `<input class="sr-inp" placeholder="Type names..." value="${srGet(key)}" oninput="srSet('${key}',this.value)" />`;
-  }
-
-  const summary = selected.length ? selected.join(', ') : 'Select...';
-  return `<div class="sr-dd-wrap" id="srdd_${key}">
-    <div class="sr-dd-trigger" onclick="srToggleDD('${key}')">
-      <span class="sr-dd-summary" id="srdd_sum_${key}">${summary}</span>
-      <span class="sr-dd-arrow">▾</span>
-    </div>
-    <div class="sr-dd-list" id="srdd_list_${key}" style="display:none;">
-      ${candidates.map(name => `
-        <label class="sr-dd-item">
-          <input type="checkbox" ${selected.includes(name)?'checked':''} onchange="srDDToggle('${key}','${name}',this.checked)">
-          ${name}
-        </label>`).join('')}
-    </div>
-  </div>`;
+// Plain free-text field for every Team row (Host Desk, Café, Captain(s),
+// Team Lead, Swarmer, Bar) — replaced the old roster-dropdown picker,
+// which pulled candidates from the on-file team-by-position list and
+// preselected from it. Who actually worked a given shift (subs,
+// walk-ons) changes often enough that a fixed candidate list was more
+// friction than it saved.
+function srTextField(key, locked) {
+  if(locked) return `<div class="sr-locked-val">${srGet(key)||'—'}</div>`;
+  return `<input class="sr-inp" placeholder="Type names..." value="${srGet(key)}" oninput="srSet('${key}',this.value)" />`;
 }
-
-function srToggleDD(key) {
-  const list = document.getElementById('srdd_list_'+key);
-  if(!list) return;
-  // Close all other open dropdowns first
-  document.querySelectorAll('.sr-dd-list').forEach(l => {
-    if(l.id !== 'srdd_list_'+key) l.style.display = 'none';
-  });
-  list.style.display = list.style.display === 'none' ? 'block' : 'none';
-}
-
-function srDDToggle(key, name, checked) {
-  let selected = (srGet(key)||'').split(',').map(s=>s.trim()).filter(Boolean);
-  if(checked) { if(!selected.includes(name)) selected.push(name); }
-  else selected = selected.filter(n => n !== name);
-  srSet(key, selected.join(', '));
-  const sum = document.getElementById('srdd_sum_'+key);
-  if(sum) sum.textContent = selected.length ? selected.join(', ') : 'Select...';
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function(e) {
-  if(!e.target.closest('.sr-dd-wrap')) {
-    document.querySelectorAll('.sr-dd-list').forEach(l => l.style.display = 'none');
-  }
-});
 
 // ── PROGRAM / EVENTS HELPERS ────────────────────────────────────
 function srEventBlock(pfx, i, locked) {
@@ -3663,12 +3616,12 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${AL ? srProgramSection('am', true) : '<div id="am-prog-wrap">'+srProgramSection('am',false)+'</div>'}
 
       ${sec('AM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}${srMultiCheck('am_host_desk',['Host'],AL)}</div>`,
-              `<div>${lbl('Café')}${srMultiCheck('am_cafe',['Barista','Other'],AL)}</div>`)}
-      ${row2(`<div>${lbl('Captain(s)')}${srMultiCheck('am_captains',['Captain'],AL)}</div>`,
-              `<div>${lbl('Team Lead')}${srMultiCheck('am_team_lead',['Manager'],AL)}</div>`)}
-      ${row2(`<div>${lbl('Swarmer')}${srMultiCheck('am_swarmer',['Swarmer'],AL)}</div>`,
-              `<div>${lbl('Bar')}${srMultiCheck('am_bar',['Bartender'],AL)}</div>`)}
+      ${row2(`<div>${lbl('Host Desk')}${srTextField('am_host_desk',AL)}</div>`,
+              `<div>${lbl('Café')}${srTextField('am_cafe',AL)}</div>`)}
+      ${row2(`<div>${lbl('Captain(s)')}${srTextField('am_captains',AL)}</div>`,
+              `<div>${lbl('Team Lead')}${srTextField('am_team_lead',AL)}</div>`)}
+      ${row2(`<div>${lbl('Swarmer')}${srTextField('am_swarmer',AL)}</div>`,
+              `<div>${lbl('Bar')}${srTextField('am_bar',AL)}</div>`)}
       ${lbl('Staffing Adjustments')}${inp('am_staffing','Any cuts, callouts, adjustments...',undefined,AL)}
       ${lbl('Coaching & Feedback Notes')}${ta('am_coaching','Shoutouts, coaching conversations, corrections...',3,AL)}
 
@@ -3736,11 +3689,11 @@ function buildSrHTML(managerName, today, dayName, amLocked, pmSubmitted) {
       ${PL ? srProgramSection('pm', true) : '<div id="pm-prog-wrap">'+srProgramSection('pm',false)+'</div>'}
 
       ${sec('PM · TEAM')}
-      ${row2(`<div>${lbl('Host Desk')}${srMultiCheck('pm_host_desk',['Host'],PL)}</div>`,
-              `<div>${lbl('Captain(s)')}${srMultiCheck('pm_captains',['Captain'],PL)}</div>`)}
-      ${row2(`<div>${lbl('Team Lead')}${srMultiCheck('pm_team_lead',['Manager'],PL)}</div>`,
-              `<div>${lbl('Bar')}${srMultiCheck('pm_bar',['Bartender'],PL)}</div>`)}
-      ${row2(`<div>${lbl('Swarmer')}${srMultiCheck('pm_swarmer',['Swarmer'],PL)}</div>`,
+      ${row2(`<div>${lbl('Host Desk')}${srTextField('pm_host_desk',PL)}</div>`,
+              `<div>${lbl('Captain(s)')}${srTextField('pm_captains',PL)}</div>`)}
+      ${row2(`<div>${lbl('Team Lead')}${srTextField('pm_team_lead',PL)}</div>`,
+              `<div>${lbl('Bar')}${srTextField('pm_bar',PL)}</div>`)}
+      ${row2(`<div>${lbl('Swarmer')}${srTextField('pm_swarmer',PL)}</div>`,
               `<div>${lbl('Staffing Adjustments')}${inp('pm_staffing','Adjustments...',undefined,PL)}</div>`)}
       ${lbl('Coaching & Feedback Notes')}${ta('pm_coaching','Shoutouts, coaching conversations, corrections...',3,PL)}
 
