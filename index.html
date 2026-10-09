@@ -109,9 +109,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── NAV TABS ── */
 .nav-tabs{display:flex;background:var(--cream-dark);padding:0 16px;border-bottom:2px solid var(--border);}
-.nav-tab{padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(23,72,84,.45);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;letter-spacing:.02em;}
+.nav-tab{position:relative;padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(23,72,84,.45);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;letter-spacing:.02em;}
 .nav-tab:hover{color:var(--teal);}
 .nav-tab.active{color:var(--teal);font-weight:700;border-bottom-color:var(--teal);}
+.nav-dot{position:absolute;top:7px;right:5px;width:7px;height:7px;border-radius:50%;background:#c0491f;box-shadow:0 0 0 2px var(--cream-dark);}
 
 /* ── STATS STRIP ── */
 .stats-strip{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
@@ -302,6 +303,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .ov-asel{flex:1;padding:5px 8px;background:var(--cream);border:1px solid var(--border);border-radius:5px;color:var(--teal);font-family:'DM Sans',sans-serif;font-size:11px;outline:none;}
 .ov-abtn{background:rgba(23,72,84,.07);border:1px solid var(--border);border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--teal);cursor:pointer;}
 .ov-abtn:hover{background:rgba(23,72,84,.13);}
+.ov-complete-btn{background:rgba(78,98,44,.1);color:#4e622c;border-color:rgba(78,98,44,.3);flex-shrink:0;}
+.ov-complete-btn:hover{background:rgba(78,98,44,.2);}
 .ov-pts{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;color:var(--teal);}
 .roster-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
 .roster-row:last-child{border-bottom:none;}
@@ -1107,7 +1110,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
   <div class="nav-tabs" id="mgr-tabs">
-    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
+    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar<span class="nav-dot" id="cal-nav-dot" hidden></span></button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
@@ -1316,7 +1319,7 @@ function getMonday(){const d=new Date(),day=d.getDay(),m=new Date(d);m.setDate(d
 function checkWeeklyReset(){const t=getMonday();if(t>lastWeeklyReset){users.forEach(u=>{u.weeklyEffort=0;u.weeklyDeadline=0;});lastWeeklyReset=t;}}
 function getDBonus(dl){if(!dl)return 0;const ms=dl-now();if(ms<=0)return 50;const m=ms/60000;if(m>480)return 0;if(m>240)return Math.round(10*(1-(m-240)/240));if(m>60)return Math.round(10+20*((240-m)/180));if(m>15)return Math.round(30+15*((60-m)/45));return Math.round(45+5*((15-m)/15));}
 function dlStatus(dl){if(!dl)return null;const m=(dl-now())/60000;if(m<=0)return'overdue';if(m<=30)return'urgent';if(m<=90)return'warning';return'ok';}
-function fmtCd(dl){if(!dl)return null;const ms=dl-now();if(ms<=0)return'Overdue!';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);const t=dl.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}),today=new Date(),tom=new Date();tom.setDate(today.getDate()+1);const day=dl.toDateString()===today.toDateString()?'today':dl.toDateString()===tom.toDateString()?'tomorrow':dl.toLocaleDateString([],{weekday:'short'});if(ms<3600000)return`Due in ${m}m`;if(ms<7200000)return`Due ~${h}h${m>0?' '+m+'m':''}`;return`Due ${day} at ${t}`;}
+function fmtCd(dl){if(!dl)return null;const ms=dl-now();if(ms<=0)return'Overdue!';const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);if(ms<3600000)return`Due in ${m}m`;if(ms<7200000)return`Due ~${h}h${m>0?' '+m+'m':''}`;const dateLabel=dl.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'});return`Due ${dateLabel}`;}
 function hostTotal(u,mode){return mode==='weekly'?(u.weeklyEffort+u.weeklyDeadline):(u.effortPts+u.deadlinePts);}
 
 function computeLeaderboardPts() {
@@ -2366,9 +2369,14 @@ function annIsResolved(a) { return annIsFullyRead(a.id) || !!a.force_closed; }
 // roster, mark-as-read) lives in the modal opened by
 // openAnnouncementViewModal(), not rendered inline.
 async function renderAnnouncementAlert() {
+  const active = announcements.filter(a => !annIsResolved(a));
+  // Lives on the persistent top nav bar, not inside the Calendar hub itself —
+  // updated here unconditionally so it's visible (and stays visible) from
+  // any tab, not just whichever one happens to have ann-alert-wrap mounted.
+  const dot = document.getElementById('cal-nav-dot');
+  if(dot) dot.hidden = active.length === 0;
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  const active = announcements.filter(a => !annIsResolved(a));
   if(!active.length) { wrap.innerHTML = ''; return; }
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
@@ -4312,6 +4320,7 @@ function renderMgr(){
         <div class="ov-status ${dotCls}">${stTxt}</div>
         ${workersHTML(t)}
         ${!t.done?`<div class="ov-assign-row">
+          <button class="ov-abtn ov-complete-btn" onclick="mgrCompleteTask(${t.id})" title="Mark complete">✅ Done</button>
           <select class="ov-asel" id="ov-sel-${t.id}">
             <option value="">Assign to...</option>
             <option value="0">🔓 Unassign</option>
@@ -4553,6 +4562,7 @@ function renderMgrManagerTasks(){
         ${dueBadge}
         ${assigneeChip}
         <div class="ov-assign-row">
+          <button class="ov-abtn ov-complete-btn" onclick="mgrCompleteTask(${t.id})" title="Mark complete">✅ Done</button>
           <select class="ov-asel" id="ov-sel-${t.id}">
             <option value="">Assign to manager...</option>
             <option value="0">🔓 Unassign</option>
