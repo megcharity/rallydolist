@@ -112,7 +112,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .nav-tab{position:relative;padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:rgba(23,72,84,.45);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;letter-spacing:.02em;}
 .nav-tab:hover{color:var(--teal);}
 .nav-tab.active{color:var(--teal);font-weight:700;border-bottom-color:var(--teal);}
-.nav-dot{position:absolute;top:7px;right:5px;width:7px;height:7px;border-radius:50%;background:#c0491f;box-shadow:0 0 0 2px var(--cream-dark);}
+.nav-dot{position:absolute;top:3px;right:6px;width:7px;height:7px;border-radius:50%;background:#c0491f;box-shadow:0 0 0 2px var(--cream);}
 
 /* ── STATS STRIP ── */
 .stats-strip{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--border);}
@@ -574,7 +574,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     .sr-prog-block { background:rgba(23,72,84,.03); border:1px solid rgba(23,72,84,.08); border-radius:8px; padding:14px; margin-bottom:10px; }
 
   
-    .task-view-btn { padding:6px 18px; border:none; background:rgba(23,72,84,.06); color:rgba(23,72,84,.5); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+    .task-view-btn { position:relative; padding:6px 18px; border:none; background:rgba(23,72,84,.06); color:rgba(23,72,84,.5); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
     .task-view-btn:first-child { border-radius:7px 0 0 7px; }
     .task-view-btn:last-child  { border-radius:0 7px 7px 0; }
     .task-view-btn.active { background:#174854; color:#fff; }
@@ -1110,7 +1110,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
   <div class="nav-tabs" id="mgr-tabs">
-    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar<span class="nav-dot" id="cal-nav-dot" hidden></span></button>
+    <button class="nav-tab active" onclick="showMgrTab('calendar',this)">Calendar</button>
     <button class="nav-tab" onclick="showMgrTab('checklists',this)">Checklists ✓</button>
     <button class="nav-tab" onclick="showMgrTab('shiftreport',this)">Shift Report</button>
     <button class="nav-tab" onclick="showMgrTab('adminlog',this)">Admin Log</button>
@@ -1122,7 +1122,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <button id="task-view-active-btn" class="task-view-btn active" onclick="switchTaskView('active')">Associate Tasks</button>
       <button id="task-view-mgr-btn" class="task-view-btn" onclick="switchTaskView('manager')">Manager Tasks</button>
       <button id="task-view-done-btn" class="task-view-btn" onclick="switchTaskView('done')">Completed</button>
-      <button id="task-view-ann-btn" class="task-view-btn" onclick="switchTaskView('announcements')">Announcements</button>
+      <button id="task-view-ann-btn" class="task-view-btn" onclick="switchTaskView('announcements')">Announcements<span class="nav-dot" id="ann-nav-dot" hidden></span></button>
     </div>
     <div class="mgr-body" id="mgr-body"></div>
     <div class="mgr-body" id="mgr-manager-body" style="display:none;"></div>
@@ -2370,11 +2370,15 @@ function annIsResolved(a) { return annIsFullyRead(a.id) || !!a.force_closed; }
 // openAnnouncementViewModal(), not rendered inline.
 async function renderAnnouncementAlert() {
   const active = announcements.filter(a => !annIsResolved(a));
-  // Lives on the persistent top nav bar, not inside the Calendar hub itself —
-  // updated here unconditionally so it's visible (and stays visible) from
-  // any tab, not just whichever one happens to have ann-alert-wrap mounted.
-  const dot = document.getElementById('cal-nav-dot');
-  if(dot) dot.hidden = active.length === 0;
+  // "New" dot on the Announcements sub-tab (Tasks tab) — narrower than
+  // "unresolved": expires 24h after posting even if nobody's gotten to it,
+  // so it flags something that just landed rather than nagging forever
+  // about an old one nobody signed off on. The 📣 count badge below still
+  // covers the full unresolved list regardless of age.
+  const dayMs = 24*60*60*1000;
+  const isNew = active.some(a => (new Date() - new Date(a.created_at)) < dayMs);
+  const dot = document.getElementById('ann-nav-dot');
+  if(dot) dot.hidden = !isNew;
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
   if(!active.length) { wrap.innerHTML = ''; return; }
