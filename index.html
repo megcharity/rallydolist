@@ -624,7 +624,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-export-row .fg{min-width:150px;}
 .inv-table-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:12px;background:#fff;}
 .inv-table{width:100%;border-collapse:collapse;min-width:760px;}
-.inv-table thead th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(23,72,84,.4);font-weight:700;padding:10px 12px;border-bottom:1.5px solid var(--border);white-space:nowrap;}
+.inv-table thead th{position:sticky;top:0;z-index:2;background:#fff;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(23,72,84,.4);font-weight:700;padding:10px 12px;border-bottom:1.5px solid var(--border);white-space:nowrap;}
 .inv-table thead th.num{text-align:right;}
 .inv-table tbody tr{border-bottom:1px solid rgba(23,72,84,.07);}
 .inv-table tbody tr.inv-cat-head td{padding:10px 12px 5px;border-bottom:none;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;color:#b87000;background:var(--cream);}
@@ -894,7 +894,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="fg full"><label>Name</label><input id="if-name" type="text" placeholder="e.g. Hendrick's Gin"/></div>
     <div class="fg full"><label>Section</label>
       <select id="if-subtab">
-        <option value="bar">Bar</option>
+        <option value="bar">Liquor</option>
         <option value="beerwine">Beer &amp; Wine</option>
       </select>
     </div>
@@ -8068,7 +8068,7 @@ async function loadInventoryReviewState() {
 // invView itself only matters for the Par Review modal and the Add Item
 // form's default Section, each of which sets it explicitly before use.
 const INV_SUBTABS = ['bar', 'beerwine'];
-const INV_SUBTAB_LABEL = { bar: 'Bar', beerwine: 'Beer & Wine' };
+const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine' };
 function invToggleSection(st) {
   invSectionsOn[st] = !invSectionsOn[st];
   invApplyFilters();
@@ -8385,12 +8385,12 @@ function renderInvBeverages() {
         // remaining number, no order concept (you swap the whole keg).
         // Everything else: the original current + order-qty model.
         const unitsCell = caseTracked
-          ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}"/>`
+          ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()"/>`
           : dash;
         const orderCell = caseTracked
-          ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}"/>`
+          ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()"/>`
           : kegTracked ? dash
-          : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}"/>`;
+          : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}" oninput="invScheduleAutosave()"/>`;
         const vendorCell = it.vendor
           ? `<span class="inv-vendor-val" title="Click to change the vendor" onclick="openInvItemForm(${it.id})">${calEsc(it.vendor)}</span>`
           : `<span class="inv-vendor-val inv-vendor-unset" title="Click to set a vendor" onclick="openInvItemForm(${it.id})">+ Set vendor</span>`;
@@ -8423,7 +8423,7 @@ function renderInvBeverages() {
     <div class="inv-controls">
       <div class="inv-controls-left">
         <input class="inv-week-input" type="date" id="inv-week-input" value="${invWeekEnding}" onchange="invChangeWeek(this.value)"/>
-        <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Bar</button>
+        <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Liquor</button>
         <button class="inv-filter-btn ${invSectionsOn.beerwine?'on':''}" data-catfilter="beerwine" onclick="invToggleSection('beerwine')">Beer &amp; Wine</button>
         <button class="inv-filter-btn ${invStatusOn.needsCount?'on':''}" data-filter="needsCount" onclick="invToggleStatus('needsCount')">Needs Count</button>
         <button class="inv-filter-btn ${invStatusOn.flagged?'on':''}" data-filter="flagged" onclick="invToggleStatus('flagged')">Flagged</button>
@@ -8446,9 +8446,10 @@ function renderInvBeverages() {
         <tbody>${rows}</tbody>
       </table>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <button class="inv-save-btn" onclick="saveInvCounts()">Save This Week's Counts</button>
       <button class="inv-save-btn" style="background:var(--olive);" onclick="submitInvOrder()">📦 Submit Order</button>
+      <span id="inv-autosave-status" style="font-size:11.5px;color:rgba(23,72,84,.45);"></span>
     </div>
   </div>`;
 
@@ -8469,7 +8470,10 @@ function invOnCountInput(itemId) {
   const ordInput = document.getElementById('inv-order-'+itemId);
   if(!ordInput) return; // kegs have no order field at all
   const cur = parseFloat(curInput.value);
-  if(!isNaN(cur) && item) ordInput.value = Math.max(0, item.par - cur);
+  // Always rounds UP — you can't order 0.8 of a bottle, and being short by
+  // any amount (even 0.2) still means a whole unit is needed, not none.
+  if(!isNaN(cur) && item) ordInput.value = Math.max(0, Math.ceil(item.par - cur));
+  invScheduleAutosave();
 }
 
 function invChangeWeek(val) { invWeekEnding = val; renderInvBeverages(); }
@@ -8504,7 +8508,12 @@ function invApplyFilters() {
   });
 }
 
-async function saveInvCounts() {
+// Shared by the manual Save button and the silent autosave below — reads
+// whatever's currently in the DOM inputs, regardless of which rows are
+// hidden by the active filters (filtering only hides rows, never removes
+// them), so neither save path ever misses a row the manager already typed
+// into just because it's scrolled off or filtered out right now.
+function invCollectCountWrites() {
   const rows = document.querySelectorAll(`#inv-beverages-body tbody tr[data-item-id]`);
   const writes = [];
   rows.forEach(r => {
@@ -8518,6 +8527,11 @@ async function saveInvCounts() {
     if(cur === null && sec === null && ord === null) return;
     writes.push({ item_id: itemId, week_ending: invWeekEnding, current_count: cur, secondary_count: sec, order_qty: ord, created_by: currentManagerName() });
   });
+  return writes;
+}
+
+async function saveInvCounts() {
+  const writes = invCollectCountWrites();
   if(!writes.length) { showToast('Nothing to save'); return; }
   try {
     await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
@@ -8531,6 +8545,39 @@ async function saveInvCounts() {
   } catch(e) {
     console.warn('Inventory count save failed', e);
     showToast('⚠ Save failed — check connection');
+  }
+}
+
+// Autosave: a manager filling in a 40-item sheet shouldn't lose everything
+// by switching tabs or getting interrupted mid-count. Debounced 1.5s after
+// the last keystroke so it isn't firing on every character, and silent
+// (a small status line, not a toast) so it doesn't nag through a long
+// counting session the way the manual Save button's toast reasonably can.
+// Deliberately skips loadInventoryCounts()/renderInvBeverages() — a full
+// table rebuild mid-keystroke would blow away focus and cursor position
+// in whatever field the manager is still typing into; the DOM already
+// holds the just-saved values, so there's nothing a re-render would add.
+let invAutosaveTimer = null;
+function invScheduleAutosave() {
+  if(invAutosaveTimer) clearTimeout(invAutosaveTimer);
+  invAutosaveTimer = setTimeout(invAutosaveNow, 1500);
+}
+async function invAutosaveNow() {
+  const writes = invCollectCountWrites();
+  if(!writes.length) return;
+  const status = document.getElementById('inv-autosave-status');
+  try {
+    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
+      method: 'POST',
+      headers: { ...INV_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(writes),
+    });
+    invCounts = invCounts.filter(c => !writes.some(w => w.item_id === c.item_id && w.week_ending === c.week_ending));
+    invCounts.push(...writes);
+    if(status) status.textContent = `Autosaved ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
+  } catch(e) {
+    console.warn('Inventory autosave failed', e);
+    if(status) status.textContent = '⚠ Autosave failed — check connection';
   }
 }
 
@@ -8807,24 +8854,22 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
 // Pulls this week's order quantities across BOTH sub-tabs (Bar + Beer &
 // Wine) — the order email is one weekly list, not per sub-tab — and
 // groups them by section (Bar / Beer & Wine), vendor shown per row.
-// Order quantities are rounded to the nearest whole unit: you can't buy
-// 0.2 of a bottle, and a shortfall under half a unit isn't worth
-// ordering. Checked against the source spreadsheet (Rally_Henri Liquor
-// Order Guide) — its own Order Qty column is the same unrounded
-// MAX(Par-OnHand,0), so this app was already matching it exactly; it
-// just needed the final number rounded for an actual order, not the
-// underlying math changed. A row whose order rounds to 0 is dropped
-// entirely. Kegs are skipped: there's no "order a fraction of a keg"
-// concept, you swap the whole thing.
+// Order quantities always round UP: you can't buy 0.8 of a bottle, and
+// being short by any amount — even 0.2 — still means a whole unit is
+// needed, not none, so this can never round down to 0 on a genuine
+// shortfall (matches invOnCountInput's live auto-fill in the counting
+// sheet, which now rounds the same way at entry time, not just here at
+// email time). Only an order_qty that's already <=0 (on-hand at or above
+// par) is dropped. Kegs are skipped: there's no "order a fraction of a
+// keg" concept, you swap the whole thing.
 function invBuildOrderGroups(weekEnding) {
   const items = invItems.filter(i => i.active && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
   const sections = { bar: [], beerwine: [] };
   items.forEach(it => {
     if(invIsKegTracked(it)) return;
     const cnt = invCountFor(it.id, weekEnding);
-    if(!cnt || typeof cnt.order_qty !== 'number') return;
-    const orderQty = Math.round(cnt.order_qty);
-    if(orderQty <= 0) return;
+    if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
+    const orderQty = Math.ceil(cnt.order_qty);
     const caseTracked = invIsCaseTracked(it);
     sections[it.sub_tab].push({
       name: it.name,
