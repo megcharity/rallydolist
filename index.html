@@ -8345,6 +8345,14 @@ function invDaysUntilReview(subTab = invView) {
 function renderInvBeverages() {
   const body = document.getElementById('inv-beverages-body');
   if(!body) return;
+  // Flush any edit still waiting on the debounce before the rebuild below
+  // replaces these input elements — otherwise a manager who switched away
+  // and back to Inventory inside the 1.5s window would see their own
+  // just-typed number silently reverted to whatever was last saved.
+  // invFlushAutosave() captures the DOM values synchronously before this
+  // function's own synchronous code continues, so this is safe to call
+  // without awaiting it here.
+  invFlushAutosave();
   if(!invWeekEnding) invWeekEnding = getTodayStr();
 
   const bannerHtml = INV_SUBTABS.map(st => {
@@ -8385,12 +8393,12 @@ function renderInvBeverages() {
         // remaining number, no order concept (you swap the whole keg).
         // Everything else: the original current + order-qty model.
         const unitsCell = caseTracked
-          ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()"/>`
+          ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : dash;
         const orderCell = caseTracked
-          ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()"/>`
+          ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : kegTracked ? dash
-          : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}" oninput="invScheduleAutosave()"/>`;
+          : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`;
         const vendorCell = it.vendor
           ? `<span class="inv-vendor-val" title="Click to change the vendor" onclick="openInvItemForm(${it.id})">${calEsc(it.vendor)}</span>`
           : `<span class="inv-vendor-val inv-vendor-unset" title="Click to set a vendor" onclick="openInvItemForm(${it.id})">+ Set vendor</span>`;
@@ -8399,7 +8407,7 @@ function renderInvBeverages() {
           <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
           <td>${vendorCell}</td>
           <td class="num"><span class="inv-par-val" title="Click to override the par" onclick="openInvItemForm(${it.id})">${parLabel}</span></td>
-          <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})"/></td>
+          <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})" onblur="invFlushAutosave()"/></td>
           <td class="num">${unitsCell}</td>
           <td class="num">${orderCell}</td>
           <td>${invSparkline(it.id)}</td>
@@ -8549,26 +8557,51 @@ async function saveInvCounts() {
 }
 
 // Autosave: a manager filling in a 40-item sheet shouldn't lose everything
-// by switching tabs or getting interrupted mid-count. Debounced 1.5s after
-// the last keystroke so it isn't firing on every character, and silent
-// (a small status line, not a toast) so it doesn't nag through a long
-// counting session the way the manual Save button's toast reasonably can.
-// Deliberately skips loadInventoryCounts()/renderInvBeverages() — a full
-// table rebuild mid-keystroke would blow away focus and cursor position
-// in whatever field the manager is still typing into; the DOM already
-// holds the just-saved values, so there's nothing a re-render would add.
+// by switching tabs or getting interrupted mid-count. A real report of
+// exactly that (numbers typed in, gone when checked later) showed the
+// first version — debounce only, nothing else — wasn't enough: if the
+// manager navigated away, backgrounded the app, or closed the tab within
+// the 1.5s debounce window, the save simply never fired. This version
+// adds three more triggers so there's no gap a manager can fall through:
+//   - onblur on every field (below) — fires the moment focus leaves a
+//     field, i.e. the instant they tab/click to the next one, not just
+//     after a pause.
+//   - visibilitychange + beforeunload (bottom of this block) — catches
+//     backgrounding the app or closing the tab outright.
+//   - renderInvBeverages() flushes any pending save before it rebuilds
+//     the table, so switching away and back to Inventory before the
+//     debounce fires can't silently overwrite an unsaved edit with
+//     stale data the way it could before.
+// Silent (a small status line, not a toast) so it doesn't nag through a
+// long counting session the way the manual Save button's toast can.
 let invAutosaveTimer = null;
 function invScheduleAutosave() {
   if(invAutosaveTimer) clearTimeout(invAutosaveTimer);
   invAutosaveTimer = setTimeout(invAutosaveNow, 1500);
 }
+// Cancels any pending debounce and saves right now instead — used
+// wherever the manager might be about to leave the field/page/tab, so
+// nothing is left waiting on a timer that may never get to fire.
+function invFlushAutosave() {
+  if(invAutosaveTimer) { clearTimeout(invAutosaveTimer); invAutosaveTimer = null; }
+  invAutosaveNow();
+}
 async function invAutosaveNow() {
+  invAutosaveTimer = null;
+  // Reads the DOM synchronously, before the first await below — safe to
+  // call even from a visibilitychange/unload handler or right before a
+  // re-render replaces these inputs, since the values are already
+  // captured into a plain array by the time anything else can run.
   const writes = invCollectCountWrites();
   if(!writes.length) return;
   const status = document.getElementById('inv-autosave-status');
   try {
+    // keepalive lets this finish even if the tab is being closed right
+    // now (the same reason the daily checklist report send uses it) —
+    // these writes are a handful of small rows, nowhere near its 64KB cap.
     await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
       method: 'POST',
+      keepalive: true,
       headers: { ...INV_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify(writes),
     });
@@ -8580,6 +8613,8 @@ async function invAutosaveNow() {
     if(status) status.textContent = '⚠ Autosave failed — check connection';
   }
 }
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') invFlushAutosave(); });
+window.addEventListener('beforeunload', invFlushAutosave);
 
 function openInvItemForm(id) {
   if(!isGM()) return;
