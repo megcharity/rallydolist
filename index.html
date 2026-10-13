@@ -8542,11 +8542,26 @@ async function saveInvCounts() {
   const writes = invCollectCountWrites();
   if(!writes.length) { showToast('Nothing to save'); return; }
   try {
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
+    // on_conflict=item_id,week_ending is mandatory here, not optional —
+    // without it, resolution=merge-duplicates has nothing telling it WHICH
+    // unique constraint to merge against, so PostgREST falls back to a
+    // plain insert. The first save for a given item+week succeeds; every
+    // save after that (autosave resends the WHOLE sheet, not just the
+    // field that changed) collides with the row that already exists and
+    // gets rejected outright — confirmed directly against the DB causing
+    // real data loss (2026-10-13): only the very first item a manager
+    // touched ever actually saved, everything after it silently failed.
+    // res.ok is checked for the same reason — fetch() does NOT throw on
+    // a 4xx/5xx response, only on a network-level failure, so without
+    // this check a rejected write still fell through to the success
+    // toast and a reload that then showed the stale (pre-edit) state,
+    // which is exactly what looked like "it cleared out."
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts?on_conflict=item_id,week_ending`, {
       method: 'POST',
       headers: { ...INV_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify(writes),
     });
+    if(!res.ok) throw new Error(`${res.status} ${await res.text().catch(()=>'')}`);
     await loadInventoryCounts();
     renderInvBeverages();
     showToast(`Saved ${writes.length} count${writes.length===1?'':'s'} ✓`);
@@ -8596,15 +8611,24 @@ async function invAutosaveNow() {
   if(!writes.length) return;
   const status = document.getElementById('inv-autosave-status');
   try {
+    // on_conflict=item_id,week_ending is mandatory — see the long comment
+    // on the same line in saveInvCounts() for why. This is the function
+    // that actually caused the real data loss on 2026-10-13: autosave
+    // resends the WHOLE sheet on every call (invCollectCountWrites()
+    // reads every row with a value, not just the field that just blurred),
+    // so the second item a manager touched already collided with the
+    // first item's row and silently failed the entire batch — and kept
+    // failing from there on, each "Autosaved ✓" status line a lie.
     // keepalive lets this finish even if the tab is being closed right
     // now (the same reason the daily checklist report send uses it) —
     // these writes are a handful of small rows, nowhere near its 64KB cap.
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts`, {
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts?on_conflict=item_id,week_ending`, {
       method: 'POST',
       keepalive: true,
       headers: { ...INV_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify(writes),
     });
+    if(!res.ok) throw new Error(`${res.status} ${await res.text().catch(()=>'')}`);
     invCounts = invCounts.filter(c => !writes.some(w => w.item_id === c.item_id && w.week_ending === c.week_ending));
     invCounts.push(...writes);
     if(status) status.textContent = `Autosaved ${new Date().toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}`;
