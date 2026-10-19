@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Opportunity Hospitality</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 2 of 12 · Opportunity Hospitality</div>
+        <h1 style="margin-top:12px">Opportunity<br><em>Hospitality</em></h1>
+        <p>Every regular started with a first visit. Not every guest walks through the door the same way, so your job is to read who's in front of you and set your team up to meet each guest exactly where they are.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 150 160" width="140" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 70 Q24 22 76 18 Q128 22 138 70 Q126 62 112 70 Q100 60 86 70 Q76 60 64 70 Q52 60 40 70 Q28 62 14 70Z" fill="#fffdf8"/><path d="M76 18 Q60 40 64 70 M76 18 Q92 40 86 70 M76 18 V150"/><path d="M40 70 Q44 44 76 18 M112 70 Q108 44 76 18"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>Every guest in front of you is an opportunity to build the Rally community. Treat every single one like they could become your best regular, because they could.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>Five guest <em>types</em></h3><ul><li>First-time players</li><li>Out-of-town guests</li><li>Event guests</li><li>Programming guests</li><li>Members</li></ul></div><div><h3>Running the <em>shift</em></h3><ul><li>Coaching and redirecting all shift long</li><li>Owning guest satisfaction and recovery</li><li>Planning ahead and watching performance</li></ul></div><div><h3>The opportunity <em>mindset</em></h3><ul><li>Relationships, not transactions</li><li>Converting visits into regulars</li><li>Extra care for solo guests</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Five guest <em>types</em></h2><p>Five types of guest, five opportunities. Each one needs something different.</p></div></div>
+      <div class="cards"><div class="card"><div class="num">01</div><h3>First-time players</h3><p class="tl">Win them over for life, starting right now.</p><ul><li>Identify them early (<i>“Is this your first time at Rally?”</i>) and make a warm, big deal of it</li><li>Walk them through check-in, how courts are set up, how RallyTrack works, and where the café and bar are</li><li>Share programming, events and memberships without overwhelming them</li><li>Check in mid-visit more than you would with a regular</li><li>Warm send-off, plus something worth coming back for</li></ul></div><div class="card"><div class="num">02</div><h3>Out-of-town guests</h3><p class="tl">Make Rally part of their Charlotte story.</p><ul><li>Acknowledge it: <i>“Welcome to Rally and to Charlotte!”</i></li><li>Take a genuine interest in where they're from and what brought them here</li><li>Be their concierge: restaurants, things to do, places to see</li><li>Don't assume they'll figure it out. Walk them through everything</li><li>Send them off with a reason to come back next time they're in town</li></ul></div><div class="card"><div class="num">03</div><h3>Event guests</h3><p class="tl">Turn a one-time visit into a lasting relationship.</p><ul><li>Review the BEO ahead of time: group size, timeline, special requests and point of contact, and brief your team</li><li>Greet and orient them right away: where they are, what's available, how the event will run</li><li>Welcome them as individuals, not just as part of a group</li><li>Look for moments to share programming, memberships and upcoming events</li><li>If someone is having a great time, find out what they'd come back for</li><li>Have programming cards and membership info on hand</li></ul></div><div class="card"><div class="num">04</div><h3>Programming guests</h3><p class="tl">On-court and off-court. Guide them in.</p><ul><li>Know the day's program and activation schedule: format, length, guest count, what's included, what to bring</li><li>Confirm the instructor or host is set up and ready, and the host desk knows what's running</li><li>Greet them at the host desk, by name if possible</li><li>Explain how the program works: what to expect, how long, what's provided</li><li>Walk them to the court or activation space. Don't just point</li><li>Solo? Introduce them to the group or instructor before you leave</li><li>Check in midway through</li></ul></div><div class="card"><div class="num">05</div><h3>Members</h3><p class="tl">They've invested in Rally. Honor that every visit.</p><ul><li>Know their names, preferences, usual order and schedule</li><li>Greet them like you've been expecting them</li><li>A simple <i>“great to see you again”</i> goes further than you think</li><li>They should hear about new programming and events first</li><li>When something goes wrong for a member, move faster and care more</li></ul></div></div><div class="note"><b>Consistency is everything with members.</b> They've been here enough to know what great looks like, and they notice when the standard slips more than any other guest.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Your job as <em>manager</em></h2><p>When you're on duty, you own how the whole shift performs: your people, your guests, your standards, your sales.</p></div></div>
+      <ol class="steps c2"><li><b>Coach the whole shift</b>Teaching the menu and standards isn't enough. Observe, redirect, recognize and give feedback in the moment, all shift long. In downtime, decide what needs attention (bar clean? syrups prepped? guest areas ready?) and set the team's priorities yourself.</li><li><b>Own guest satisfaction</b>Connect with every guest throughout the shift: introduce yourself, welcome them, thank them for coming. Every complaint goes to a manager, never left for an associate. Step in, listen, resolve it, and make sure they leave taken care of.</li><li><b>Drive business performance</b>Watch whether the team is selling and spotting opportunities all shift, not just maintaining what's already working. Keep asking what could be better and where you're leaving business on the table.</li><li><b>Plan ahead</b>Strong shifts start before they begin. Look at reservations, programming, events, staffing and pressure points, and build a plan so you're ahead of problems instead of reacting to them.</li></ol><div class="alert"><b>Zoom out.</b> When you're the manager on duty, think about the business as a whole, and take responsibility for how all of it is performing.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>Rally Presentation</b>: how we look, move, speak and care for the space.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Identify a first-timer and walk them through the full Rally experience.", "Review the court schedule and BEOs at the start of the shift and brief the host desk.", "Introduce a solo programming guest to the group or instructor.", "Greet a member by name and share something new that's coming up.", "Act as a local concierge for an out-of-town guest.", "Share programming or membership info with an event guest who's having a great time."];
+var OUTCOMES=["Name the five guest types and what each one needs.", "Prepare my team before programs and events arrive.", "Give solo guests extra care.", "Protect the member standard.", "Treat every guest as a potential regular."];
+var SCEN=[{"q": "A corporate group of 40 arrives for an event, and most have never heard of Rally. How do you and your team approach it?", "pts": ["Review the BEO in advance and brief the team.", "Greet and orient the group immediately.", "Welcome people as individuals, not a crowd.", "Look for moments to share programming, memberships and events.", "Have cards ready, and ask the people having a great time what they'd come back for."], "listen": "The conversion mindset: every event guest is a potential regular."}, {"q": "A guest arrives alone for a beginner clinic and looks nervous. What happens next?", "pts": ["Greet them warmly, by name if you can.", "Explain how the clinic works and how long it runs.", "Walk them to the court.", "Introduce them to the instructor or another guest before you leave.", "Check in midway through."], "listen": "Walking them there (not pointing) and making an introduction."}, {"q": "A longtime member's court wasn't ready on time, and they're annoyed. How do you handle it?", "pts": ["Move faster and care more. They're watching how we respond.", "Acknowledge it and take ownership.", "Fix it right away.", "Follow up later in their visit."], "listen": "Urgency and ownership, plus a follow-up."}, {"q": "A couple tells your bartender they're visiting from Denver. What does a great interaction look like?", "pts": ["“Welcome to Rally and to Charlotte!”", "Ask what brought them here.", "Offer local recommendations.", "Make sure they get the full Rally walkthrough.", "Send them off with a reason to come back."], "listen": "The buzz effect: they'll tell people back home."}, {"q": "What do you check at the start of every shift so your team is ready for programming guests?", "pts": ["Court schedule and BEOs: every program and activation.", "Format, length, guest count, what's included, what to bring.", "Instructor or host is set up.", "Host desk is briefed."], "listen": "Prep happens before guests arrive, not when they're at the desk."}];
+var KEYNAME="rally-mgr-opportunity-hospitality-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

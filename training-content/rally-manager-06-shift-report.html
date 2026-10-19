@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · The Shift Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 6 of 12 · The Shift Report</div>
+        <h1 style="margin-top:12px">The Shift<br><em>Report</em></h1>
+        <p>The shift report is Rally's record of what happens every day. It gives the whole leadership team visibility, whether or not they were on shift. A well-written report takes 10 minutes and tells the full story of the shift.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 130 160" width="120" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="22" width="90" height="126" rx="8" fill="#fffdf8"/><path d="M46 16 H84 V32 H46Z" fill="#174854"/><path d="M36 56 L42 62 L52 50 M60 57 H94 M36 84 L42 90 L52 78 M60 85 H94 M36 112 H52 M60 113 H88"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>Write it like someone who wasn’t there needs to understand the shift. Because they do.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>The <em>standards</em></h3><ul><li>Own your block</li><li>No blank fields</li><li>Coaching &amp; feedback</li><li>Specific notes</li></ul></div><div><h3>Events <em>& comps</em></h3><ul><li>POC feedback in person</li><li>Documenting every comp</li><li>Open % rules</li></ul></div><div><h3>Sending <em>it</em></h3><ul><li>Submitting the full report</li><li>The email sends itself</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>How to complete it <em>right</em></h2></div></div>
+      <div class="cards"><div class="card"><h3>Own your <em>block</em></h3><ul><li>The AM manager completes the AM section before their shift ends</li><li>The PM manager completes the PM section at close</li><li>Neither waits for the other, and neither leaves without it done</li></ul></div><div class="card"><h3>No blank <em>fields</em></h3><ul><li>If a field doesn't apply, write <b>N/A</b></li><li>A blank field looks like something was missed. N/A means it was considered and intentionally skipped</li></ul></div><div class="card"><h3>Coaching <em>& feedback</em></h3><p class="tl">Never blank.</p><ul><li>If you're on the floor, you're coaching</li><li>Smooth shift? Recognize great work. Something slipped? Address it</li><li>No coaching moment by the end of the shift? Create one: find something to celebrate and something to sharpen</li></ul></div><div class="card"><h3>Specific <em>notes</em></h3><p class="tl">“Good shift” tells no one anything.</p><ul><li><b>Programming and activations:</b> what worked, what didn't, how guests responded</li><li><b>Player and captain feedback</b> worth passing up</li><li><b>Operational issues:</b> equipment, service gaps, anything that affected guests</li><li><b>Wins:</b> standout team members and great guest moments</li></ul></div></div><div class="alert"><b>If it's not documented, it didn't happen.</b> A coaching conversation that isn't written down can't be referenced if a pattern develops later.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Event <em>feedback</em></h2><p>For every event that ran on your shift, connect with the POC <b>in person</b> before they leave. Not by text or email afterward.</p></div></div>
+      <div class="callout"><span class='label'>Ask every POC</span><ul><li>“What did you enjoy most tonight?”</li><li>“What's one thing we could improve for next time?”</li><li>“Would you come back, and is there anything that would make it an easy yes?”</li></ul></div><div class="note">Fill in the Events section <b>immediately</b>, while it's fresh. The Director of Sales reviews this section, so write it accordingly. <b>Couldn't find the POC?</b> Note it in the report and follow up by phone or email the next morning.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Comps <em>& discounts</em></h2><p>Document every comp and discount on the shift with a note: <b>who, why, and who approved it.</b></p></div></div>
+      <div class="compare"><div><span class="label">Every comp</span><ul><li>Who received it</li><li>Why</li><li>Who approved it</li></ul></div><div><span class="label">Every open % use</span><ul><li>The guest or check it was applied to</li><li>The reason</li><li>The percentage</li><li>The authorizing manager's name</li></ul></div></div><div class="alert"><b>No undocumented open % discounts.</b> If it's in the Toast report and not in your shift report notes, you will be asked about it.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Sending <em>it</em></h2><p>Hitting Submit Full Report is the last thing the closing manager does before locking up. The report emails itself the moment you submit it.</p></div></div>
+      <ol class="duties"><li><div><b>Finalize the full shift report</b>Every field complete, with N/A where it doesn't apply, including your Positive and Negative Comps totals pulled from Toast.</div></li><li><div><b>Hit Submit Full Report</b>The system sends the recap to the Ops Managers, F&amp;B Director, Sales Director and Exec Chef automatically. No screenshot, no PDF, no email to compose.</div></li><li><div><b>Need to fix something after you submit?</b>Edit the report and use Resend Email to send the corrected version.</div></li></ol><div class="note"><b>The standard doesn't change based on how busy the shift was.</b> A hard night is more reason to document, not less.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>Private Events</b>: the operations standards that make every event match what was sold.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Complete your AM or PM block before leaving, with no blank fields.", "Write a specific coaching and feedback note.", "Get event feedback from a POC in person and fill in the Events section right away.", "Document every comp and any open % use correctly, with the right totals in the Comps fields.", "Submit the full report before lock-up and confirm it sent."];
+var OUTCOMES=["Explain why the shift report matters.", "Complete my block with no blank fields.", "Write coaching and notes that are specific.", "Collect and record event POC feedback.", "Document comps and open % uses.", "Submit the full report and confirm the email sent."];
+var SCEN=[{"q": "It was a slow Tuesday and nothing happened. What goes in the coaching and feedback field?", "pts": ["It's never blank.", "Recognize something specific someone did well.", "If there was no coaching moment, create one during the shift.", "Name names and be specific."], "listen": "Never blank, and specific."}, {"q": "Rewrite this note: “Good shift, event went well.”", "pts": ["Name the event, the guest count and what worked.", "Include POC feedback (what they enjoyed, what to improve, would they return).", "Note any operational issues.", "Call out standout team members by name."], "listen": "Detail someone who wasn't there could act on."}, {"q": "You used open % to take 20% off a birthday table's check. What do you record?", "pts": ["The guest or check it was applied to.", "The reason (birthday).", "The percentage (20%).", "The authorizing manager's name."], "listen": "All four details. It will show up in the Toast report."}, {"q": "The event POC left before you could find them. What now?", "pts": ["Note it in the shift report.", "Follow up by phone or email the next morning."], "listen": "Documenting the miss and the follow-up."}, {"q": "Walk through your last 15 minutes before lock-up.", "pts": ["Finish the PM block with no blank fields.", "Pull your Comps & Discounts totals from Toast and enter them in the report.", "Hit Submit Full Report.", "Confirm it sent to the Ops Managers, F&B Director, Sales Director and Exec Chef.", "Then lock up."], "listen": "Submitting before lock-up, not just finishing the fields."}];
+var KEYNAME="rally-mgr-shift-report-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

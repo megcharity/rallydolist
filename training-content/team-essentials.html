@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Essentials</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Hanken+Grotesk:wght@400;500;600;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#174854;--olive:#4e622c;--orange:#f89a1c;--cream:#fbf6ed;--coral:#f58664;--sage:#cee4cf;--paper:#fffdf8;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--navy);font:16px/1.6 'Hanken Grotesk',Arial,sans-serif;}
+.page{max-width:760px;margin:0 auto;padding:28px 20px 80px;}
+.eyebrow{font-family:'Gochi Hand',cursive;font-size:20px;color:var(--orange);margin:0 0 4px;}
+h1{font-family:'Instrument Serif',Georgia,serif;font-size:40px;font-weight:400;margin:0 0 6px;line-height:1.05;}
+.byline{font-size:13px;color:rgba(23,72,84,.6);margin-bottom:28px;}
+.intro{font-size:17px;background:var(--sage);border-radius:10px;padding:16px 18px;margin-bottom:28px;}
+h2{font-family:'Instrument Serif',Georgia,serif;font-size:27px;font-weight:400;color:var(--olive);margin:38px 0 14px;border-bottom:2px solid var(--sage);padding-bottom:8px;}
+h3{font-size:15px;font-weight:700;margin:20px 0 8px;}
+details.sec{border:2px solid var(--sage);border-radius:10px;margin-bottom:14px;background:var(--paper);}
+details.sec summary{list-style:none;cursor:pointer;padding:16px 18px;font-family:'Instrument Serif',Georgia,serif;font-size:24px;font-weight:400;color:var(--olive);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+details.sec summary::-webkit-details-marker{display:none;}
+details.sec summary::after{content:'+';font-family:'Hanken Grotesk',Arial,sans-serif;font-size:22px;font-weight:700;color:var(--orange);flex:none;}
+details.sec[open] summary{border-bottom:2px solid var(--sage);}
+details.sec[open] summary::after{content:'–';}
+details.sec .sec-body{padding:4px 18px 18px;}
+details.sec .sec-body>*:first-child{margin-top:0;}
+details.sec .sec-body h3:first-child{margin-top:0;}
+p{margin:0 0 14px;}
+a{color:var(--navy);text-decoration:underline;}
+table{width:100%;border-collapse:collapse;margin:10px 0 20px;font-size:14px;}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid rgba(23,72,84,.15);vertical-align:top;}
+th{background:var(--cream);font-weight:700;}
+ul,ol{margin:0 0 16px;padding-left:22px;}
+li{margin-bottom:6px;}
+.callout{border-left:5px solid var(--orange);background:var(--cream);padding:12px 16px;margin:0 0 18px;border-radius:0 8px 8px 0;}
+.a-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0 0;}
+@media(min-width:600px){.a-grid{grid-template-columns:repeat(4,1fr);}}
+.a-card{background:var(--sage);border-radius:10px;padding:14px 12px;cursor:pointer;min-height:84px;}
+.a-card .a-big{font-family:'Instrument Serif',Georgia,serif;font-size:2.4rem;line-height:1;color:var(--navy);display:block;}
+.a-card .a-word{font-weight:600;font-size:14px;margin-top:2px;}
+.a-card .a-back{display:none;}
+.a-card.open .a-front{display:none;}
+.a-card.open .a-back{display:block;}
+.a-card.open{background:var(--navy);color:var(--cream);}
+.a-card.open .a-big{color:var(--cream);font-size:1.6rem;}
+.a-card .a-back p{margin:6px 0 0;font-size:13px;}
+.a-card .tap{display:block;margin-top:8px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.6;}
+.checklist{list-style:none;padding:0;margin:0 0 20px;}
+.checklist li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(23,72,84,.1);}
+.checklist input{margin-top:3px;width:16px;height:16px;accent-color:var(--olive);}
+.signoff{display:flex;gap:24px;flex-wrap:wrap;margin-top:28px;font-size:14px;}
+.signoff div{flex:1;min-width:180px;border-top:1px solid var(--navy);padding-top:6px;}
+@media print{
+  details.sec summary::after{display:none;}
+  .a-card .a-front{display:none;}
+  .a-card .a-back{display:block;}
+  .a-card .tap{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">Core Training</div>
+  <h1>Team Essentials</h1>
+
+  <div class="intro">Every guest is every team member's responsibility, and we take care of their needs before they ask.</div>
+
+  <p style="font-size:13px;color:rgba(23,72,84,.6);margin:-6px 0 18px;">Tap each section below to open it.</p>
+
+  <details class="sec" open>
+    <summary>Who we are</summary>
+    <div class="sec-body">
+  <p>Rally is a catalyst for connection — pickleball, elevated food and craft drinks. Our tone: confident, warm and a little playful. Never cheesy or stuffy.</p>
+
+  <h3>Our six core values</h3>
+  <table>
+    <tr><th>Value</th><th>What it looks like on the floor</th></tr>
+    <tr><td>Assume Positive Intent</td><td>Give each other the benefit of the doubt — empathy and understanding over suspicion and defensiveness</td></tr>
+    <tr><td>Ask Bold Questions</td><td>Stay curious, suggest ideas, challenge the status quo — the "why" matters as much as the "what"</td></tr>
+    <tr><td>Long Term Thinking</td><td>No shortcuts; build trust through time, patience and consistency</td></tr>
+    <tr><td>Fire in the Belly</td><td>Solve problems with creativity, passion and grit — go the extra mile</td></tr>
+    <tr><td>Quick to Laugh</td><td>Serious about success, not too serious; celebrate the small stuff</td></tr>
+    <tr><td>Experience Obsessed</td><td>Go above and beyond to delight guests and teammates — notice what people need before they ask</td></tr>
+  </table>
+  <p style="font-size:13px;color:rgba(23,72,84,.65);margin-top:-10px;">Magic Moments — small, unexpected acts that anticipate needs — is one of five Operating Principles in <em>The Rally Way</em>, along with See/Do, What Gets Measured Gets Done, The Details Matter and Productive Disagreement.</p>
+
+  <p><strong>You're always "on stage."</strong> From the moment you walk in wearing your uniform to the last guest leaving, you represent Rally. No gossip about the business or teammates where guests can hear.</p>
+
+  <h3>Grooming basics</h3>
+  <ul>
+    <li>Clean, ironed, well-fitted uniform</li>
+    <li>Clean, slip-resistant shoes</li>
+    <li>Hair at shoulder length or longer: tied up</li>
+    <li>No cologne or perfume · minimal jewelry</li>
+    <li>Clean nails — unchipped polish only</li>
+  </ul>
+  <p>A smile and eye contact are part of the uniform too.</p>
+
+  <h3>Know the venue</h3>
+  <p>Guests will ask about any zone — learn them all:</p>
+  <ul>
+    <li>Front Desk — check-in, merch, gift cards</li>
+    <li>8 courts (4 indoor, 4 outdoor), each with a lounge for up to 10</li>
+    <li>South Lounge · The Garden · Café · Scratch Pizza Bar · 101 Bar</li>
+  </ul>
+  <p>Seating is first come, first served — except the court lounges.</p>
+
+  <h3>Our sister restaurant, Henrietta's</h3>
+  <p>Next door at 117 Southside Drive. A contemporary neighborhood bistro by Chef Andres Kaifer of Customshop. Open Mon–Sat 5–10pm, Sun 4–8pm. Unlike Rally, they take reservations — send guests who want a booked dinner there. Private dining: (980) 501-0866, <a href="https://www.henriettasclt.com/" target="_blank">henriettasclt.com</a>.</p>
+
+      </div>
+  </details>
+
+  <details class="sec">
+    <summary>How we serve</summary>
+    <div class="sec-body">
+  <p>Rally service is professional but casual, conversational rather than scripted, and built on six points: hospitality, presentation, knowledge, teamwork, critical thinking and technical proficiency.</p>
+
+  <div class="callout"><strong>The Two-Foot Rule.</strong> Acknowledge every guest within two feet of you with eye contact, energy and a smile. Mid-task? Pause, smile and say "I'll be right with you!" They are guests, never "customers."</div>
+
+  <h3>The non-negotiables</h3>
+  <ol>
+    <li>Start and finish every interaction with a smile.</li>
+    <li>Use names — guests' and teammates'.</li>
+    <li>Never, ever interrupt. Approach silently, wait for acknowledgement; if needed, rest a hand on the table and wait for eye contact.</li>
+    <li>Manicure the table before you leave it: remove anything no longer needed.</li>
+    <li>Say hello while giving guests the right of way.</li>
+    <li>Guests never hear talk about the business or your personal life.</li>
+  </ol>
+  <p><strong>Also expected:</strong></p>
+  <ul>
+    <li>Never leave a guest with a flat "no" — offer an alternative</li>
+    <li>Escort guests partway ("let me show you the way"), point with your whole hand</li>
+    <li>Don't announce your next move ("I'll ring that in and be right back")</li>
+    <li>Never sit, kneel, lean or crouch at a table</li>
+    <li>Let guests offer a handshake — don't initiate one</li>
+  </ul>
+
+  <h3>Say this, not that</h3>
+  <table>
+    <tr><th>Moment</th><th>Say</th><th>Avoid</th></tr>
+    <tr><td>Greeting</td><td>"Good evening, welcome to Rally — is this your first time with us?"</td><td>"Hey guys," "Hi y'all"</td></tr>
+    <tr><td>Taking the order</td><td>"May I answer any questions about the menu?"</td><td>"What are we drinking?" "Ready yet?"</td></tr>
+    <tr><td>Responding to a request</td><td>"Certainly." "Right away."</td><td>"Yeah," "Okay," "No problem"</td></tr>
+    <tr><td>Quality check</td><td>"How is your pizza?" (name the dish)</td><td>"Is everything okay?"</td></tr>
+    <tr><td>Clearing</td><td>"Are you still enjoying your pizza?"</td><td>"Still working on that?"</td></tr>
+    <tr><td>Farewell</td><td>"Thank you for joining us — hope to see you soon."</td><td>"Thanks, bye-bye"</td></tr>
+  </table>
+  <p style="font-size:14px;color:rgba(23,72,84,.65);">These are guidelines, not a script. Read the table and mirror it: a date night, a business happy hour and a group of first-time birthday players each want a different pace.</p>
+
+  <h3>Teamwork and the 3 C's</h3>
+  <p>Every guest is everyone's guest. If food is up, run it; if a table is dirty, clear it; if a guest flags you, help or find the answer.</p>
+  <ul>
+    <li><strong>Communicate:</strong> can't do it yourself? Hand it off clearly so nothing slips.</li>
+    <li><strong>Circulate:</strong> keep moving, look for one need at every table, never congregate with teammates on the floor.</li>
+    <li><strong>Consolidate:</strong> never walk empty-handed — take dirties in, bring food or supplies out.</li>
+  </ul>
+  <div class="callout">
+    <strong>The five critical moments</strong> — when guests want service fastest
+    <ol>
+      <li>They sit down → drink</li>
+      <li>A course finishes → manicure and crumb the table</li>
+      <li>A drink gets low → refill</li>
+      <li>Food arrives and something's missing → quality check</li>
+      <li>It's time to go → payment</li>
+    </ol>
+  </div>
+
+      </div>
+  </details>
+
+  <details class="sec">
+    <summary>Sequence of service and time standards</summary>
+    <div class="sec-body">
+  <p>Every tab starts with a pre-authorized card, before the first order goes in.</p>
+  <p><strong>Step one: pre-authorize a card.</strong> QR orders: Toast handles this automatically. Handheld orders: get a card and pre-authorize before ringing anything in. Either way, the guest can still close out on that card or pay another way at the end.</p>
+  <p><strong>Ordering with Toast Mobile Order & Pay.</strong> Every court, table and bar seat has a QR code — guests scan, order and can add to the same tab as their group. Mirror the guest: if they prefer traditional service, take the order on a handheld with a physical menu. Captains and Bartenders can split checks. At every hand-off, pass along allergies, preferences and the occasion.</p>
+
+  <h3>Time standards — fast, but the guest should never feel rushed</h3>
+  <table>
+    <tr><th>Step</th><th>Target</th></tr>
+    <tr><td>Greet</td><td>Immediately, within 1 min</td></tr>
+    <tr><td>Drinks</td><td>Under 4 min</td></tr>
+    <tr><td>Snacks and shareables</td><td>5–7 min</td></tr>
+    <tr><td>Pizzas</td><td>8–10 min</td></tr>
+    <tr><td>Desserts</td><td>8 min</td></tr>
+    <tr><td>Salads, bowls, handhelds</td><td>9 min</td></tr>
+    <tr><td>Boards</td><td>10–12 min</td></tr>
+    <tr><td>Quality check</td><td>After 2 min or 2 bites</td></tr>
+    <tr><td>Bus a table</td><td>1 min or less</td></tr>
+    <tr><td>Court turnover</td><td>2 min or less</td></tr>
+  </table>
+
+  <h3>Technical basics to practice</h3>
+  <ul>
+    <li><strong>Glassware:</strong> hold by the bottom third or the stem, never near the rim; more than two drinks always goes on a tray. Place on the guest's right; water goes farthest right. Coasters with the first round. Never serve in a warm glass.</li>
+    <li><strong>Plates:</strong> carry three at most, by the edge, no "butterfly" carries. Serve from the left, clear from the right, at hip level — never "helicopter" over a guest. Hot plates for hot food, cold for cold.</li>
+    <li><strong>Clearing:</strong> ask the guest if it's okay to clear their empty dishes. Never stack plates on or over the table. Crumb onto a plate, never the floor.</li>
+    <li><strong>Leftovers:</strong> bring boxes to the table; box for the guest only if they ask.</li>
+  </ul>
+
+      </div>
+  </details>
+
+  <details class="sec">
+    <summary>Alcohol, complaints and safety</summary>
+    <div class="sec-body">
+  <p>These are the rules with legal or safety consequences — no judgment calls here, and always loop in the manager on duty (MOD).</p>
+  <p><strong>Responsible alcohol service.</strong> It is illegal to serve a minor or an intoxicated person, and you can be held personally responsible.</p>
+  <ul>
+    <li><strong>Check ID</strong> for anyone who looks under 30; no valid photo ID proving 21+, no alcohol. Decline politely and without judgment.</li>
+    <li><strong>Track consumption</strong> for each guest, and remember they may have been drinking elsewhere.</li>
+    <li><strong>Watch for signs:</strong> slurred speech, glassy eyes, stumbling or spilling, loud or abusive talk, sudden mood swings. Don't mistake a loud personality or a medical issue (diabetes, stroke) for intoxication.</li>
+    <li><strong>Cutting someone off:</strong> stop serving, tell the MOD and your teammates so the guest can't order elsewhere. Approach privately and kindly, offer food and non-alcoholic drinks, and don't argue. The MOD will back you up.</li>
+    <li><strong>If it escalates:</strong> never physically detain a guest; bring a teammate if they're threatening; call the police if needed. Arrange an Uber or Lyft and strongly discourage driving.</li>
+  </ul>
+
+  <div class="callout" style="padding:16px 18px 20px;">
+    <strong>Guest complaints: the four A's — tap each one</strong>
+    <div class="a-grid">
+      <div class="a-card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="a-front"><span class="a-big">A</span><div class="a-word">Apologize</div><span class="tap">Tap to reveal</span></div>
+        <div class="a-back"><span class="a-big">A</span><div class="a-word">Apologize</div><p>For how it affected them, even if it wasn't our fault. No excuses, no blame.</p><span class="tap">Tap to flip back</span></div>
+      </div>
+      <div class="a-card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="a-front"><span class="a-big">A</span><div class="a-word">Acknowledge</div><span class="tap">Tap to reveal</span></div>
+        <div class="a-back"><span class="a-big">A</span><div class="a-word">Acknowledge</div><p>Show you understand: if the guest feels there's a problem, there is one.</p><span class="tap">Tap to flip back</span></div>
+      </div>
+      <div class="a-card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="a-front"><span class="a-big">A</span><div class="a-word">Act</div><span class="tap">Tap to reveal</span></div>
+        <div class="a-back"><span class="a-big">A</span><div class="a-word">Act</div><p>Tell a manager, fix it quickly, and loop in anyone who needs to know.</p><span class="tap">Tap to flip back</span></div>
+      </div>
+      <div class="a-card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="a-front"><span class="a-big">A</span><div class="a-word">Assess</div><span class="tap">Tap to reveal</span></div>
+        <div class="a-back"><span class="a-big">A</span><div class="a-word">Assess</div><p>Go back to the guest. Do they feel taken care of now?</p><span class="tap">Tap to flip back</span></div>
+      </div>
+    </div>
+    <p style="margin:12px 0 0">Notify the MOD immediately about every guest issue, big or small.</p>
+  </div>
+  <p><strong>Exception — food poisoning or illness claims.</strong> Do not apologize for the cause. Say only "I'm sorry to hear you aren't feeling well," and connect them with the General Manager. Never say anything that sounds like Rally accepts fault.</p>
+
+  <h3>Health and safety</h3>
+  <ul>
+    <li>Sick? Tell your manager immediately and try to find coverage; a doctor's note is required.</li>
+    <li>Wash your hands any time you enter a restroom, touch your face, cough or sneeze.</li>
+    <li>Note any allergy or dislike a guest mentions and carry it through their whole visit.</li>
+    <li>Report any pest sighting to a manager immediately.</li>
+    <li>On court: never interrupt a rally. If a ball rolls onto another court mid-game, call "Ball" — don't retrieve it yourself. Anyone can call "Let" to stop play for a safety issue.</li>
+  </ul>
+
+      </div>
+  </details>
+
+  <details class="sec">
+    <summary>Pickleball and court basics</summary>
+    <div class="sec-body">
+  <p>Every team member should be able to explain the game and how to book — guests ask constantly, and "I don't know" is the worst answer we can give.</p>
+  <ul>
+    <li><strong>The game:</strong> a mix of tennis, badminton and ping-pong, played singles or doubles with a paddle and a plastic ball. Traditional scoring goes to 11 and only the serving team scores; rally scoring goes to 21 and every rally scores. Win by 2 either way.</li>
+    <li><strong>Three rules guests ask about most:</strong> the serve is underhand, hit below the waist, diagonally past the kitchen line. The serve and the return must each bounce before anyone volleys (the double-bounce rule). No volleys while touching the kitchen — the 7-foot zone by the net.</li>
+    <li><strong>Booking:</strong> online via rallypickleball.com (Playbypoint) is preferred; phone or front desk also works, and walk-ins get open courts first come, first served. Reservations open 5 days ahead, in 1- or 1.5-hour blocks. Large groups count as a private event — let a manager know.</li>
+    <li><strong>Equipment:</strong> every reservation includes a Rally paddle per player and 2 balls per court. We sell Joola paddles (say "YO-la") and Rhoback apparel at the front desk.</li>
+    <li><strong>Arrival:</strong> guests check in at least 10 minutes before court time; first-timers are encouraged to come 30 minutes early to learn the rules.</li>
+    <li><strong>Where to send inquiries:</strong> any private event goes to a manager. Corporate wellness programs and private lessons go to the Director of Pickleball. Classes (Rally Rookies, Pickleball Pump) and leagues (Leisure League, Rally Ranks) book online or at the front desk.</li>
+  </ul>
+
+      </div>
+  </details>
+
+  <h2>Team sign-off checklist</h2>
+  <p>Each team member reviews this summary and confirms they can:</p>
+  <ul class="checklist">
+    <li><input type="checkbox">Name Rally's six core values and give an example of a Magic Moment</li>
+    <li><input type="checkbox">Practice the Two-Foot Rule and the six non-negotiables</li>
+    <li><input type="checkbox">Pre-authorize a card before the first order on every tab</li>
+    <li><input type="checkbox">Help a guest use the QR ordering, or take the order traditionally</li>
+    <li><input type="checkbox">Recite the time standards for drinks, food and court turnover</li>
+    <li><input type="checkbox">Handle glassware and plates to standard</li>
+    <li><input type="checkbox">Card a guest and explain how to cut off an intoxicated guest</li>
+    <li><input type="checkbox">Handle a complaint with the four A's — and the food-poisoning exception</li>
+    <li><input type="checkbox">Explain basic pickleball rules and how to book a court</li>
+    <li><input type="checkbox">Know who to ask for beverage, coffee and food menu questions</li>
+  </ul>
+  <div class="signoff"><div>Associate name</div><div>Trainer</div><div>Date</div></div>
+</div>
+<script>
+window.addEventListener('beforeprint', function(){
+  document.querySelectorAll('details.sec').forEach(function(d){ d.dataset.wasOpen = d.open ? '1' : '0'; d.open = true; });
+});
+window.addEventListener('afterprint', function(){
+  document.querySelectorAll('details.sec').forEach(function(d){ d.open = d.dataset.wasOpen === '1'; });
+});
+</script>
+</body>
+</html>

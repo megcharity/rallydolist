@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · PlayByPoint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+.skills .grp td{background:var(--sage);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px}
+.sec-count{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.06em;white-space:nowrap}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 12 of 12 · PlayByPoint</div>
+        <h1 style="margin-top:12px">Play<em>By</em>Point</h1>
+        <p>PlayByPoint runs our courts: reservations, check-in, programs and the court schedule. Managers need to handle everything the front desk does, plus the tools only managers can use. Start with PlayByPoint's own short training courses, then practice the Rally-specific parts with your trainer.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 140 140" width="130" height="130" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="70" cy="70" r="46" fill="#174854"/><g fill="#fbf6ed" stroke="none"><ellipse cx="52" cy="48" rx="6" ry="5"/><ellipse cx="80" cy="42" rx="5" ry="6"/><ellipse cx="96" cy="66" rx="6" ry="5"/><ellipse cx="66" cy="70" rx="6" ry="6"/><ellipse cx="42" cy="78" rx="5" ry="6"/><ellipse cx="78" cy="96" rx="6" ry="5"/><ellipse cx="54" cy="100" rx="4" ry="4"/></g><path d="M14 112 Q26 100 30 86 M122 30 Q112 22 104 20"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The goal</span><p>Guests should never feel the software. Every booking, check-in and change should be smooth enough that all they notice is the welcome.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>PlayByPoint <em>Academy</em></h3><ul><li>Front Desk course</li><li>Manager course</li></ul></div><div><h3>Daily <em>tools</em></h3><ul><li>Check-in and reservations</li><li>Drop-ins and payments</li><li>Blocking courts</li></ul></div><div><h3>Manager <em>tools</em></h3><ul><li>Roles and permissions</li><li>Court status</li><li>Audit logs</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Start with the <em>Academy</em></h2><p>PlayByPoint has free, on-demand courses for each role. They're mobile-friendly and take about 10–15 minutes each. Complete both before your first shift running the front desk.</p></div></div>
+      <div class="cards"><div class="card"><h3>Operator / <em>Front Desk</em> course</h3><p class="tl">Daily counter work.</p><ul><li>Checking in players</li><li>Managing court reservations</li><li>Handling drop-ins and walk-ons</li><li>Accepting payments and viewing bookings</li><li>Running reports and viewing player activity</li></ul></div><div class="card"><h3><em>Manager</em> course</h3><p class="tl">Configuring the club.</p><ul><li>Facility details, staff accounts, schedules and court availability</li><li>Memberships and player access</li><li>Reservation, lesson, pricing and program rules</li><li>Communication tools, announcements and promotions</li><li>Reports and support resources</li></ul></div></div><div class="callout"><p><b>Find the courses:</b> <a href="https://help.playbypoint.com/en/articles/12288172-playbypoint-academy-on-demand-training-for-managers-operators-pros" target="_blank" rel="noopener">PlayByPoint Academy</a> · help.playbypoint.com</p></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Who can <em>do what</em></h2><p>Your PlayByPoint role decides what you can change.</p></div></div>
+      <div class="compare"><div><span class="label">Operator · front desk</span><ul><li>Daily tasks and helping players with bookings</li><li>Posts, widgets, leaderboards and banner ads</li><li>Can't edit facility, booking, payment or membership rules</li><li>Some settings may be visible, but saving can be blocked</li></ul></div><div><span class="label">Manager</span><ul><li>Full facility-level control</li><li>Booking, pricing, cancellation and membership rules</li><li>Courts, schedules, programs and staff roles</li><li>Payments, card readers and hardware</li><li>Audit logs</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Blocking <em>a court</em></h2><p>For maintenance, events or anything that takes a court out of play.</p></div></div>
+      <ol class="steps c2"><li><b>Open the calendar</b>Admin dashboard → <b>Calendar</b>. Click an open slot on the court → <b>Add Booking</b>.</li><li><b>Pick the type</b>Choose <b>RESERVATION</b>, <b>LESSON</b>, <b>MAINTENANCE</b> or <b>OTHER</b>, then pick or type a Type.</li><li><b>Set courts and dates</b>Check <b>SCHEDULE RECURRING EVENT</b>, select each <b>COURT</b>, set <b>DATE END</b> and <b>REPEAT ON</b>. Same-day block: end date = today, no days checked.</li><li><b>Save and confirm</b>Click <b>Book</b>, then check the calendar shows the court as unavailable. To change or remove it, click the block → edit or <b>Delete</b>.</li></ol>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Court <em>status</em></h2><p>A message at the top of our website and app that tells players about conditions. It's informational only: it doesn't close courts or block reservations.</p></div></div>
+      <div class="tw"><table class="tbl"><thead><tr><th>Status</th><th>Use it when</th></tr></thead><tbody><tr><td>Courts wet – check back soon</td><td>Courts are wet and not yet playable</td></tr><tr><td>Lightning in area – play delayed</td><td>Storms are nearby and play is paused</td></tr><tr><td>Event in progress – limited courts available</td><td>An event is using some courts</td></tr><tr><td>All courts playable</td><td>The default, when nothing else applies</td></tr><tr><td>Custom Status</td><td>Anything else, in your own words</td></tr></tbody></table></div><div class="note"><b>Weather changes, status changes.</b> Update it from the admin dashboard as often as needed. Because it doesn't block bookings, if courts truly can't be used, block them too.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Audit <em>logs</em></h2><p>Managers can see who changed what.</p></div></div>
+      <ul><li><b>Settings</b> → <b>General</b> → <b>Audit Logs</b></li><li>Each entry shows when, what area, which player or object, the action, the manager, and the before and after values</li><li>Filter by category, date range or user</li><li>Currently tracks player profile updates and reservation pricing changes</li></ul>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Rally-specific <em>setup</em></h2><p>PlayByPoint's courses teach the software. Your trainer covers how Rally uses it.</p></div></div>
+      <ul><li>Our court pricing, member rates and program rules</li><li>How we handle cancellations, late arrivals and refunds</li><li>RallyTrack and the courtside displays</li><li>Who to call when something isn't working</li></ul>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Checklist</span><p class="hint" style="margin-top:8px">Review every item with another manager. Check Reviewed as you cover it, Can do it once they can do it on their own.</p></div><span class="sec-count" id="ptxt">0 of 21 ready</span></div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">PlayByPoint Academy</td></tr><tr><td>Complete the Operator / Front Desk course</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp0r" data-sec="pbp" aria-label="Reviewed: Complete the Operator / Front Desk course"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp0d" data-sec="pbp" aria-label="Can do it: Complete the Operator / Front Desk course"></label></td></tr><tr><td>Complete the Manager course</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp1r" data-sec="pbp" aria-label="Reviewed: Complete the Manager course"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp1d" data-sec="pbp" aria-label="Can do it: Complete the Manager course"></label></td></tr><tr class="grp"><td colspan="3">Daily front desk tasks</td></tr><tr><td>Check in a player</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp2r" data-sec="pbp" aria-label="Reviewed: Check in a player"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp2d" data-sec="pbp" aria-label="Can do it: Check in a player"></label></td></tr><tr><td>Make a reservation and manage an existing one</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp3r" data-sec="pbp" aria-label="Reviewed: Make a reservation and manage an existing one"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp3d" data-sec="pbp" aria-label="Can do it: Make a reservation and manage an existing one"></label></td></tr><tr><td>Handle a drop-in or walk-on</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp4r" data-sec="pbp" aria-label="Reviewed: Handle a drop-in or walk-on"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp4d" data-sec="pbp" aria-label="Can do it: Handle a drop-in or walk-on"></label></td></tr><tr><td>Accept a payment and view bookings</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp5r" data-sec="pbp" aria-label="Reviewed: Accept a payment and view bookings"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp5d" data-sec="pbp" aria-label="Can do it: Accept a payment and view bookings"></label></td></tr><tr class="grp"><td colspan="3">Blocking a court</td></tr><tr><td>Add a booking and choose the right type (Reservation, Lesson, Maintenance or Other)</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp6r" data-sec="pbp" aria-label="Reviewed: Add a booking and choose the right type (Reservation, Lesson, Maintenance or Other)"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp6d" data-sec="pbp" aria-label="Can do it: Add a booking and choose the right type (Reservation, Lesson, Maintenance or Other)"></label></td></tr><tr><td>Set the court(s), date and recurrence correctly</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp7r" data-sec="pbp" aria-label="Reviewed: Set the court(s), date and recurrence correctly"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp7d" data-sec="pbp" aria-label="Can do it: Set the court(s), date and recurrence correctly"></label></td></tr><tr><td>Confirm the block shows on the calendar, then edit or remove it</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp8r" data-sec="pbp" aria-label="Reviewed: Confirm the block shows on the calendar, then edit or remove it"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp8d" data-sec="pbp" aria-label="Can do it: Confirm the block shows on the calendar, then edit or remove it"></label></td></tr><tr class="grp"><td colspan="3">Court status</td></tr><tr><td>Know what each status message means and when to use it</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp9r" data-sec="pbp" aria-label="Reviewed: Know what each status message means and when to use it"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp9d" data-sec="pbp" aria-label="Can do it: Know what each status message means and when to use it"></label></td></tr><tr><td>Update court status for weather or conditions</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp10r" data-sec="pbp" aria-label="Reviewed: Update court status for weather or conditions"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp10d" data-sec="pbp" aria-label="Can do it: Update court status for weather or conditions"></label></td></tr><tr><td>Know that status is informational only — block the courts too if they truly can't be used</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp11r" data-sec="pbp" aria-label="Reviewed: Know that status is informational only — block the courts too if they truly can't be used"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp11d" data-sec="pbp" aria-label="Can do it: Know that status is informational only — block the courts too if they truly can't be used"></label></td></tr><tr class="grp"><td colspan="3">Roles & permissions</td></tr><tr><td>Explain the difference between Operator and Manager access</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp12r" data-sec="pbp" aria-label="Reviewed: Explain the difference between Operator and Manager access"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp12d" data-sec="pbp" aria-label="Can do it: Explain the difference between Operator and Manager access"></label></td></tr><tr><td>Know what an Operator can't change</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp13r" data-sec="pbp" aria-label="Reviewed: Know what an Operator can't change"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp13d" data-sec="pbp" aria-label="Can do it: Know what an Operator can't change"></label></td></tr><tr class="grp"><td colspan="3">Audit logs</td></tr><tr><td>Find Settings → General → Audit Logs</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp14r" data-sec="pbp" aria-label="Reviewed: Find Settings → General → Audit Logs"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp14d" data-sec="pbp" aria-label="Can do it: Find Settings → General → Audit Logs"></label></td></tr><tr><td>Filter by category, date range or user</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp15r" data-sec="pbp" aria-label="Reviewed: Filter by category, date range or user"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp15d" data-sec="pbp" aria-label="Can do it: Filter by category, date range or user"></label></td></tr><tr><td>Read an entry: what changed, who changed it, and the before and after values</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp16r" data-sec="pbp" aria-label="Reviewed: Read an entry: what changed, who changed it, and the before and after values"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp16d" data-sec="pbp" aria-label="Can do it: Read an entry: what changed, who changed it, and the before and after values"></label></td></tr><tr class="grp"><td colspan="3">Rally-specific setup</td></tr><tr><td>Our court pricing, member rates and program rules</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp17r" data-sec="pbp" aria-label="Reviewed: Our court pricing, member rates and program rules"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp17d" data-sec="pbp" aria-label="Can do it: Our court pricing, member rates and program rules"></label></td></tr><tr><td>How we handle cancellations, late arrivals and refunds</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp18r" data-sec="pbp" aria-label="Reviewed: How we handle cancellations, late arrivals and refunds"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp18d" data-sec="pbp" aria-label="Can do it: How we handle cancellations, late arrivals and refunds"></label></td></tr><tr><td>RallyTrack and the courtside displays</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp19r" data-sec="pbp" aria-label="Reviewed: RallyTrack and the courtside displays"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp19d" data-sec="pbp" aria-label="Can do it: RallyTrack and the courtside displays"></label></td></tr><tr><td>Who to call when something isn't working</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp20r" data-sec="pbp" aria-label="Reviewed: Who to call when something isn't working"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp20d" data-sec="pbp" aria-label="Can do it: Who to call when something isn't working"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>That's the last chapter. Head back to the <b>Manager Training Checklist</b> and sign off with your trainer once every topic is covered.</p></div>
+    </div>
+  </div>
+  <div class="bar"><span class="saved" id="saved">Your checkmarks save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all</button></div>
+</div>
+<script>
+var KEYNAME="rally-mgr-playbypoint-v1";
+var TOTAL=21;
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Checkmarks can’t be saved in this browser — they’ll clear if you close the page.';}}
+function progress(){
+  var done=0;
+  document.querySelectorAll('input[data-save$="d"][data-sec="pbp"]').forEach(function(b){if(b.checked)done++;});
+  document.getElementById('ptxt').textContent=done+' of '+TOTAL+' ready';
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();progress();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every checkmark and answer on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+  progress();
+});
+progress();
+</body>
+</html>

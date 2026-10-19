@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barista Training Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+
+.jump{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.jump a{display:inline-block;padding:6px 12px;border:1.5px solid var(--navy);border-radius:999px;font-size:14px;font-weight:600;color:var(--navy);text-decoration:none;background:var(--paper)}
+.jump a:hover{background:var(--sage)}
+.prog{display:flex;align-items:center;gap:14px;margin-top:18px}
+.prog-bar{flex:1;height:12px;border:1.5px solid var(--navy);border-radius:999px;overflow:hidden;background:var(--paper)}
+.prog-fill{height:100%;width:0;background:var(--orange);transition:width .2s}
+.prog-txt{font-weight:600;font-size:14px;white-space:nowrap}
+.skills .grp td{background:var(--sage);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px}
+.skills td small{display:block;opacity:.8;font-size:13.5px;margin-top:2px}
+.newtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--orange);font-size:11px;font-weight:700;letter-spacing:.04em;vertical-align:1px}
+.sec-count{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.06em;white-space:nowrap}
+.notes-label{margin-top:16px;display:block}
+.signs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+.signs div{border-top:1.5px solid var(--navy);padding-top:6px;font-size:13px;margin-top:40px}
+.how{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.how>div{border-top:2px solid var(--orange);padding-top:10px}
+.how>div>b{display:block;font-size:17px;margin-bottom:4px}
+@media (max-width:720px){.how,.signs{grid-template-columns:1fr}}
+@media print{.jump,.bar,.prog{display:none}.sec{break-inside:avoid-page}textarea{min-height:60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Barista Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Barista Training · Checklist</div>
+        <h1 style="margin-top:12px">Barista Training<br><em>Checklist</em></h1>
+        <p>Everything a Rally barista needs to know, in one checklist. Sit down with your manager and work through it together. When every item is reviewed and you can do it on your own, you're ready for the cafe.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 120 150" width="120" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22 Q60 10 102 22 L104 34 Q60 26 16 34 Z"/><path d="M22 36 L32 138 Q60 146 88 138 L98 36"/><path d="M26 66 L94 66 L90 104 L30 104 Z" fill="#174854" fill-opacity=".85"/><path d="M42 16 Q46 4 58 8 Q70 2 76 14" stroke-width="2.5"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The goal</span>
+        <p>Review every item with a manager until you know how to do all of it, on your own, with confidence.</p>
+      </div>
+      <div class="how two-col" style="margin-top:22px">
+        <div><b>1 · Review it</b><p>Your manager walks you through the item: tells you, shows you, then has you try it. Check <b>Reviewed</b>.</p></div>
+        <div><b>2 · Do it</b><p>Once you can do it on your own, your manager checks <b>Can do it</b>.</p></div>
+      </div>
+      <div class="prog"><div class="prog-bar"><div class="prog-fill" id="pfill"></div></div><span class="prog-txt" id="ptxt">0 of 66 ready</span></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:14px"><span class="tag t-orange">Jump to a section</span></div>
+      <ul class="jump"><li><a href="#culture">Culture &amp; Rally basics</a></li><li><a href="#guests">Guest experience</a></li><li><a href="#menu">Menu &amp; coffee knowledge</a></li><li><a href="#drinks">Making drinks</a></li><li><a href="#pos">Toast &amp; morning programs</a></li><li><a href="#ops">Cafe operations</a></li></ul>
+    </div>
+    
+    <div class="sec" id="culture">
+      <div class="sec-head">
+        <div><h2>Culture <em>&amp; Rally basics</em></h2></div>
+        <span class="sec-count" data-count="culture">0 of 14</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Core values</td></tr><tr><td>Review core values</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesr" data-sec="culture" aria-label="Reviewed: Review core values"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesd" data-sec="culture" aria-label="Can do it: Review core values"></label></td></tr><tr class="grp"><td colspan="3">Operating principles</td></tr><tr><td>Review operating principles</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesr" data-sec="culture" aria-label="Reviewed: Review operating principles"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesd" data-sec="culture" aria-label="Can do it: Review operating principles"></label></td></tr><tr><td>Brainstorm ways to bring the values and principles to life as a barista</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11r" data-sec="culture" aria-label="Reviewed: Brainstorm ways to bring the values and principles to life as a barista"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11d" data-sec="culture" aria-label="Can do it: Brainstorm ways to bring the values and principles to life as a barista"></label></td></tr><tr class="grp"><td colspan="3">Pickleball</td></tr><tr><td>The Ways to Play at Rally</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture12r" data-sec="culture" aria-label="Reviewed: The Ways to Play at Rally"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture12d" data-sec="culture" aria-label="Can do it: The Ways to Play at Rally"></label></td></tr><tr><td>Traditional pickleball scoring</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture13r" data-sec="culture" aria-label="Reviewed: Traditional pickleball scoring"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture13d" data-sec="culture" aria-label="Can do it: Traditional pickleball scoring"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="guests">
+      <div class="sec-head">
+        <div><h2>Guest <em>experience</em></h2></div>
+        <span class="sec-count" data-count="guests">0 of 7</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">At the counter</td></tr><tr><td>Greeting guests when they walk in</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests0r" data-sec="guests" aria-label="Reviewed: Greeting guests when they walk in"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests0d" data-sec="guests" aria-label="Can do it: Greeting guests when they walk in"></label></td></tr><tr><td>Questions to ask guests when they order</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests1r" data-sec="guests" aria-label="Reviewed: Questions to ask guests when they order"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests1d" data-sec="guests" aria-label="Can do it: Questions to ask guests when they order"></label></td></tr><tr><td>Chat with guests about what&#x27;s happening at Rally, and how to stay up to date</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests2r" data-sec="guests" aria-label="Reviewed: Chat with guests about what&#x27;s happening at Rally, and how to stay up to date"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests2d" data-sec="guests" aria-label="Can do it: Chat with guests about what&#x27;s happening at Rally, and how to stay up to date"></label></td></tr><tr class="grp"><td colspan="3">Around the venue</td></tr><tr><td>Directing guests around the venue</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests3r" data-sec="guests" aria-label="Reviewed: Directing guests around the venue"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests3d" data-sec="guests" aria-label="Can do it: Directing guests around the venue"></label></td></tr><tr><td>Give a full tour of Rally</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests4r" data-sec="guests" aria-label="Reviewed: Give a full tour of Rally"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests4d" data-sec="guests" aria-label="Can do it: Give a full tour of Rally"></label></td></tr><tr><td>Where a guest who&#x27;s here to play should go first</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests5r" data-sec="guests" aria-label="Reviewed: Where a guest who&#x27;s here to play should go first"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests5d" data-sec="guests" aria-label="Can do it: Where a guest who&#x27;s here to play should go first"></label></td></tr><tr><td>How guests make a pickleball reservation, and how to help them</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests6r" data-sec="guests" aria-label="Reviewed: How guests make a pickleball reservation, and how to help them"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests6d" data-sec="guests" aria-label="Can do it: How guests make a pickleball reservation, and how to help them"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="menu">
+      <div class="sec-head">
+        <div><h2>Menu <em>&amp; coffee knowledge</em></h2></div>
+        <span class="sec-count" data-count="menu">0 of 8</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Menu</td></tr><tr><td>Review the menu and offerings</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu0r" data-sec="menu" aria-label="Reviewed: Review the menu and offerings"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu0d" data-sec="menu" aria-label="Can do it: Review the menu and offerings"></label></td></tr><tr><td>The milks we offer</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu1r" data-sec="menu" aria-label="Reviewed: The milks we offer"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu1d" data-sec="menu" aria-label="Can do it: The milks we offer"></label></td></tr><tr><td>What&#x27;s in the flight of the month</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu2r" data-sec="menu" aria-label="Reviewed: What&#x27;s in the flight of the month"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu2d" data-sec="menu" aria-label="Can do it: What&#x27;s in the flight of the month"></label></td></tr><tr class="grp"><td colspan="3">Coffee</td></tr><tr><td>Our coffee partner</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu3r" data-sec="menu" aria-label="Reviewed: Our coffee partner"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu3d" data-sec="menu" aria-label="Can do it: Our coffee partner"></label></td></tr><tr><td>The beans we use for espresso, drip and cold brew</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu4r" data-sec="menu" aria-label="Reviewed: The beans we use for espresso, drip and cold brew"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu4d" data-sec="menu" aria-label="Can do it: The beans we use for espresso, drip and cold brew"></label></td></tr><tr class="grp"><td colspan="3">Recipes</td></tr><tr><td>The recipe cards and binder</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu5r" data-sec="menu" aria-label="Reviewed: The recipe cards and binder"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu5d" data-sec="menu" aria-label="Can do it: The recipe cards and binder"></label></td></tr><tr><td>The syrups, and where they&#x27;re kept</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu6r" data-sec="menu" aria-label="Reviewed: The syrups, and where they&#x27;re kept"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu6d" data-sec="menu" aria-label="Can do it: The syrups, and where they&#x27;re kept"></label></td></tr><tr><td>Weighing syrups and milks</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu7r" data-sec="menu" aria-label="Reviewed: Weighing syrups and milks"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="menu7d" data-sec="menu" aria-label="Can do it: Weighing syrups and milks"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="drinks">
+      <div class="sec-head">
+        <div><h2>Making <em>drinks</em></h2></div>
+        <span class="sec-count" data-count="drinks">0 of 16</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">By heart</td></tr><tr><td>Make the most popular and basic orders by heart, without checking the recipe card</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinksHr" data-sec="drinks" aria-label="Reviewed: Make the most popular and basic orders by heart"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinksHd" data-sec="drinks" aria-label="Can do it: Make the most popular and basic orders by heart"></label></td></tr><tr class="grp"><td colspan="3">Brewed &amp; tea</td></tr><tr><td>Drip coffee</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks0r" data-sec="drinks" aria-label="Reviewed: Drip coffee"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks0d" data-sec="drinks" aria-label="Can do it: Drip coffee"></label></td></tr><tr><td>Cold brew</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks1r" data-sec="drinks" aria-label="Reviewed: Cold brew"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks1d" data-sec="drinks" aria-label="Can do it: Cold brew"></label></td></tr><tr><td>Matcha, hot and iced</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks2r" data-sec="drinks" aria-label="Reviewed: Matcha, hot and iced"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks2d" data-sec="drinks" aria-label="Can do it: Matcha, hot and iced"></label></td></tr><tr><td>Hot and iced teas</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks3r" data-sec="drinks" aria-label="Reviewed: Hot and iced teas"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks3d" data-sec="drinks" aria-label="Can do it: Hot and iced teas"></label></td></tr><tr class="grp"><td colspan="3">Espresso</td></tr><tr><td>Build a drink: order of operations for hot and iced</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks4r" data-sec="drinks" aria-label="Reviewed: Build a drink: order of operations for hot and iced"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks4d" data-sec="drinks" aria-label="Can do it: Build a drink: order of operations for hot and iced"></label></td></tr><tr><td>The espresso drink menu</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks5r" data-sec="drinks" aria-label="Reviewed: The espresso drink menu"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks5d" data-sec="drinks" aria-label="Can do it: The espresso drink menu"></label></td></tr><tr><td>Pull a shot of espresso</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks6r" data-sec="drinks" aria-label="Reviewed: Pull a shot of espresso"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks6d" data-sec="drinks" aria-label="Can do it: Pull a shot of espresso"></label></td></tr><tr><td>Espresso tasting: bitter or sour, grind finer or coarser</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks7r" data-sec="drinks" aria-label="Reviewed: Espresso tasting: bitter or sour, grind finer or coarser"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks7d" data-sec="drinks" aria-label="Can do it: Espresso tasting: bitter or sour, grind finer or coarser"></label></td></tr><tr><td>Pull a decaf and a half-caf shot</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks8r" data-sec="drinks" aria-label="Reviewed: Pull a decaf and a half-caf shot"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks8d" data-sec="drinks" aria-label="Can do it: Pull a decaf and a half-caf shot"></label></td></tr><tr class="grp"><td colspan="3">Milk</td></tr><tr><td>Steam milk: angle, aeration, whirlpool and temperature</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks9r" data-sec="drinks" aria-label="Reviewed: Steam milk: angle, aeration, whirlpool and temperature"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks9d" data-sec="drinks" aria-label="Can do it: Steam milk: angle, aeration, whirlpool and temperature"></label></td></tr><tr><td>Cortado, cappuccino and latte, and how the milk differs for each</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks10r" data-sec="drinks" aria-label="Reviewed: Cortado, cappuccino and latte, and how the milk differs for each"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks10d" data-sec="drinks" aria-label="Can do it: Cortado, cappuccino and latte, and how the milk differs for each"></label></td></tr><tr><td>Latte art</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks11r" data-sec="drinks" aria-label="Reviewed: Latte art"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks11d" data-sec="drinks" aria-label="Can do it: Latte art"></label></td></tr><tr class="grp"><td colspan="3">Specialty</td></tr><tr><td>Chai latte</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks12r" data-sec="drinks" aria-label="Reviewed: Chai latte"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks12d" data-sec="drinks" aria-label="Can do it: Chai latte"></label></td></tr><tr><td>London Fog</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks13r" data-sec="drinks" aria-label="Reviewed: London Fog"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks13d" data-sec="drinks" aria-label="Can do it: London Fog"></label></td></tr><tr><td>Make two drinks of your manager&#x27;s choice</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks14r" data-sec="drinks" aria-label="Reviewed: Make two drinks of your manager&#x27;s choice"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="drinks14d" data-sec="drinks" aria-label="Can do it: Make two drinks of your manager&#x27;s choice"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="pos">
+      <div class="sec-head">
+        <div><h2>Toast <em>&amp; morning programs</em></h2></div>
+        <span class="sec-count" data-count="pos">0 of 5</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Toast</td></tr><tr><td>Get familiar with Toast POS</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos0r" data-sec="pos" aria-label="Reviewed: Get familiar with Toast POS"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos0d" data-sec="pos" aria-label="Can do it: Get familiar with Toast POS"></label></td></tr><tr><td>Where to place breakfast and brewed drink tickets</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos1r" data-sec="pos" aria-label="Reviewed: Where to place breakfast and brewed drink tickets"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos1d" data-sec="pos" aria-label="Can do it: Where to place breakfast and brewed drink tickets"></label></td></tr><tr><td>Where to place espresso tickets</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos2r" data-sec="pos" aria-label="Reviewed: Where to place espresso tickets"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos2d" data-sec="pos" aria-label="Can do it: Where to place espresso tickets"></label></td></tr><tr class="grp"><td colspan="3">Morning programs</td></tr><tr><td>Ring in a Courts &amp; Coffee drink ticket as Courts &amp; Coffee</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos3r" data-sec="pos" aria-label="Reviewed: Ring in a Courts &amp; Coffee drink ticket as Courts &amp; Coffee"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos3d" data-sec="pos" aria-label="Can do it: Ring in a Courts &amp; Coffee drink ticket as Courts &amp; Coffee"></label></td></tr><tr><td>Ring in other morning program drinks at $0 with a punch card or ticket</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos4r" data-sec="pos" aria-label="Reviewed: Ring in other morning program drinks at $0 with a punch card or ticket"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos4d" data-sec="pos" aria-label="Can do it: Ring in other morning program drinks at $0 with a punch card or ticket"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="ops">
+      <div class="sec-head">
+        <div><h2>Cafe <em>operations</em></h2></div>
+        <span class="sec-count" data-count="ops">0 of 16</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Food</td></tr><tr><td>How the oven works</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0r" data-sec="ops" aria-label="Reviewed: How the oven works"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0d" data-sec="ops" aria-label="Can do it: How the oven works"></label></td></tr><tr><td>Plates and pastry bags for serving food, and where to find more</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1r" data-sec="ops" aria-label="Reviewed: Plates and pastry bags for serving food, and where to find more"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1d" data-sec="ops" aria-label="Can do it: Plates and pastry bags for serving food, and where to find more"></label></td></tr><tr><td>Supporting food running and expo</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2r" data-sec="ops" aria-label="Reviewed: Supporting food running and expo"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2d" data-sec="ops" aria-label="Can do it: Supporting food running and expo"></label></td></tr><tr class="grp"><td colspan="3">Stocking</td></tr><tr><td>Restocking items when low, including where to get more sugar</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3r" data-sec="ops" aria-label="Reviewed: Restocking items when low, including where to get more sugar"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3d" data-sec="ops" aria-label="Can do it: Restocking items when low, including where to get more sugar"></label></td></tr><tr><td>Restocking the condiment station</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4r" data-sec="ops" aria-label="Reviewed: Restocking the condiment station"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4d" data-sec="ops" aria-label="Can do it: Restocking the condiment station"></label></td></tr><tr><td>Making syrups and other items when low</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops5r" data-sec="ops" aria-label="Reviewed: Making syrups and other items when low"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops5d" data-sec="ops" aria-label="Can do it: Making syrups and other items when low"></label></td></tr><tr class="grp"><td colspan="3">Cleaning</td></tr><tr><td>Cleanliness of the area</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops6r" data-sec="ops" aria-label="Reviewed: Cleanliness of the area"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops6d" data-sec="ops" aria-label="Can do it: Cleanliness of the area"></label></td></tr><tr><td>Spraying counters and cleaning the stainless steel cabinets</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops7r" data-sec="ops" aria-label="Reviewed: Spraying counters and cleaning the stainless steel cabinets"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops7d" data-sec="ops" aria-label="Can do it: Spraying counters and cleaning the stainless steel cabinets"></label></td></tr><tr><td>Doing dishes when the rack is full</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops8r" data-sec="ops" aria-label="Reviewed: Doing dishes when the rack is full"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops8d" data-sec="ops" aria-label="Can do it: Doing dishes when the rack is full"></label></td></tr><tr><td>Bussing Garden Pods and 70s tables when able</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops9r" data-sec="ops" aria-label="Reviewed: Bussing Garden Pods and 70s tables when able"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops9d" data-sec="ops" aria-label="Can do it: Bussing Garden Pods and 70s tables when able"></label></td></tr><tr class="grp"><td colspan="3">Side work</td></tr><tr><td>Opening side work checklist</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops10r" data-sec="ops" aria-label="Reviewed: Opening side work checklist"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops10d" data-sec="ops" aria-label="Can do it: Opening side work checklist"></label></td></tr><tr><td>Closing side work checklist</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops11r" data-sec="ops" aria-label="Reviewed: Closing side work checklist"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops11d" data-sec="ops" aria-label="Can do it: Closing side work checklist"></label></td></tr><tr class="grp"><td colspan="3">Around the venue</td></tr><tr><td>Setting up umbrellas, cornhole and cushions, and where they go in the morning</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops12r" data-sec="ops" aria-label="Reviewed: Setting up umbrellas, cornhole and cushions, and where they go in the morning"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops12d" data-sec="ops" aria-label="Can do it: Setting up umbrellas, cornhole and cushions, and where they go in the morning"></label></td></tr><tr><td>Using the radio</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops13r" data-sec="ops" aria-label="Reviewed: Using the radio"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops13d" data-sec="ops" aria-label="Can do it: Using the radio"></label></td></tr><tr><td>Supporting the team when the cafe is slow and when it&#x27;s busy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops14r" data-sec="ops" aria-label="Reviewed: Supporting the team when the cafe is slow and when it&#x27;s busy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops14d" data-sec="ops" aria-label="Can do it: Supporting the team when the cafe is slow and when it&#x27;s busy"></label></td></tr><tr><td>Dog policy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops15r" data-sec="ops" aria-label="Reviewed: Dog policy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops15d" data-sec="ops" aria-label="Can do it: Dog policy"></label></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="bar">
+    <span class="saved" id="saved">Your checkmarks save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all</button>
+  </div>
+</div>
+<script>
+var TOTAL=66;
+var KEYNAME='rally-barista-checklist-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Checkmarks can’t be saved in this browser — they’ll clear if you close the page.';}}
+function progress(){
+  var done=0;
+  document.querySelectorAll('[data-count]').forEach(function(c){
+    var s=c.getAttribute('data-count'),boxes=document.querySelectorAll('input[data-sec="'+s+'"][data-save$="d"]'),k=0;
+    boxes.forEach(function(b){if(b.checked)k++;});done+=k;c.textContent=k+' of '+boxes.length+' ready';
+  });
+  document.getElementById('ptxt').textContent=done+' of '+TOTAL+' ready';
+  document.getElementById('pfill').style.width=(done/TOTAL*100)+'%';
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();progress();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every checkmark on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+  progress();
+});
+progress();
+</script>
+</body>
+</html>

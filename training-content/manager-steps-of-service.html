@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rally Managers · Steps of Service</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --blue:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed; --coral:#f58664; --mint:#cee4cf;
+  --bg:#fbf6ed; --ink:#174854; --ink-soft:#3f6670; --rule:#174854; --panel:#fffdf8;
+  --script-bg:#174854; --script-ink:#fbf6ed; --mint-bg:#cee4cf; --coral-bg:#fde2d8; --orange-bg:#feecd2;
+  --olive-ink:#4e622c;
+  --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+  --sans:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --hand:"Gochi Hand","Comic Sans MS","Bradley Hand",cursive;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f2f37; --ink:#fbf6ed; --ink-soft:#c9d8d6; --rule:#cee4cf; --panel:#143d47;
+    --script-bg:#cee4cf; --script-ink:#0f2f37; --mint-bg:#1d4a40; --coral-bg:#4a2a22; --orange-bg:#4a3714;
+    --olive-ink:#b9cf8f;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f2f37; --ink:#fbf6ed; --ink-soft:#c9d8d6; --rule:#cee4cf; --panel:#143d47;
+  --script-bg:#cee4cf; --script-ink:#0f2f37; --mint-bg:#1d4a40; --coral-bg:#4a2a22; --orange-bg:#4a3714;
+  --olive-ink:#b9cf8f;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 78px)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px;border-radius:2px}
+
+.page{max-width:1120px;margin:0 auto;padding:0 20px 64px}
+.corner{display:flex;justify-content:space-between;font-family:var(--hand);font-size:22px;letter-spacing:.12em;padding:18px 4px 14px}
+
+/* Hero */
+.frame{border:2.5px solid var(--rule)}
+.hero{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr)}
+.hero-title{padding:44px 36px;border-right:2.5px solid var(--rule);display:flex;flex-direction:column;justify-content:space-between;gap:28px;position:relative}
+.hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(52px,8vw,96px);line-height:.92;margin:0;letter-spacing:-.01em}
+.hero h1 em{display:block;padding-left:.35em}
+.hero-title p{margin:0;max-width:34ch;color:var(--ink-soft)}
+.hero-title .doodle{position:absolute;right:22px;top:26px;width:64px;transform:rotate(12deg)}
+.goals{display:grid;grid-template-rows:1fr 1fr}
+.goal{padding:30px 34px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start}
+.goal + .goal{border-top:2.5px solid var(--rule)}
+.goal-num{font-family:var(--serif);font-style:italic;font-size:64px;line-height:.8;color:var(--orange)}
+.goal:nth-child(2) .goal-num{color:var(--coral)}
+.goal h2{font-family:var(--serif);font-weight:500;font-size:28px;line-height:1.15;margin:0 0 8px}
+.goal p{margin:0;color:var(--ink-soft);max-width:52ch}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;padding:16px 4px 0;font-size:15px}
+.legend span{display:inline-flex;align-items:center;gap:10px}
+.swatch{width:34px;height:20px;display:inline-block}
+.swatch.req{background:var(--script-bg)}
+.swatch.ex{border:2px dashed var(--ink)}
+
+/* Nav */
+.tabs-wrap{position:sticky;top:0;z-index:5;background:var(--bg);margin-top:28px;padding-top:env(safe-area-inset-top,0px);border-bottom:2.5px solid var(--rule)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:10px 0 0}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;font:600 15px/1 var(--sans);color:var(--ink);text-decoration:none;background:transparent;border:2.5px solid transparent;border-bottom:none;padding:13px 16px 12px;cursor:pointer;margin-bottom:-2.5px;border-radius:0}
+.tab small{display:block;font:400 13px/1 var(--hand);letter-spacing:.06em;opacity:.75;margin-bottom:5px}
+.tab:hover{background:var(--panel)}
+.tab[aria-current="true"]{border-color:var(--rule);background:var(--bg);border-bottom:2.5px solid var(--bg)}
+
+/* Panels */
+.panel{padding-top:40px}
+.panel + .panel{margin-top:96px}
+.panel-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 48px;align-items:end;margin-bottom:36px}
+.panel-head h2{font-family:var(--serif);font-weight:400;font-size:clamp(40px,6vw,64px);line-height:1;margin:0}
+.panel-head h2 em{font-style:italic}
+.panel-head p{margin:0;color:var(--ink-soft);max-width:48ch}
+.kicker{font-family:var(--hand);font-size:20px;letter-spacing:.06em;color:var(--olive-ink);margin:0 0 6px}
+
+h3{font-family:var(--serif);font-weight:500;font-size:30px;line-height:1.15;margin:0 0 14px}
+h4{font-family:var(--sans);font-weight:700;font-size:17px;margin:22px 0 8px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:1.25em}
+li{margin:0 0 8px}
+li::marker{color:var(--ink-soft)}
+
+/* Steps */
+.steps{list-style:none;padding:0;margin:0;counter-reset:step}
+.step{display:grid;grid-template-columns:92px minmax(0,1fr);border-top:2.5px solid var(--rule);padding:30px 0 22px;margin:0;cursor:pointer}
+.step:last-child{border-bottom:2.5px solid var(--rule)}
+.step .back{display:none}
+.step.open:not(.feature){background:var(--mint-bg)}
+.step.open .front{display:none}
+.step.open .back{display:block}
+.step .tap{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;margin-top:10px}
+.step-num{font-family:var(--serif);font-style:italic;font-size:68px;line-height:.8;color:var(--orange)}
+.step-body{max-width:760px}
+.step-body > p:first-of-type{color:var(--ink-soft)}
+
+/* Scripts */
+.script{background:var(--script-bg);color:var(--script-ink);padding:20px 24px 18px;margin:18px 0;font-family:var(--serif);font-size:20px;line-height:1.5;position:relative}
+.script::before{content:"Required script · say it as written";display:block;font:600 13px/1 var(--sans);letter-spacing:.02em;opacity:.8;margin-bottom:10px}
+.example{border:2px dashed var(--ink);padding:16px 22px 14px;margin:16px 0;font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.5}
+.example::before{content:"Example · adapt it naturally";display:block;font:600 13px/1 var(--sans);font-style:normal;letter-spacing:.02em;opacity:.7;margin-bottom:8px}
+.script p,.example p{margin:0}
+.script p + p{margin-top:12px}
+
+/* Split columns for branches */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:16px 0;border:2px solid var(--rule)}
+.split > div{padding:18px 20px}
+.split > div + div{border-left:2px solid var(--rule)}
+.split .tag{display:inline-block;font:700 14px/1 var(--sans);padding:7px 10px;margin-bottom:12px}
+.tag.new,.tag.yes{background:var(--mint-bg);color:var(--ink)}
+.tag.ret{background:var(--orange-bg);color:var(--ink)}
+.tag.no{background:var(--coral-bg);color:var(--ink)}
+.split ul{margin-bottom:0}
+
+/* Timeline */
+.timeline{margin:0 0 40px;border:2.5px solid var(--rule);padding:26px 28px 22px;background:var(--panel)}
+.timeline h3{font-size:24px;margin-bottom:22px}
+.tl-scroll{overflow-x:auto}
+.tl{position:relative;min-width:640px;display:grid;grid-template-columns:repeat(4,1fr);padding-top:18px}
+.tl::before{content:"";position:absolute;left:8px;right:8px;top:24px;height:3px;background:var(--rule)}
+.tl-item{position:relative;padding-right:14px}
+.tl-dot{width:15px;height:15px;border-radius:50%;background:var(--bg);border:3px solid var(--rule);position:relative;z-index:1;margin-bottom:14px}
+.tl-item.hot .tl-dot{background:var(--orange);border-color:var(--orange)}
+.tl-when{font-family:var(--hand);font-size:19px;color:var(--olive-ink);line-height:1.1;margin-bottom:4px}
+.tl-what{font-weight:600;font-size:15px;line-height:1.35}
+
+/* Non-negotiables */
+.rules{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;border-top:2.5px solid var(--rule)}
+.rules li{margin:0;padding:20px 22px 18px 0;border-bottom:1.5px solid var(--rule);display:grid;grid-template-columns:44px 1fr;gap:8px}
+.rules li:nth-child(odd){border-right:1.5px solid var(--rule)}
+.rules li:nth-child(even){padding-left:22px}
+.rules .n{font-family:var(--serif);font-style:italic;font-size:30px;line-height:1;color:var(--orange)}
+.rules .wide{grid-column:1 / -1;border-right:none!important;padding-left:0!important}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.dont,.do{padding:12px 14px;font-size:16px}
+.dont{background:var(--coral-bg)}
+.do{background:var(--mint-bg)}
+.dont b,.do b{display:block;font-size:13px;margin-bottom:4px}
+.dont q{text-decoration:line-through;text-decoration-thickness:2px}
+
+.section{margin-top:52px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+.note{border-left:5px solid var(--orange);padding:12px 18px;background:var(--orange-bg);margin:0 0 30px;max-width:820px}
+.note strong{display:block;margin-bottom:2px}
+
+/* Signals */
+.signals{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:16px}
+.signals th{text-align:left;font-family:var(--hand);font-weight:400;font-size:19px;letter-spacing:.04em;color:var(--olive-ink);padding:6px 12px 8px 0;border-bottom:2px solid var(--rule)}
+.signals td{padding:11px 12px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+.signals td:first-child{width:46%}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;padding:0;list-style:none}
+.chips li{margin:0;padding:8px 14px;border:2px solid var(--rule);border-radius:999px;font-weight:600;font-size:15px}
+
+/* Event checklists */
+.phases{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:2.5px solid var(--rule)}
+.phase{padding:24px 22px}
+.phase + .phase{border-left:2.5px solid var(--rule)}
+.phase h3{font-size:34px;font-style:italic;font-weight:400;margin-bottom:4px}
+.phase .count{font-size:14px;color:var(--ink-soft);margin-bottom:16px}
+.check{list-style:none;padding:0;margin:0}
+.check li{margin:0 0 4px}
+.check label{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:7px 0;cursor:pointer;font-size:16px;line-height:1.45}
+.check input{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--rule);margin:2px 0 0;cursor:pointer;display:grid;place-content:center;background:transparent}
+.check input::after{content:"";width:10px;height:10px;background:var(--orange);transform:scale(0);transition:transform .12s ease}
+.check input:checked::after{transform:scale(1)}
+.check input:checked + span{opacity:.55}
+.check .sub{padding-left:32px;font-size:15px;color:var(--ink-soft)}
+.check .sub label{font-size:15px}
+.reset{font:600 14px var(--sans);background:none;border:2px solid var(--rule);color:var(--ink);padding:8px 14px;cursor:pointer;margin-top:14px}
+
+/* Quiz */
+.quiz{list-style:none;padding:0;margin:0;counter-reset:q}
+.q{border-top:2.5px solid var(--rule);padding:22px 0}
+.q:last-child{border-bottom:2.5px solid var(--rule)}
+.q-text{font-family:var(--serif);font-size:23px;line-height:1.3;margin:0 0 14px;max-width:760px}
+.q-opts{display:flex;flex-direction:column;gap:8px;max-width:760px}
+.q-opts button{text-align:left;font:500 16px/1.4 var(--sans);color:var(--ink);background:var(--panel);border:2px solid var(--rule);padding:12px 16px;cursor:pointer}
+.q-opts button:hover:not(:disabled){background:var(--mint-bg)}
+.q-opts button:disabled{cursor:default}
+.q-opts button.right{background:var(--mint-bg);border-color:var(--olive)}
+.q-opts button.wrong{background:var(--coral-bg);border-style:dashed}
+.q-why{margin-top:12px;max-width:760px;font-size:16px;padding:12px 16px;border-left:5px solid var(--olive)}
+.q-why[hidden]{display:none}
+.score{font-family:var(--serif);font-size:26px;margin:24px 0 0}
+
+footer{margin-top:64px;padding-top:18px;border-top:2.5px solid var(--rule);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:14px;color:var(--ink-soft)}
+footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr}
+  .hero-title{border-right:none;border-bottom:2.5px solid var(--rule)}
+  .panel-head{grid-template-columns:1fr}
+  .phases{grid-template-columns:1fr}
+  .phase + .phase{border-left:none;border-top:2.5px solid var(--rule)}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  body{font-size:16px}
+  .page{padding:0 14px 48px}
+  .hero-title,.goal{padding:26px 20px}
+  .goal-num{font-size:48px}
+  .step{grid-template-columns:52px minmax(0,1fr)}
+  .step-num{font-size:46px}
+  .split{grid-template-columns:1fr}
+  .split > div + div{border-left:none;border-top:2px solid var(--rule)}
+  .rules{grid-template-columns:1fr}
+  .rules li{border-right:none!important;padding-left:0!important}
+  .dodont{grid-template-columns:1fr}
+  .script{font-size:18px;padding:18px}
+  .example{font-size:17px}
+  h3{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  .tabs-wrap,.reset{display:none}
+  .panel + .panel{break-before:page;margin-top:0;border-top:none}
+  .step .front{display:none}
+  .step .back{display:block}
+  .step .tap{display:none}
+}
+.cases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:2.5px solid var(--rule)}
+.case{padding:22px 20px 14px}
+.case + .case{border-left:2.5px solid var(--rule)}
+.case-letter{display:inline-grid;place-content:center;width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--bg);font:500 22px/1 var(--serif);font-style:italic;margin-bottom:14px}
+.case h3{font-size:22px}
+.case ul{font-size:16px}
+.case-note{margin:14px 0 0;font-weight:600}
+.signals a{font-weight:600}
+.step.feature{background:var(--orange-bg);border-top:none;border-left:6px solid var(--orange);padding:30px 24px 24px 18px}
+.step.feature + .step{border-top:none}
+.step.feature .step-num{color:var(--ink)}
+.feature-tag{display:inline-block;background:var(--orange);color:#174854;font:700 14px/1 var(--sans);padding:7px 11px;margin-bottom:12px}
+.feature-lead{font-family:var(--serif);font-size:21px;line-height:1.45;color:var(--ink)!important;max-width:44ch}
+.step.feature .example{background:var(--bg)}
+@media (max-width:640px){.step.feature{padding:24px 14px 20px 10px}.feature-lead{font-size:19px}}
+.standard{margin-top:44px;background:var(--orange-bg);border-left:6px solid var(--orange);padding:28px 28px 22px}
+.standard-lead{font-family:var(--serif);font-size:clamp(24px,3vw,32px);line-height:1.25;margin:0 0 12px;max-width:30ch}
+.standard p:last-child{margin:0;max-width:64ch}
+#leagues .split{margin-top:0}
+.goals.three{grid-template-rows:auto auto auto}
+.goal .example{margin:12px 0 0;font-size:17px}
+@media (max-width:860px){.cases{grid-template-columns:1fr 1fr}.case:nth-child(3){border-left:none}.case:nth-child(n+3){border-top:2.5px solid var(--rule)}}
+@media (max-width:640px){.cases{grid-template-columns:1fr}.case + .case{border-left:none;border-top:2.5px solid var(--rule)}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="corner" aria-hidden="true"><span>MANAGERS</span><span>RALLY</span></div>
+
+  <header class="hero frame">
+    <div class="hero-title">
+      <svg class="doodle" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28" fill="var(--ink)"/><g fill="var(--bg)"><ellipse cx="22" cy="18" rx="3.2" ry="4"/><ellipse cx="38" cy="15" rx="3" ry="3.6"/><ellipse cx="47" cy="27" rx="3.4" ry="3"/><ellipse cx="31" cy="30" rx="3.4" ry="3.8"/><ellipse cx="16" cy="33" rx="3" ry="3.6"/><ellipse cx="42" cy="42" rx="3.6" ry="3.2"/><ellipse cx="26" cy="46" rx="3.2" ry="3.6"/><ellipse cx="36" cy="54" rx="2.6" ry="2.4"/></g></svg>
+      <h1>Steps of <em>Service</em></h1>
+      <p>Training guide for Rally Managers. Already read the <a href="/training-content/manager-non-negotiables.html">Non-Negotiables</a>? Good — here's the 1-minute standard, then every position's steps of service.</p>
+    </div>
+    <div class="goals three">
+      <div class="goal">
+        <div class="goal-num">1</div>
+        <div>
+          <h2>Care for our guests.</h2>
+          <p>Personally and proactively engage with every guest who comes into the building.</p>
+        </div>
+      </div>
+      <div class="goal">
+        <div class="goal-num">2</div>
+        <div>
+          <h2>Support the team.</h2>
+          <p>Run food, take waters to tables, buss tables. You are responsible for their success.</p>
+        </div>
+      </div>
+      <div class="goal">
+        <div class="goal-num">3</div>
+        <div>
+          <h2>Actively manage your shift.</h2>
+          <p>See <a href="#during">during shift</a> below.</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs-wrap" aria-label="Training sections">
+    <div class="tabs">
+      <a class="tab" href="#foundations" aria-current="true"><small>Start here</small>1-Minute Standard</a>
+      <a class="tab" href="#courts"><small>Event 1</small>Court reservations</a>
+      <a class="tab" href="#walkins"><small>Event 2</small>Walk-ins</a>
+      <a class="tab" href="#leagues"><small>Event 3</small>Leagues &amp; programming</a>
+      <a class="tab" href="#events"><small>Event 4</small>Events</a>
+      <a class="tab" href="#opening"><small>Leadership</small>Opening</a>
+      <a class="tab" href="#during"><small>Leadership</small>During shift</a>
+      <a class="tab" href="#giveaways"><small>Reference</small>Giveaways</a>
+      <a class="tab" href="#quiz"><small>Finish</small>Check yourself</a>
+    </div>
+  </nav>
+
+  <!-- FOUNDATIONS -->
+  <section class="panel" id="foundations">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Part 1</p>
+        <h2>The 1-Minute <em>Standard</em></h2>
+      </div>
+      <p>This applies on every shift, whatever is happening in the building.</p>
+    </div>
+
+
+    <div class="standard">
+      <span class="feature-tag">The 1-minute standard</span>
+      <p class="standard-lead">Every guest is seated within 1 minute of arrival and escorted to their court or table.</p>
+      <p>Making this happen is the Manager's responsibility. If a team member isn't immediately available, you do it: take waters and menus to seated guests, or walk guests to their courts yourself.</p>
+    </div>
+  </section>
+
+  <!-- COURTS -->
+  <section class="panel" id="courts">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Event type 1 of 4</p>
+        <h2>Court <em>Reservations</em></h2>
+      </div>
+      <p>Touch every court and every reservation. Your cue is the Host's "15 minutes left" radio call.</p>
+    </div>
+
+    <ol class="steps">
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="front"><h3>Drop off towels and the review card</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Drop off towels and the review card</h3>
+          <p>When the Host calls "15 minutes left," head to that court.</p>
+          <div class="note"><strong>Review card incentive</strong>If players fill out the review card, $10 is added to their account, per person.</div>
+        <span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="front"><h3>Ask about their visit</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Ask about their visit</h3>
+          <p>Ask how their time was, and learn what brought them to Rally.</p>
+        <span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="front"><h3>Add notes on PlayByPoint</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Add notes on PlayByPoint</h3>
+          <p>Record their reason for visiting, their preferences, and anything else worth tracking.</p>
+        <span class="tap">Tap to flip back</span></div></div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- WALK-INS -->
+  <section class="panel" id="walkins">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Event type 2 of 4</p>
+        <h2>Walk-<em>Ins</em></h2>
+      </div>
+      <p>Guests here for food and drinks. Your touchpoint comes at the end of their visit.</p>
+    </div>
+    <ol class="steps">
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="front"><h3>Check in when the check is dropped</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Check in when the check is dropped</h3>
+          <p>Stop by the table as the check goes down.</p>
+        <span class="tap">Tap to flip back</span></div></div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- LEAGUES -->
+  <section class="panel" id="leagues">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Event type 3 of 4</p>
+        <h2>Leagues &amp; <em>Programming</em></h2>
+      </div>
+      <p>Building connections and relationships with our regulars is very important. Whatever your role that night, you're visible.</p>
+    </div>
+
+    <div class="split">
+      <div>
+        <span class="tag new">You're running the program</span>
+        <ul>
+          <li>Start the program, then roam.</li>
+          <li>Sitting outside with the league the whole time isn't permitted. Your presence is needed inside, and court touching is still required.</li>
+        </ul>
+      </div>
+      <div>
+        <span class="tag ret">You're MOD, not running it</span>
+        <ul>
+          <li>Make sure your laps include the outdoor programming.</li>
+          <li>Pop in and talk to guests. Get to know our regulars.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h4>Leagues that allow you to roam</h4>
+    <ul class="chips">
+      <li>Leisure League (+)</li><li>Ranks</li><li>Rookies League</li><li>Guys &amp; Gals League</li><li>Just Dudes</li>
+    </ul>
+  </section>
+
+  <!-- EVENTS -->
+  <section class="panel" id="events">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Event type 4 of 4</p>
+        <h2>Private <em>Events</em></h2>
+      </div>
+      <p>This is not a "set it and forget it" situation. Tick items off as you go.</p>
+    </div>
+
+    <div class="phases">
+      <div class="phase">
+        <h3>Before</h3>
+        <p class="count">Prep, setup &amp; team briefing</p>
+        <ul class="check">
+          <li><label><input type="checkbox"><span>Meet with the kitchen to check replen numbers, before 9am.</span></label></li>
+          <li><label><input type="checkbox"><span>Ring the event into Toast, before 9am.</span></label></li>
+          <li><label><input type="checkbox"><span>Hand off with the other managers. Share what you covered with the kitchen.</span></label></li>
+          <li><label><input type="checkbox"><span>When the team arrives, go over the BEO or Battleplan with Host, Bar and Captains. Cover every detail, including how to ring in drinks.</span></label></li>
+          <li><label><input type="checkbox"><span>Remind the team to clock into the event number.</span></label></li>
+          <li><label><input type="checkbox"><span>Setup complete 30 minutes before the event starts.</span></label></li>
+          <li><label><input type="checkbox"><span>Review the setup. Make sure it's up to our standards.</span></label></li>
+          <li><label><input type="checkbox"><span>Greet the POC as soon as they arrive and review the BEO with them. This has to happen.</span></label></li>
+          <li><label><input type="checkbox"><span>Introduce the POC to their Captains.</span></label></li>
+          <li><label><input type="checkbox"><span>Know what time food needs to go out, especially with multiple events at once.</span></label></li>
+          <li><label><input type="checkbox"><span>Remind the team not to gather at the service well. No more than 1 minute there. Roam.</span></label></li>
+        </ul>
+      </div>
+      <div class="phase">
+        <h3>During</h3>
+        <p class="count">Timing, replens &amp; audits</p>
+        <ul class="check">
+          <li><label><input type="checkbox"><span>Track when food needs to go out. At that time, make sure it's actually out, and help run food if needed.</span></label></li>
+          <li><label><input type="checkbox"><span>Check in with the POC about every 20 minutes. Make sure replens are being rung in.</span></label></li>
+          <li><label><input type="checkbox"><span>Audit checks to make sure the team is ringing items in correctly for the BEO package.</span></label></li>
+        </ul>
+      </div>
+      <div class="phase">
+        <h3>After</h3>
+        <p class="count">Thank, reset &amp; close</p>
+        <ul class="check">
+          <li><label><input type="checkbox"><span>Hand the POC an event review card and a free Courts &amp; Coffee card as a thank-you.</span></label></li>
+          <li><label><input type="checkbox"><span>Make sure the area is reset.</span></label></li>
+          <li><label><input type="checkbox"><span>Make sure Captains and Bartenders rang everything in correctly.</span></label></li>
+          <li><label><input type="checkbox"><span>Close out the event on Toast.</span></label></li>
+          <li><label><input type="checkbox"><span>Review the takeaway policy.</span></label></li>
+        </ul>
+      </div>
+    </div>
+    <button class="reset" type="button" id="resetChecks">Clear all checkmarks</button>
+  </section>
+
+  <!-- OPENING -->
+  <section class="panel" id="opening">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Part 3 · Leadership</p>
+        <h2>Opening: Prepare the <em>Shift</em></h2>
+      </div>
+      <p>A shift goes the way it's set up. Everything here is done before guests need it.</p>
+    </div>
+    <ol class="steps">
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="front"><h3>Complete the opening checklist</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Complete the opening checklist</h3><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="front"><h3>Fill out the floor plan and shift review</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Fill out the floor plan and shift review</h3><p>Add a battle plan if there's a large event. Don't leave anything blank.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="front"><h3>Check side work for every position</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Check side work for every position</h3><p>Know the side work of all positions and check that it's complete, or know what still needs to be done.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">4</div>
+        <div class="step-body"><div class="front"><h3>Open the bar</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Open the bar</h3><p>Bar open, fridge organized, lights on.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">5</div>
+        <div class="step-body"><div class="front"><h3>Set up the full venue</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Set up the full venue</h3><p>Waters, towels, TVs on, and the rest of the opening checklist.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">6</div>
+        <div class="step-body"><div class="front"><h3>Make cuts or staffing adjustments</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Make cuts or staffing adjustments</h3><p>As soon as you get in.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">7</div>
+        <div class="step-body"><div class="front"><h3>AM to PM handoff</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>AM to PM handoff</h3><p>Go over the lineup sheet, the floor plan and the events.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- DURING -->
+  <section class="panel" id="during">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Part 3 · Leadership</p>
+        <h2>During Shift: See the <em>Whole Venue</em></h2>
+      </div>
+      <p>Be present and see the whole venue. The goal: you can confidently lead a shift while coaching the team.</p>
+    </div>
+    <ol class="steps">
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">1</div>
+        <div class="step-body"><div class="front"><h3>Figure of 8s</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Figure of 8s</h3><p>Walk loops that include the kitchen and outdoor courts. Look for tables that need bussing, buss them yourself, and radio the Captain if you need more hands.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">2</div>
+        <div class="step-body"><div class="front"><h3>Overall cleanliness</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Overall cleanliness</h3><p>Straighten cushions and make sure waters are filled.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">3</div>
+        <div class="step-body"><div class="front"><h3>Kitchen check</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Kitchen check</h3><p>Go to the kitchen and look at the KDS screen.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">4</div>
+        <div class="step-body"><div class="front"><h3>Manage the shift</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Manage the shift</h3>
+        <ul>
+          <li>Look at all open tabs and run periodic audits.</li>
+          <li>Make sure servers are clocking in and ringing in food correctly.</li>
+          <li>Know exactly who is on which court or section at all times. Captains can't switch sections without your approval.</li>
+          <li>Make sure every tab has a card on file.</li>
+        </ul><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">5</div>
+        <div class="step-body"><div class="front"><h3>Host desk check</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Host desk check</h3><p>Give the host desk a checklist so they're always working on something, and review their side work.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">6</div>
+        <div class="step-body"><div class="front"><h3>Hands</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Hands</h3><p>Every "hands" call gets acknowledged. If it doesn't, jump on the radio and ask who has hands. Support if you're able. Running food is your responsibility.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+      <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+        <div class="step-num">7</div>
+        <div class="step-body"><div class="front"><h3>Review the KDS for ticket times and unpaid checks</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Review the KDS for ticket times and unpaid checks</h3><p>If items haven't been paid for, it's your responsibility to catch it before the guest leaves.</p><span class="tap">Tap to flip back</span></div></div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- GIVEAWAYS -->
+  <section class="panel" id="giveaways">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Appendix</p>
+        <h2>Giveaways &amp; <em>Incentives</em></h2>
+      </div>
+      <p>What each type of guest gets, and when.</p>
+    </div>
+    <div class="tl-scroll">
+      <table class="signals">
+        <thead><tr><th>Giveaway</th><th>Who gets it</th></tr></thead>
+        <tbody>
+          <tr><td>Complimentary chips</td><td>Court reservations, as needed. Captains check with you first.</td></tr>
+          <tr><td>Towels</td><td>Court reservations, dropped off with the review card.</td></tr>
+          <tr><td>Review card, $10 per person</td><td>Court reservations. $10 is added to the account of each person who fills it out.</td></tr>
+          <tr><td>Event review card + free Courts &amp; Coffee card</td><td>Event POCs, after the event.</td></tr>
+          <tr><td>50% discount</td><td>Confirm Captains offered it to every reservation, except $20 reservations and reservations that played for free.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="panel" id="quiz">
+    <div class="panel-head">
+      <div>
+        <p class="kicker">Knowledge check</p>
+        <h2>Check <em>Yourself</em></h2>
+      </div>
+      <p><span id="qcount"></span> questions on priorities, event types and leading the shift. Pick an answer to see if you're right and why. You can retake it as many times as you like.</p>
+    </div>
+    <ol class="quiz" id="quizList"></ol>
+    <p class="score" id="score" aria-live="polite"></p>
+    <button class="reset" type="button" id="retake">Retake the quiz</button>
+  </section>
+
+  <footer>
+    <span class="hand">for an active social life</span>
+    <span>Rally · Manager Steps of Service</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // Section nav: links jump to sections; highlight the section in view
+  var links = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var sections = links.map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); });
+  var nav = document.querySelector('.tabs-wrap');
+  function mark(i){
+    links.forEach(function(a,k){ if(k===i){ a.setAttribute('aria-current','true'); } else { a.removeAttribute('aria-current'); } });
+    var a = links[i], bar = a.parentNode;
+    if(a.offsetLeft < bar.scrollLeft || a.offsetLeft + a.offsetWidth > bar.scrollLeft + bar.clientWidth){
+      bar.scrollLeft = a.offsetLeft - 16;
+    }
+  }
+  function onScroll(){
+    var line = Math.min(nav.getBoundingClientRect().bottom, 140) + 40, cur = 0;
+    sections.forEach(function(sec,i){ if(sec && sec.getBoundingClientRect().top <= line) cur = i; });
+    if(window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) cur = sections.length - 1;
+    mark(cur);
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+
+  // Quiz
+  document.getElementById('resetChecks').addEventListener('click', function(){
+    document.querySelectorAll('#events input[type=checkbox]').forEach(function(c){ c.checked=false; });
+  });
+  var Q = [
+    {q:'What are a Manager\'s three highest priorities?', o:['Admin, scheduling, and inventory','Care for our guests, support the team, and actively manage your shift','Events, leagues, and court reservations'], a:1, why:'Care for guests, support the team (run food, waters, bussing), and actively manage your shift.'},
+    {q:'How quickly should every guest be seated and escorted to their court or table?', o:['Within 1 minute of arrival','Within 5 minutes','Whenever a Host is free'], a:0, why:'Every guest is seated within 1 minute and escorted. If no one is free, you do it yourself.'},
+    {q:'A "hands" call goes unanswered. What do you do?', o:['Wait, someone will get it','Jump on the radio, ask who has hands, and support if you can','Run it only if it\'s your section'], a:1, why:'Every hands call gets acknowledged. Running food is also your responsibility.'},
+    {q:'It\'s a busy Saturday night. When do you catch up on admin?', o:['Now, on your laptop at the bar','Not during a busy shift. Plan for it','Between hands calls'], a:1, why:'No admin during a busy shift. Laptops are used sparingly on an active floor.'},
+    {q:'Two Captains are chatting at the service well. What do you do?', o:['Let them catch a break','Get them roaming','Ignore it if tables look fine'], a:1, why:'Make sure Captains are always roaming, never chatting at the service well.'},
+    {q:'A Captain misses a step of service. Whose responsibility is it?', o:['Only the Captain\'s','Yours, as the Manager','The Host\'s'], a:1, why:'Know every position\'s steps of service. If steps are missed, it\'s your responsibility.'},
+    {q:'What\'s your cue to visit a court reservation?', o:['The Host\'s "15 minutes left" radio call','When they check in','When they close their tab'], a:0, why:'At the "15 minutes left" call, visit the court with towels and the review card.'},
+    {q:'What does a court reservation player get for filling out the review card?', o:['A free drink','$10 added to their account, per person','A free court hour'], a:1, why:'$10 is added to their account for each person who fills it out.'},
+    {q:'After talking with a court group, where do you record what you learned?', o:['PlayByPoint notes','Toast','The floor chart'], a:0, why:'Add notes on PlayByPoint: reason for visit, preferences, anything worth tracking.'},
+    {q:'When do you check in with walk-in diners?', o:['When the check is dropped','Before they order','Only if there\'s a complaint'], a:0, why:'Stop by the table as the check goes down.'},
+    {q:'You\'re running tonight\'s league. What\'s expected?', o:['Stay outside with the league all night','Start the program, then roam, including court touching inside','Hand it off to a Captain'], a:1, why:'Start the program, then roam. Your presence is needed inside, and court touching is still required.'},
+    {q:'You\'re MOD but not running the league. What do you do?', o:['Leave the league to whoever runs it','Include outdoor programming in your laps and talk to guests','Only check in at the end'], a:1, why:'Your laps include outdoor programming. Building relationships with regulars is very important.'},
+    {q:'For an event, by when do you meet the kitchen about replens and ring the event into Toast?', o:['Before 9am','30 minutes before the event','When the POC arrives'], a:0, why:'Both happen before 9am.'},
+    {q:'When must event setup be complete?', o:['30 minutes before the event starts','When the first guest arrives','10 minutes before'], a:0, why:'Setup is complete 30 minutes before start, then you review it against our standards.'},
+    {q:'During an event, how often do you check in with the POC?', o:['Once at the start','About every 20 minutes','Only at the end'], a:1, why:'Check in about every 20 minutes and make sure replens are being rung in. Events aren\'t "set it and forget it."'},
+    {q:'What does the event POC receive after the event?', o:['An event review card and a free Courts & Coffee card','A discount on their bill','Nothing'], a:0, why:'An event review card plus a free Courts & Coffee card as a thank-you.'},
+    {q:'What are Figure of 8s?', o:['A league format','Walking loops of the venue, including the kitchen and outdoor courts','A drink special'], a:1, why:'Loops through the whole venue to spot tables to buss. Buss them yourself and radio a Captain if you need more hands.'},
+    {q:'A Captain wants to switch sections mid-shift. Can they?', o:['Yes, if another Captain agrees','Only with your approval','Never'], a:1, why:'Captains can\'t switch sections unless you approve it. Know who is on which court or section at all times.'},
+    {q:'You spot an unpaid check on the KDS. When should it be caught?', o:['At the end of the night','Before the guest leaves','During the next shift\'s audit'], a:1, why:'Catching unpaid items before the guest leaves is your responsibility.'},
+    {q:'When do you make cuts or staffing adjustments?', o:['As soon as you get in','At the AM to PM handoff','After the rush'], a:0, why:'Make appropriate cuts or staffing adjustments as soon as you get in.'}
+  ];
+  document.getElementById('qcount').textContent = Q.length;
+  var list = document.getElementById('quizList'), score = document.getElementById('score'), answered = 0, right = 0;
+  function build(){
+    list.innerHTML=''; score.textContent=''; answered=0; right=0;
+    Q.forEach(function(item, idx){
+      var li = document.createElement('li'); li.className='q';
+      var p = document.createElement('p'); p.className='q-text'; p.textContent=(idx+1)+'. '+item.q; li.appendChild(p);
+      var opts = document.createElement('div'); opts.className='q-opts';
+      var why = document.createElement('div'); why.className='q-why'; why.hidden=true; why.textContent=item.why;
+      item.o.forEach(function(txt, j){
+        var b = document.createElement('button'); b.type='button'; b.textContent=txt;
+        b.addEventListener('click', function(){
+          opts.querySelectorAll('button').forEach(function(x,k){ x.disabled=true; if(k===item.a) x.classList.add('right'); });
+          if(j!==item.a) b.classList.add('wrong'); else right++;
+          why.hidden=false; answered++;
+          if(answered===Q.length){
+            score.textContent = 'You got '+right+' of '+Q.length+' right. '+(right===Q.length?'Ready for the floor.':'Review the sections you missed, then try again.');
+            if(window.parent!==window) window.parent.postMessage({rallyQuiz:true,title:document.title,score:right,total:Q.length},window.location.origin);
+          }
+        });
+        opts.appendChild(b);
+      });
+      li.appendChild(opts); li.appendChild(why); list.appendChild(li);
+    });
+  }
+  build();
+  document.getElementById('retake').addEventListener('click', function(){
+    build(); document.getElementById('quiz').scrollIntoView();
+  });
+})();
+</script>
+</body>
+</html>

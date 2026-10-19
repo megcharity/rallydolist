@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host Training Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+
+.jump{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.jump a{display:inline-block;padding:6px 12px;border:1.5px solid var(--navy);border-radius:999px;font-size:14px;font-weight:600;color:var(--navy);text-decoration:none;background:var(--paper)}
+.jump a:hover{background:var(--sage)}
+.prog{display:flex;align-items:center;gap:14px;margin-top:18px}
+.prog-bar{flex:1;height:12px;border:1.5px solid var(--navy);border-radius:999px;overflow:hidden;background:var(--paper)}
+.prog-fill{height:100%;width:0;background:var(--orange);transition:width .2s}
+.prog-txt{font-weight:600;font-size:14px;white-space:nowrap}
+.skills .grp td{background:var(--sage);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px}
+.skills td small{display:block;opacity:.8;font-size:13.5px;margin-top:2px}
+.newtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--orange);font-size:11px;font-weight:700;letter-spacing:.04em;vertical-align:1px}
+.sec-count{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.06em;white-space:nowrap}
+.notes-label{margin-top:16px;display:block}
+.signs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+.signs div{border-top:1.5px solid var(--navy);padding-top:6px;font-size:13px;margin-top:40px}
+.how{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.how>div{border-top:2px solid var(--orange);padding-top:10px}
+.how>div>b{display:block;font-size:17px;margin-bottom:4px}
+@media (max-width:720px){.how,.signs{grid-template-columns:1fr}}
+@media print{.jump,.bar,.prog{display:none}.sec{break-inside:avoid-page}textarea{min-height:60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Host Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Host Training · Guest Experience Specialist</div>
+        <h1 style="margin-top:12px">Host Training<br><em>Checklist</em></h1>
+        <p>Everything a Rally host needs to know, in one checklist. Sit down with your manager and work through it together. When every item is reviewed and you can do it on your own, you're ready for the host desk.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 140 150" width="130" height="140" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="28" y="22" width="84" height="112" rx="8" fill="#fffdf8"/><rect x="52" y="14" width="36" height="16" rx="5" fill="#174854"/><path d="M44 56 l7 7 l12 -14"/><path d="M72 56 H98"/><path d="M44 84 l7 7 l12 -14"/><path d="M72 84 H98"/><rect x="44" y="104" width="18" height="18" rx="3"/><path d="M72 113 H98"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The goal</span>
+        <p>Review every item with a manager until you know how to do all of it, on your own, with confidence.</p>
+      </div>
+      <div class="how two-col" style="margin-top:22px">
+        <div><b>1 · Review it</b><p>Your manager walks you through the item: tells you, shows you, then has you try it. Check <b>Reviewed</b>.</p></div>
+        <div><b>2 · Do it</b><p>Once you can do it on your own, your manager checks <b>Can do it</b>.</p></div>
+      </div>
+      <div class="prog"><div class="prog-bar"><div class="prog-fill" id="pfill"></div></div><span class="prog-txt" id="ptxt">0 of 90 ready</span></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:14px"><span class="tag t-orange">Jump to a section</span></div>
+      <ul class="jump"><li><a href="#culture">Culture &amp; Rally basics</a></li><li><a href="#guests">Guest experience</a></li><li><a href="#phone">Phone &amp; messages</a></li><li><a href="#events">Events</a></li><li><a href="#memberships">Memberships</a></li><li><a href="#pbp">PlayByPoint</a></li><li><a href="#refunds">Refund policies</a></li><li><a href="#pickleball">Pickleball programs</a></li><li><a href="#pos">Retail, gift cards &amp; take-out</a></li><li><a href="#ops">Operations</a></li><li><a href="#mail">Mail, packages &amp; lost and found</a></li></ul>
+    </div>
+    
+    <div class="sec" id="culture">
+      <div class="sec-head">
+        <div><h2>Culture <em>&amp; Rally basics</em></h2></div>
+        <span class="sec-count" data-count="culture">0 of 16</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Core values</td></tr><tr><td>Review core values</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesr" data-sec="culture" aria-label="Reviewed: Review core values"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesd" data-sec="culture" aria-label="Can do it: Review core values"></label></td></tr><tr class="grp"><td colspan="3">Operating principles</td></tr><tr><td>Review operating principles</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesr" data-sec="culture" aria-label="Reviewed: Review operating principles"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesd" data-sec="culture" aria-label="Can do it: Review operating principles"></label></td></tr><tr class="grp"><td colspan="3">Know Rally</td></tr><tr><td>Rally&#x27;s operating hours</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture7r" data-sec="culture" aria-label="Reviewed: Rally&#x27;s operating hours"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture7d" data-sec="culture" aria-label="Can do it: Rally&#x27;s operating hours"></label></td></tr><tr><td>Henrietta&#x27;s hours of operation</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture8r" data-sec="culture" aria-label="Reviewed: Henrietta&#x27;s hours of operation"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture8d" data-sec="culture" aria-label="Can do it: Henrietta&#x27;s hours of operation"></label></td></tr><tr><td>Current activations</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture9r" data-sec="culture" aria-label="Reviewed: Current activations"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture9d" data-sec="culture" aria-label="Can do it: Current activations"></label></td></tr><tr><td>What&#x27;s happening each day of the week (daily happenings)</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture10r" data-sec="culture" aria-label="Reviewed: What&#x27;s happening each day of the week (daily happenings)"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture10d" data-sec="culture" aria-label="Can do it: What&#x27;s happening each day of the week (daily happenings)"></label></td></tr><tr><td>How to support the team when it&#x27;s slow and when it&#x27;s busy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11r" data-sec="culture" aria-label="Reviewed: How to support the team when it&#x27;s slow and when it&#x27;s busy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11d" data-sec="culture" aria-label="Can do it: How to support the team when it&#x27;s slow and when it&#x27;s busy"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="guests">
+      <div class="sec-head">
+        <div><h2>Guest <em>experience</em></h2></div>
+        <span class="sec-count" data-count="guests">0 of 6</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">At the desk</td></tr><tr><td>Greeting guests when they walk in</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests0r" data-sec="guests" aria-label="Reviewed: Greeting guests when they walk in"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests0d" data-sec="guests" aria-label="Can do it: Greeting guests when they walk in"></label></td></tr><tr><td>Directing guests around the venue</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests1r" data-sec="guests" aria-label="Reviewed: Directing guests around the venue"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests1d" data-sec="guests" aria-label="Can do it: Directing guests around the venue"></label></td></tr><tr><td>Give a full tour of Rally (part of your sign-off)</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests2r" data-sec="guests" aria-label="Reviewed: Give a full tour of Rally (part of your sign-off)"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests2d" data-sec="guests" aria-label="Can do it: Give a full tour of Rally (part of your sign-off)"></label></td></tr><tr><td>Chat with guests about what&#x27;s happening at Rally</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests3r" data-sec="guests" aria-label="Reviewed: Chat with guests about what&#x27;s happening at Rally"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests3d" data-sec="guests" aria-label="Can do it: Chat with guests about what&#x27;s happening at Rally"></label></td></tr><tr class="grp"><td colspan="3">Food &amp; beverage</td></tr><tr><td>Review the food and beverage menus and offerings</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests4r" data-sec="guests" aria-label="Reviewed: Review the food and beverage menus and offerings"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests4d" data-sec="guests" aria-label="Can do it: Review the food and beverage menus and offerings"></label></td></tr><tr><td>Table numbers and sections</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests5r" data-sec="guests" aria-label="Reviewed: Table numbers and sections"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="guests5d" data-sec="guests" aria-label="Can do it: Table numbers and sections"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="phone">
+      <div class="sec-head">
+        <div><h2>Phone <em>&amp; messages</em></h2></div>
+        <span class="sec-count" data-count="phone">0 of 6</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Phone</td></tr><tr><td>Answering the phone and the call flow</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone0r" data-sec="phone" aria-label="Reviewed: Answering the phone and the call flow"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone0d" data-sec="phone" aria-label="Can do it: Answering the phone and the call flow"></label></td></tr><tr><td>Phone etiquette</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone1r" data-sec="phone" aria-label="Reviewed: Phone etiquette"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone1d" data-sec="phone" aria-label="Can do it: Phone etiquette"></label></td></tr><tr><td>Check for missed calls and call back every one</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone2r" data-sec="phone" aria-label="Reviewed: Check for missed calls and call back every one"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone2d" data-sec="phone" aria-label="Can do it: Check for missed calls and call back every one"></label></td></tr><tr class="grp"><td colspan="3">Taking messages</td></tr><tr><td>How to take a message for a manager</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone3r" data-sec="phone" aria-label="Reviewed: How to take a message for a manager"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone3d" data-sec="phone" aria-label="Can do it: How to take a message for a manager"></label></td></tr><tr><td>How to take a message for the Sales &amp; Events team</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone4r" data-sec="phone" aria-label="Reviewed: How to take a message for the Sales &amp; Events team"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone4d" data-sec="phone" aria-label="Can do it: How to take a message for the Sales &amp; Events team"></label></td></tr><tr><td>Check emails sent to hello@rally; respond (use AI to help with grammar) and copy the GM</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone5r" data-sec="phone" aria-label="Reviewed: Check emails sent to hello@rally; respond (use AI to help with grammar) and copy the GM"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="phone5d" data-sec="phone" aria-label="Can do it: Check emails sent to hello@rally; respond (use AI to help with grammar) and copy the GM"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="events">
+      <div class="sec-head">
+        <div><h2><em>Events</em></h2><p>Know what to do when someone calls or walks in asking about an event.</p></div>
+        <span class="sec-count" data-count="events">0 of 4</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Event inquiries</td></tr><tr><td>What to say when someone calls asking about an event</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events0r" data-sec="events" aria-label="Reviewed: What to say when someone calls asking about an event"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events0d" data-sec="events" aria-label="Can do it: What to say when someone calls asking about an event"></label></td></tr><tr><td>How to fill out the event inquiry form</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events1r" data-sec="events" aria-label="Reviewed: How to fill out the event inquiry form"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events1d" data-sec="events" aria-label="Can do it: How to fill out the event inquiry form"></label></td></tr><tr><td>Who the inquiry goes to, and how quickly</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events2r" data-sec="events" aria-label="Reviewed: Who the inquiry goes to, and how quickly"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events2d" data-sec="events" aria-label="Can do it: Who the inquiry goes to, and how quickly"></label></td></tr><tr><td>Go through the Host and Events communication document</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events3r" data-sec="events" aria-label="Reviewed: Go through the Host and Events communication document"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events3d" data-sec="events" aria-label="Can do it: Go through the Host and Events communication document"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="memberships">
+      <div class="sec-head">
+        <div><h2><em>Memberships</em></h2></div>
+        <span class="sec-count" data-count="memberships">0 of 5</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Know everything about memberships</td></tr><tr><td>Membership options and pricing</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships0r" data-sec="memberships" aria-label="Reviewed: Membership options and pricing"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships0d" data-sec="memberships" aria-label="Can do it: Membership options and pricing"></label></td></tr><tr><td>Member benefits</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships1r" data-sec="memberships" aria-label="Reviewed: Member benefits"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships1d" data-sec="memberships" aria-label="Can do it: Member benefits"></label></td></tr><tr><td>How to sell a membership and sign someone up</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships2r" data-sec="memberships" aria-label="Reviewed: How to sell a membership and sign someone up"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships2d" data-sec="memberships" aria-label="Can do it: How to sell a membership and sign someone up"></label></td></tr><tr><td>How to look up who the members are</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships3r" data-sec="memberships" aria-label="Reviewed: How to look up who the members are"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships3d" data-sec="memberships" aria-label="Can do it: How to look up who the members are"></label></td></tr><tr><td>Preparing the day&#x27;s member welcome signs and updating the members list</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships4r" data-sec="memberships" aria-label="Reviewed: Preparing the day&#x27;s member welcome signs and updating the members list"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="memberships4d" data-sec="memberships" aria-label="Can do it: Preparing the day&#x27;s member welcome signs and updating the members list"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="pbp">
+      <div class="sec-head">
+        <div><h2><em>PlayByPoint</em></h2></div>
+        <span class="sec-count" data-count="pbp">0 of 19</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Reservations</td></tr><tr><td>Make a reservation over the phone</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp0r" data-sec="pbp" aria-label="Reviewed: Make a reservation over the phone"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp0d" data-sec="pbp" aria-label="Can do it: Make a reservation over the phone"></label></td></tr><tr><td>Make a reservation in person</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp1r" data-sec="pbp" aria-label="Reviewed: Make a reservation in person"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp1d" data-sec="pbp" aria-label="Can do it: Make a reservation in person"></label></td></tr><tr><td>How far in advance guests can book (date sheet)</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp2r" data-sec="pbp" aria-label="Reviewed: How far in advance guests can book (date sheet)"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp2d" data-sec="pbp" aria-label="Can do it: How far in advance guests can book (date sheet)"></label></td></tr><tr><td>Minimum and maximum court duration</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp3r" data-sec="pbp" aria-label="Reviewed: Minimum and maximum court duration"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp3d" data-sec="pbp" aria-label="Can do it: Minimum and maximum court duration"></label></td></tr><tr><td>Cancel a reservation</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp4r" data-sec="pbp" aria-label="Reviewed: Cancel a reservation"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp4d" data-sec="pbp" aria-label="Can do it: Cancel a reservation"></label></td></tr><tr><td>Move guests to an indoor or outdoor court</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp5r" data-sec="pbp" aria-label="Reviewed: Move guests to an indoor or outdoor court"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp5d" data-sec="pbp" aria-label="Can do it: Move guests to an indoor or outdoor court"></label></td></tr><tr><td>Reservation no-shows</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp6r" data-sec="pbp" aria-label="Reviewed: Reservation no-shows"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp6d" data-sec="pbp" aria-label="Can do it: Reservation no-shows"></label></td></tr><tr class="grp"><td colspan="3">Waivers</td></tr><tr><td>Signing the waiver through the QR code</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp7r" data-sec="pbp" aria-label="Reviewed: Signing the waiver through the QR code"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp7d" data-sec="pbp" aria-label="Can do it: Signing the waiver through the QR code"></label></td></tr><tr><td>Signing the waiver on paper</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp8r" data-sec="pbp" aria-label="Reviewed: Signing the waiver on paper"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp8d" data-sec="pbp" aria-label="Can do it: Signing the waiver on paper"></label></td></tr><tr><td>Printing waivers</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp9r" data-sec="pbp" aria-label="Reviewed: Printing waivers"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp9d" data-sec="pbp" aria-label="Can do it: Printing waivers"></label></td></tr><tr><td>Age requirement and how to complete a minor&#x27;s waiver</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp10r" data-sec="pbp" aria-label="Reviewed: Age requirement and how to complete a minor&#x27;s waiver"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp10d" data-sec="pbp" aria-label="Can do it: Age requirement and how to complete a minor&#x27;s waiver"></label></td></tr><tr class="grp"><td colspan="3">Payments &amp; credits</td></tr><tr><td>Add credits to a guest&#x27;s account</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp11r" data-sec="pbp" aria-label="Reviewed: Add credits to a guest&#x27;s account"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp11d" data-sec="pbp" aria-label="Can do it: Add credits to a guest&#x27;s account"></label></td></tr><tr><td>Pay for a reservation using club credits, including partial credits</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp12r" data-sec="pbp" aria-label="Reviewed: Pay for a reservation using club credits, including partial credits"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp12d" data-sec="pbp" aria-label="Can do it: Pay for a reservation using club credits, including partial credits"></label></td></tr><tr><td>Pay for a reservation using the device</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp13r" data-sec="pbp" aria-label="Reviewed: Pay for a reservation using the device"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp13d" data-sec="pbp" aria-label="Can do it: Pay for a reservation using the device"></label></td></tr><tr><td>Pay for a reservation using someone else&#x27;s account</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp14r" data-sec="pbp" aria-label="Reviewed: Pay for a reservation using someone else&#x27;s account"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp14d" data-sec="pbp" aria-label="Can do it: Pay for a reservation using someone else&#x27;s account"></label></td></tr><tr><td>Refund to a credit card</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp15r" data-sec="pbp" aria-label="Reviewed: Refund to a credit card"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp15d" data-sec="pbp" aria-label="Can do it: Refund to a credit card"></label></td></tr><tr><td>Refund to club credits</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp16r" data-sec="pbp" aria-label="Reviewed: Refund to club credits"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp16d" data-sec="pbp" aria-label="Can do it: Refund to club credits"></label></td></tr><tr><td>Comp or discount a court</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp17r" data-sec="pbp" aria-label="Reviewed: Comp or discount a court"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp17d" data-sec="pbp" aria-label="Can do it: Comp or discount a court"></label></td></tr><tr><td>College student deal</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp18r" data-sec="pbp" aria-label="Reviewed: College student deal"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pbp18d" data-sec="pbp" aria-label="Can do it: College student deal"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="refunds">
+      <div class="sec-head">
+        <div><h2>Refund <em>policies</em></h2><p>Programming and reservations have different refund policies. Know both.</p></div>
+        <span class="sec-count" data-count="refunds">0 of 4</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Policies</td></tr><tr><td>Refund policy for reservations</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds0r" data-sec="refunds" aria-label="Reviewed: Refund policy for reservations"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds0d" data-sec="refunds" aria-label="Can do it: Refund policy for reservations"></label></td></tr><tr><td>Refund policy for programming</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds1r" data-sec="refunds" aria-label="Reviewed: Refund policy for programming"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds1d" data-sec="refunds" aria-label="Can do it: Refund policy for programming"></label></td></tr><tr><td>How the two are different, and how to explain it to a guest</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds2r" data-sec="refunds" aria-label="Reviewed: How the two are different, and how to explain it to a guest"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds2d" data-sec="refunds" aria-label="Can do it: How the two are different, and how to explain it to a guest"></label></td></tr><tr><td>Rain out policy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds3r" data-sec="refunds" aria-label="Reviewed: Rain out policy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="refunds3d" data-sec="refunds" aria-label="Can do it: Rain out policy"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="pickleball">
+      <div class="sec-head">
+        <div><h2>Pickleball <em>programs</em></h2></div>
+        <span class="sec-count" data-count="pickleball">0 of 8</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Programs</td></tr><tr><td>Confirm your Pickleball 101 IRL is booked</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball0r" data-sec="pickleball" aria-label="Reviewed: Confirm your Pickleball 101 IRL is booked"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball0d" data-sec="pickleball" aria-label="Can do it: Confirm your Pickleball 101 IRL is booked"></label></td></tr><tr><td>Recap traditional pickleball scoring</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball1r" data-sec="pickleball" aria-label="Reviewed: Recap traditional pickleball scoring"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball1d" data-sec="pickleball" aria-label="Can do it: Recap traditional pickleball scoring"></label></td></tr><tr><td>Socials</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball2r" data-sec="pickleball" aria-label="Reviewed: Socials"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball2d" data-sec="pickleball" aria-label="Can do it: Socials"></label></td></tr><tr><td>Leagues</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball3r" data-sec="pickleball" aria-label="Reviewed: Leagues"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball3d" data-sec="pickleball" aria-label="Can do it: Leagues"></label></td></tr><tr><td>Classes</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball4r" data-sec="pickleball" aria-label="Reviewed: Classes"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball4d" data-sec="pickleball" aria-label="Can do it: Classes"></label></td></tr><tr><td>Tournaments and round robins</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball5r" data-sec="pickleball" aria-label="Reviewed: Tournaments and round robins"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball5d" data-sec="pickleball" aria-label="Can do it: Tournaments and round robins"></label></td></tr><tr><td>Private lessons</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball6r" data-sec="pickleball" aria-label="Reviewed: Private lessons"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball6d" data-sec="pickleball" aria-label="Can do it: Private lessons"></label></td></tr><tr><td>RallyTrack</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball7r" data-sec="pickleball" aria-label="Reviewed: RallyTrack"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pickleball7d" data-sec="pickleball" aria-label="Can do it: RallyTrack"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="pos">
+      <div class="sec-head">
+        <div><h2>Retail, <em>gift cards &amp; take-out</em></h2></div>
+        <span class="sec-count" data-count="pos">0 of 8</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Retail</td></tr><tr><td>How to ring in retail</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos0r" data-sec="pos" aria-label="Reviewed: How to ring in retail"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos0d" data-sec="pos" aria-label="Can do it: How to ring in retail"></label></td></tr><tr><td>Grabbing merch from back stock</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos1r" data-sec="pos" aria-label="Reviewed: Grabbing merch from back stock"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos1d" data-sec="pos" aria-label="Can do it: Grabbing merch from back stock"></label></td></tr><tr class="grp"><td colspan="3">Gift cards</td></tr><tr><td>Gift card process over the phone</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos2r" data-sec="pos" aria-label="Reviewed: Gift card process over the phone"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos2d" data-sec="pos" aria-label="Can do it: Gift card process over the phone"></label></td></tr><tr><td>Gift card process in person</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos3r" data-sec="pos" aria-label="Reviewed: Gift card process in person"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos3d" data-sec="pos" aria-label="Can do it: Gift card process in person"></label></td></tr><tr class="grp"><td colspan="3">Take-out orders</td></tr><tr><td>How to handle a take-out order</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos4r" data-sec="pos" aria-label="Reviewed: How to handle a take-out order"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos4d" data-sec="pos" aria-label="Can do it: How to handle a take-out order"></label></td></tr><tr><td>How to ring in a take-out order</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos5r" data-sec="pos" aria-label="Reviewed: How to ring in a take-out order"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos5d" data-sec="pos" aria-label="Can do it: How to ring in a take-out order"></label></td></tr><tr><td>How to sell take-out (separate training coming)</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos6r" data-sec="pos" aria-label="Reviewed: How to sell take-out (separate training coming)"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos6d" data-sec="pos" aria-label="Can do it: How to sell take-out (separate training coming)"></label></td></tr><tr class="grp"><td colspan="3">Other charges</td></tr><tr><td>Outside dessert fee</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos7r" data-sec="pos" aria-label="Reviewed: Outside dessert fee"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="pos7d" data-sec="pos" aria-label="Can do it: Outside dessert fee"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="ops">
+      <div class="sec-head">
+        <div><h2><em>Operations</em></h2></div>
+        <span class="sec-count" data-count="ops">0 of 8</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Tools &amp; communication</td></tr><tr><td>Radio calls</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0r" data-sec="ops" aria-label="Reviewed: Radio calls"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0d" data-sec="ops" aria-label="Can do it: Radio calls"></label></td></tr><tr><td>Teams and GroupMe</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1r" data-sec="ops" aria-label="Reviewed: Teams and GroupMe"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1d" data-sec="ops" aria-label="Can do it: Teams and GroupMe"></label></td></tr><tr><td>Changing lighting, TVs and music</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2r" data-sec="ops" aria-label="Reviewed: Changing lighting, TVs and music"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2d" data-sec="ops" aria-label="Can do it: Changing lighting, TVs and music"></label></td></tr><tr><td>Opening procedure</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3r" data-sec="ops" aria-label="Reviewed: Opening procedure"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3d" data-sec="ops" aria-label="Can do it: Opening procedure"></label></td></tr><tr class="grp"><td colspan="3">Around the venue</td></tr><tr><td>Supporting food running and bussing</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4r" data-sec="ops" aria-label="Reviewed: Supporting food running and bussing"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4d" data-sec="ops" aria-label="Can do it: Supporting food running and bussing"></label></td></tr><tr><td>Using the ping pong tables</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops5r" data-sec="ops" aria-label="Reviewed: Using the ping pong tables"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops5d" data-sec="ops" aria-label="Can do it: Using the ping pong tables"></label></td></tr><tr><td>Cleanliness of the area</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops6r" data-sec="ops" aria-label="Reviewed: Cleanliness of the area"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops6d" data-sec="ops" aria-label="Can do it: Cleanliness of the area"></label></td></tr><tr><td>Dog policy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops7r" data-sec="ops" aria-label="Reviewed: Dog policy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops7d" data-sec="ops" aria-label="Can do it: Dog policy"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="mail">
+      <div class="sec-head">
+        <div><h2>Mail, <em>packages &amp; lost and found</em></h2></div>
+        <span class="sec-count" data-count="mail">0 of 6</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Mail</td></tr><tr><td>What to do with mail</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail0r" data-sec="mail" aria-label="Reviewed: What to do with mail"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail0d" data-sec="mail" aria-label="Can do it: What to do with mail"></label></td></tr><tr class="grp"><td colspan="3">Packages</td></tr><tr><td>What to do with packages</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail1r" data-sec="mail" aria-label="Reviewed: What to do with packages"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail1d" data-sec="mail" aria-label="Can do it: What to do with packages"></label></td></tr><tr><td>Teams-message the right person when a package arrives</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail2r" data-sec="mail" aria-label="Reviewed: Teams-message the right person when a package arrives"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail2d" data-sec="mail" aria-label="Can do it: Teams-message the right person when a package arrives"></label></td></tr><tr><td>No boxes at the host desk; get them to the right owner</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail3r" data-sec="mail" aria-label="Reviewed: No boxes at the host desk; get them to the right owner"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail3d" data-sec="mail" aria-label="Can do it: No boxes at the host desk; get them to the right owner"></label></td></tr><tr class="grp"><td colspan="3">Lost and found</td></tr><tr><td>What to do with lost and found items</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail4r" data-sec="mail" aria-label="Reviewed: What to do with lost and found items"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail4d" data-sec="mail" aria-label="Can do it: What to do with lost and found items"></label></td></tr><tr><td>Keep lost and found up to date and organized</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail5r" data-sec="mail" aria-label="Reviewed: Keep lost and found up to date and organized"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="mail5d" data-sec="mail" aria-label="Can do it: Keep lost and found up to date and organized"></label></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-sage">Sign-off</span></div>
+      <p>Every item is reviewed and checked "Can do it."</p>
+      <div class="signs"><div>Host signature &amp; date</div><div>Manager signature &amp; date</div></div>
+    </div>
+  </div>
+  <div class="bar">
+    <span class="saved" id="saved">Your checkmarks save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all</button>
+  </div>
+</div>
+<script>
+var TOTAL=90;
+var KEYNAME='rally-host-checklist-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Checkmarks can’t be saved in this browser — they’ll clear if you close the page.';}}
+function progress(){
+  var done=0;
+  document.querySelectorAll('[data-count]').forEach(function(c){
+    var s=c.getAttribute('data-count'),boxes=document.querySelectorAll('input[data-sec="'+s+'"][data-save$="d"]'),k=0;
+    boxes.forEach(function(b){if(b.checked)k++;});done+=k;c.textContent=k+' of '+boxes.length+' ready';
+  });
+  document.getElementById('ptxt').textContent=done+' of '+TOTAL+' ready';
+  document.getElementById('pfill').style.width=(done/TOTAL*100)+'%';
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();progress();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every checkmark on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+  progress();
+});
+progress();
+</script>
+</body>
+</html>

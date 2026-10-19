@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Manager Responsibilities</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 5 of 12 · Manager Responsibilities</div>
+        <h1 style="margin-top:12px">Manager<br><em>Responsibilities</em></h1>
+        <p>Being a manager at Rally means owning the full shift, not just the floor. Every shift has non-negotiable duties that make sure the venue is ready, the team is set up to succeed, and leadership has full visibility.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 150 150" width="140" height="140" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="75" cy="78" r="54" fill="#fffdf8"/><path d="M75 78 V44 M75 78 L98 92"/><path d="M75 30 V36 M75 120 V126 M27 78 H33 M117 78 H123"/><path d="M36 22 Q24 26 20 40 M114 22 Q126 26 130 40"/><circle cx="75" cy="78" r="5" fill="#174854"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>Managers run the floor and the business.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>AM <em>opening</em></h3><ul><li>Opening checklist and readiness sign-off</li><li>Cash, BEOs, roster and lineup</li><li>Handing off to PM</li></ul></div><div><h3>PM <em>closing</em></h3><ul><li>KDS and event POCs</li><li>Closing walkthrough</li><li>Cash, shift report and lock-up</li></ul></div><div><h3>Weekly <em>& monthly</em></h3><ul><li>Scheduling and ordering</li><li>Labour and sales reviews</li><li>Inventory and P&amp;L</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>AM <em>Opening Manager</em></h2></div></div>
+      <ol class="duties"><li><div><b>Follow the opening checklist</b>Get the venue ready for service. It should be guest-ready 15 minutes before opening.<span class="ref">→ Opening Checklist (SharePoint)</span></div></li><li><div><b>Pre-shift walkthrough: sign off</b>Complete the venue readiness checklist before service and sign your name. If it's not signed, it didn't happen.<span class="ref">→ Venue Readiness Checklist (SharePoint)</span></div></li><li><div><b>Count cash drawers</b>Count all cash drawers and the café bar. Verify opening amounts, record them in the cash log, and escalate any discrepancy immediately.<span class="ref">→ Cash Handling SOP (SharePoint)</span></div></li><li><div><b>Review BEOs and meet with the kitchen before 9am</b>Review all BEOs for the day, align with the kitchen on every event, and ring all BEO items into Toast before service.</div></li><li><div><b>Print the roster and floor chart</b>Print the day's roster from HotSchedules. Create and post the floor chart so everyone knows their role and section.</div></li><li><div><b>Fill out and print the lineup sheet</b>Before associates arrive: events, activations, sales targets, 86'd items, and anything else the team needs to know.<span class="ref">→ Lineup Sheet Template (SharePoint)</span></div></li><li><div><b>Review the lineup with every associate as they arrive</b>Each associate comes to the bar for a one-on-one review of the game plan, their role, activations and sales targets. Every associate, every shift, no exceptions.</div></li><li><div><b>Be on the floor: coach, support, motivate</b>Stay visible. Coach in real time, support the café and bar, run competitions, motivate the team to sell.</div></li><li><div><b>Do your Figure of 8s</b>Keep the loop going all shift (see below).</div></li><li><div><b>Close out the café and note paper goods</b>Confirm the café is clean and closed out. Pass any low paper goods to the PM manager.</div></li><li><div><b>Complete the AM shift report and hand off</b>Fill out the AM block, count reservations to your cutoff, and write a clear handoff note for the PM manager.<span class="ref">→ Chapter 6 · Shift Report</span></div></li></ol><div class="alert"><b>Don't leave without completing your shift report.</b></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>PM <em>Closing Manager</em></h2></div></div>
+      <ol class="duties"><li><div><b>Pre-shift walkthrough: sign off</b>When you arrive, complete the venue readiness checklist before taking over, and sign off.<span class="ref">→ Venue Readiness Checklist (SharePoint)</span></div></li><li><div><b>Review the roster and floor chart</b>Adjust for PM and make sure every team member knows their position.</div></li><li><div><b>Review the lineup with every associate as they arrive</b>Tonight's game plan, events, activations and sales targets. Every associate, every shift.<span class="ref">→ Lineup Sheet Template (SharePoint)</span></div></li><li><div><b>Be on the floor: coach, support, motivate</b>Stay visible all evening. Coach, recognize great work, run competitions.</div></li><li><div><b>Do your Figure of 8s</b>No empty plates, no uncollected glasses, food moving from the window.</div></li><li><div><b>Check the KDS: monitor ticket times</b>Check the Kitchen Display System regularly and address long ticket times with the kitchen immediately.</div></li><li><div><b>Touch base with every event POC</b>Before any event guest leaves, find the POC in person and get feedback. Fill in the Events section of the shift report right after.<span class="ref">→ Chapter 6 · Shift Report</span></div></li><li><div><b>Flag bar shortages to leadership</b>If anything at the bar is critically low, tell the GM before it becomes a floor problem.</div></li><li><div><b>Note paper goods that are low</b>Check all paper goods before close and note anything low in the shift report.</div></li><li><div><b>Follow the closing checklist</b>Work through it with the full team. Nothing gets skipped.<span class="ref">→ Closing Checklist (SharePoint)</span></div></li><li><div><b>Closing walkthrough with the full team</b>Before anyone leaves, walk every area with the closing team: bathrooms, tables, outdoor area, floors, courts, bar, café. Everyone participates.</div></li><li><div><b>Confirm every check is paid and everyone is clocked out</b>No open tabs left overnight. Every team member clocked out before they leave.</div></li><li><div><b>Collect shift reviews from all associates</b>Collect printed shift reviews (printed from Toast) from every associate before they leave.</div></li><li><div><b>Count bar, café and cash drawers</b>Record cash drops and tips on the cash sheet, log everything, and escalate any discrepancy.<span class="ref">→ Cash Handling SOP (SharePoint)</span></div></li><li><div><b>Complete the PM shift report and send the Day Summary</b>Fill out the full PM block, pull sales and covers from Toast, complete the Events section, then screenshot the Day Summary and email the team.<span class="ref">→ Chapter 6 · Shift Report</span></div></li><li><div><b>Lock up: lights, TVs, music off</b>Final sweep. Leave the venue the way you'd want to open it.</div></li></ol><div class="alert"><b>Last one out owns it.</b></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>The <em>Figure of 8</em></h2><p>Your loop through the venue, repeated all shift.</p></div></div>
+      <ol class="steps"><li><b>Indoor courts</b>Walk the indoor courts and introduce yourself to guests.</li><li><b>Outdoor courts</b>Check the outdoor courts and lounges.</li><li><b>Expo</b>Walk to expo. Look for empty plates, glasses and food sitting in the window. Then start the loop again.</li></ol><div class="note"><b>Run PULSE on every loop:</b> playlists, upkeep, lighting, screens, environment (Chapter 4).</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Case <em>by case</em></h2><p>When the situation calls for it.</p></div></div>
+      <div class="cards"><div class="card"><h3>Incident <em>reporting</em></h3><ul><li>Any incident involving a guest, team member or the venue gets documented on the shift report</li><li>Escalate serious incidents to leadership immediately. Don't wait until the end of the shift</li><li>If it's not documented, it didn't happen</li></ul></div><div class="card"><h3>Performance <em>write-ups</em></h3><ul><li>Follow Chapter 8 · Coaching &amp; Corrective Action</li><li>Complete the form when formal documentation is required</li><li>Always have a witness present</li><li>File the form and note the conversation in the shift report</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Own the <em>problem</em></h2><p>When something goes wrong (equipment, a guest issue, a gap in service), you don't just report it. You take ownership and take steps to solve it.</p></div></div>
+      <ol class="steps c2"><li><b>Own it</b>It's your shift, so it's your problem. Don't wait for someone else to notice or pick it up.</li><li><b>Take action</b>Do everything you can to fix it, or at least contain it, right now. Look for a workaround that keeps the guest experience on track.</li><li><b>Escalate with a plan</b>If it needs payment approval, reach out to the GM, but bring what you've already done and what you recommend. Get it as far as you can first.</li><li><b>Close the loop</b>Follow through until it's actually solved, and note what happened and what you did in the shift report.</li></ol><div class="note"><b>Problem solvers are huge at Rally.</b> “The ice machine is down” is a report. “The ice machine is down. I called the repair company, they can come at 2pm for a $150 service fee, and I've bought bagged ice to get us through. Can you approve the service call?” is ownership.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Weekly <em>& monthly</em></h2></div></div>
+      <div class="compare"><div><span class="label">Weekly</span><ul><li><b>Scheduling:</b> build and publish in HotSchedules at least one week ahead. Review labour targets first</li><li><b>Bar ordering:</b> review pars, check stock, place the order</li><li><b>Café ordering:</b> review pars, coordinate with the café team</li><li><b>Paper goods and supplies:</b> check and replenish</li><li><b>Equipment and cleaning check:</b> flag maintenance needs and confirm the cleaning schedule was followed</li><li><b>Labour tracking review:</b> flag overages and patterns</li><li><b>Captain sales review:</b> top performers and anyone who needs coaching</li><li><b>Weekly managers meeting:</b> all managers plus leadership. Come prepared</li></ul></div><div><span class="label">Monthly</span><ul><li><b>Inventory count:</b> full end-of-month count for bar and café, submitted to leadership by the 1st</li><li><b>Deep clean and maintenance review:</b> confirm the deep clean, walk the venue, submit a maintenance report</li><li><b>P&amp;L review</b> with leadership. Come with context on variances: labour, comps, sales</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>The Shift Report</b>: how to complete it, how to document comps, and how to send it.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Complete the opening checklist with the venue guest-ready 15 minutes before open.", "Sign off on the venue readiness checklist.", "Count drawers and record them in the cash log.", "Review BEOs, meet with the kitchen before 9am, and ring BEO items into Toast.", "Build the floor chart and lineup sheet, then give every associate a one-on-one lineup.", "Run Figure of 8s all shift.", "Monitor the KDS and address long ticket times with the kitchen.", "Lead the closing walkthrough with the full team.", "Confirm all checks are paid, everyone is clocked out, and shift reviews are collected.", "Lock up: lights, TVs and music off.", "Take ownership of a problem on shift: act on it, and bring the GM a plan if approval is needed."];
+var OUTCOMES=["Run an AM open from start to handoff.", "Run a PM close from takeover to lock-up.", "Explain the Figure of 8.", "Know when to file an incident report.", "Own a problem from start to finish, not just report it.", "Know my weekly and monthly duties."];
+var SCEN=[{"q": "Associates start arriving at 9:30 and the lineup sheet isn't printed. What should have happened, and what do you do now?", "pts": ["The AM manager fills out and prints the lineup sheet before associates arrive.", "Every associate still gets a one-on-one lineup at the bar before they hit the floor.", "Cover events, activations, sales targets and 86'd items.", "Build in time so it's ready next shift."], "listen": "Lineup before the floor, for every associate, with no exceptions."}, {"q": "A cash drawer is $20 short at open. What do you do?", "pts": ["Record it in the cash log.", "Escalate the discrepancy immediately.", "Follow the Cash Handling SOP."], "listen": "Immediate escalation, not waiting until the end of the day."}, {"q": "At 7pm the KDS shows ticket times climbing. What do you do?", "pts": ["Address it with the kitchen immediately.", "Walk to expo on your Figure of 8 and see what's sitting.", "Keep captains informed so they can update guests."], "listen": "Acting right away rather than waiting it out."}, {"q": "At close, a captain asks to leave before the closing walkthrough. What's your answer?", "pts": ["No. Every closing team member participates in the walkthrough.", "Collect their printed shift review.", "Confirm they're clocked out before they leave."], "listen": "Holding the standard kindly and firmly."}, {"q": "The walk-in cooler is reading warm mid-shift. What do you do?", "pts": ["Own it. Don't just text someone that it's broken.", "Act now: protect the product (move what you can), check the obvious causes.", "Contact the repair vendor and get a time and cost.", "Bring the GM a plan and ask for payment approval if needed.", "Follow it through to the fix and note it in the shift report."], "listen": "Action and a recommendation before escalating, not just a report."}, {"q": "A guest slips on a wet floor near the bar but says they're fine. What do you do?", "pts": ["Take care of the guest first.", "Document it on the shift report.", "If it's serious, escalate to leadership immediately."], "listen": "Documenting it even when the guest says they're fine."}];
+var KEYNAME="rally-mgr-manager-responsibilities-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

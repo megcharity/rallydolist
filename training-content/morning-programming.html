@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Morning Programming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Barista Training</span><span>Rally</span></div>
+
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Barista Training · Morning Programming</div>
+        <h1 style="margin-top:12px">Morning<br><em>Programming</em></h1>
+        <p>Many of our morning guests are here for a program, and some programs include a drink with the ticket. Today you'll learn which drinks are included, how to ring them in on Toast, and why the players behind those tickets are some of the most important guests you'll serve.</p>
+      </div>
+      <div class="hero-r">
+        <svg class="illo" viewBox="0 0 120 150" width="120" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22 Q60 10 102 22 L104 34 Q60 26 16 34 Z"/><path d="M22 36 L32 138 Q60 146 88 138 L98 36"/><path d="M26 66 L94 66 L90 104 L30 104 Z" fill="#174854" fill-opacity=".85"/><path d="M42 16 Q46 4 58 8 Q70 2 76 14" stroke-width="2.5"/></svg>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The Rally Standard</span>
+        <p>Every program drink gets rung in, and every program player gets known by name.</p>
+      </div>
+      <div class="connect">
+        <div>
+          <h3>Connection is <em>key</em></h3>
+          <p>Our morning program players are our regulars. Building relationships with them builds community at Rally, and it builds the kind of relationships that lead to better tips. Learn their names and their usual orders, ask how their games went, and greet them like the regulars they are.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll explore today</span></div>
+      <div class="explore">
+        <div>
+          <h3>Courts &amp; <em>Coffee</em></h3>
+          <ul><li>Our most popular morning program</li><li>Every player receives a drink ticket</li><li>The ticket gets them a free cold brew, drip coffee or tea</li><li>Ring it in as Courts &amp; Coffee on Toast</li></ul>
+        </div>
+        <div>
+          <h3>Other morning <em>programs</em></h3>
+          <ul><li>Players also receive free drinks</li><li>They show a punch card or ticket</li><li>Ring the drink in at $0</li></ul>
+        </div>
+        <div>
+          <h3>Ringing in <em>&amp; tips</em></h3>
+          <ul><li>When a drink is rung in at $0, a percentage of the ticket sale goes toward tips</li><li>A program drink that isn't rung in leaves that tip share out</li><li>Always ring it in, even when the guest isn't paying</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <h2>Ringing In a <em>Program Drink</em></h2>
+          <p>When a program player comes to the counter with a ticket or punch card, follow these steps.</p>
+        </div>
+      </div>
+      <ol class="steps">
+        <li><b>Check for the ticket or punch card</b>Courts &amp; Coffee players bring a drink ticket. Players in other morning programs show a punch card or ticket.</li>
+        <li><b>Ring it in on Toast</b>Courts &amp; Coffee: ring it in as Courts &amp; Coffee, for a cold brew, drip coffee or tea. Other morning programs: ring the drink in at $0.</li>
+        <li><b>Make it and connect</b>Make the drink to standard and call their name. Ask how their game went, and remember their order for next time.</li>
+      </ol>
+      <div class="alert"><b>Have a manager show you how.</b> Before you ring in a Courts &amp; Coffee ticket or a $0 program drink on your own, ask a manager to walk you through it on Toast.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-orange">Practice during service</span>
+          <p class="hint" style="margin-top:8px">Your trainer checks these off during service.</p>
+        </div>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead>
+        <tbody id="skills"></tbody>
+      </table>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of today, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-coral">At the counter</span>
+          <p>Answer each one in your own words, then review your answers with your MOD.</p>
+        </div>
+      </div>
+      <div class="scen" id="scen"></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw today</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, I'd like you to focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px">
+        <span class="label">Looking ahead</span>
+        <p>Keep building your list of program regulars. By the end of your first few weeks of mornings, aim to know most Courts &amp; Coffee players by name and order.</p>
+      </div>
+    </div>
+  </div>
+
+  <details class="key">
+    <summary>
+      <div>
+        <h2>MOD <em>Cheat Sheet</em></h2>
+        <p class="hint" style="margin-top:6px">For MODs reviewing answers. Trainees — finish your answers first.</p>
+      </div>
+      <span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span>
+    </summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. A trainee's answer is on track when it hits the main ideas in their own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+
+  <div class="bar">
+    <span class="saved" id="saved">Your answers save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all answers</button>
+  </div>
+</div>
+
+<script>
+var SKILLS=["Ring in a Courts & Coffee drink ticket as Courts & Coffee on Toast.", "Tell a Courts & Coffee player what their ticket covers: cold brew, drip coffee or tea.", "Ring in an other-program drink at $0 when the player shows a punch card or ticket.", "Ring in every program drink, without skipping any.", "Greet program regulars by name.", "Remember at least three program regulars' usual orders.", "Start a conversation with a program player about their game or the program."];
+var OUTCOMES=["Explain what Courts & Coffee is and what the drink ticket includes.", "Ring in Courts & Coffee drinks correctly on Toast.", "Ring in other morning program drinks at $0 with a punch card or ticket.", "Explain why program drinks are always rung in, and how it affects tips.", "Build relationships with our morning program players."];
+var SCEN=["A Courts & Coffee player hands you their drink ticket and asks for an oat milk latte. What do you do?", "A player from another morning program asks for a cold brew and shows you their punch card. Walk through how you ring it in.", "A player says they're in a morning program but doesn't have a punch card or ticket with them. What do you do?", "It's slammed, and a teammate says to just hand out the program coffees without ringing them in to save time. What do you say?", "Why does it matter to get to know our program players?", "A Courts & Coffee regular you've served a few times walks up. How do you greet them?"];
+var KEY=[{"pts": ["Explain kindly that the ticket covers a cold brew, drip coffee or tea.", "Offer one of those, or offer to ring the latte in as a regular sale.", "Ring any ticket drink in as Courts & Coffee on Toast."], "listen": "Knowing exactly what the ticket covers, and offering options warmly rather than just saying no."}, {"pts": ["Check the punch card or ticket.", "Ring the drink in at $0 on Toast.", "Make it to standard, call their name, and connect."], "listen": "Ringing it in at $0, not skipping it."}, {"pts": ["The free drink needs a punch card or ticket.", "Be friendly about it, and check with your MOD on how to handle it."], "listen": "Not ringing it in at $0 without a card or ticket, and bringing in the MOD rather than guessing."}, {"pts": ["Every program drink gets rung in.", "When it's rung in at $0, a percentage of the ticket sale goes toward tips.", "Skipping it costs the team tips."], "listen": "Understanding the tip connection, and holding the standard even when it's busy."}, {"pts": ["They're our regulars.", "Relationships build community at Rally.", "Relationships lead to better tips."], "listen": "Both reasons: community and tips."}, {"pts": ["Greet them by name.", "Ask if they want their usual.", "Ask how their games went today."], "listen": "Using their name and remembering their order."}];
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    var cb=el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s});
+    lab.appendChild(cb);td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+});
+var ky=document.getElementById('key');
+KEY.forEach(function(k,i){
+  var d=el('div',{'class':'ans'});d.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+SCEN[i]));
+  var ul=el('ul');k.pts.forEach(function(p){ul.appendChild(el('li',{},p));});d.appendChild(ul);
+  d.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+k.listen));ky.appendChild(d);
+});
+
+var KEYNAME='rally-morning-programming-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+</script>
+</body>
+</html>

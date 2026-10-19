@@ -1,0 +1,247 @@
+<title>Rally New Hire Bingo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+/* Layout: Rally training-page frame (navy rule box on cream) holding one 5×5 card; same look as the other Rally chapters, single light theme by choice. */
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+  --t-shadow:#cee4cf; --t-people:#fde2bd; --t-sales:#fbd2c4; --t-floor:#fffdf8; --t-know:#e3ecee;
+  --display:"Instrument Serif",Georgia,serif;
+  --body:"Hanken Grotesk",system-ui,-apple-system,sans-serif;
+  --hand:"Gochi Hand","Comic Sans MS",cursive;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--cream);color:var(--navy);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--hand);font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1{font-size:clamp(44px,8vw,70px);line-height:.95}
+h1 em,h2 em{font-style:italic}
+p{margin:0}
+.hand{font-family:var(--hand);font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+
+.frame{border:2px solid var(--navy);background:var(--cream)}
+.hero{display:grid;grid-template-columns:1.4fr .6fr}
+.hero-l{padding:28px;border-right:2px solid var(--navy);min-width:0}
+.hero-l p{margin-top:14px;font-size:17px;max-width:56ch}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px}
+
+.who{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;padding:20px 28px;border-top:2px solid var(--navy)}
+.who label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.who input{font:inherit;font-size:17px;color:var(--navy);background:transparent;border:0;border-bottom:1.5px solid var(--navy);padding:4px 2px;border-radius:0;width:100%}
+.who input:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+.rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:22px 28px;border-top:2px solid var(--navy)}
+.rules>div{border-top:2px solid var(--orange);padding-top:10px;min-width:0}
+.rules b{display:block;font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;margin-bottom:4px}
+
+.card-sec{padding:24px 28px 28px;border-top:2px solid var(--navy)}
+.status{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.status .count{font-family:var(--display);font-size:26px;line-height:1}
+.status .count em{font-style:italic}
+.banner{font-family:var(--hand);font-size:20px;letter-spacing:.1em;text-transform:uppercase;background:var(--orange);padding:4px 16px 2px;border-radius:999px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.letters,.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));min-width:620px}
+.letters div{text-align:center;font-family:var(--display);font-size:44px;line-height:1;padding:4px 0 8px}
+.grid{border:2px solid var(--navy);background:var(--navy);gap:2px}
+.sq{position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-height:150px;padding:12px 11px 10px;background:var(--paper);color:var(--navy);border:0;text-align:left;font:inherit;cursor:pointer;min-width:0}
+.sq:focus-visible{outline:3px solid var(--orange);outline-offset:-5px;z-index:1}
+.sq[data-c="shadow"]{background:var(--t-shadow)}
+.sq[data-c="people"]{background:var(--t-people)}
+.sq[data-c="sales"]{background:var(--t-sales)}
+.sq[data-c="floor"]{background:var(--t-floor)}
+.sq[data-c="know"]{background:var(--t-know)}
+.sq .cat{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+.sq .txt{font-size:14.5px;font-weight:500;line-height:1.3;flex:1}
+.sq .ini{display:flex;align-items:flex-end;gap:6px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.sq .ini span{flex:1;border-bottom:1.25px solid var(--navy);height:14px}
+.stamp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transform:scale(.6) rotate(-14deg);transition:opacity .18s ease,transform .22s cubic-bezier(.3,1.6,.5,1)}
+.stamp svg{width:74%;max-width:112px;height:auto}
+.sq.on .stamp{opacity:.92;transform:scale(1) rotate(-14deg)}
+.sq.on .txt,.sq.on .cat{opacity:.55}
+.sq.win{box-shadow:inset 0 0 0 4px var(--orange)}
+.sq.free{background:var(--navy);color:var(--cream);cursor:default;align-items:center;justify-content:center;text-align:center}
+.sq.free .f1{font-family:var(--hand);font-size:15px;letter-spacing:.14em;text-transform:uppercase}
+.sq.free .f2{font-family:var(--display);font-style:italic;font-size:30px;line-height:1}
+.sq.free.win{box-shadow:inset 0 0 0 4px var(--orange)}
+
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:16px;font-size:13px;font-weight:500}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:16px;height:16px;border:1.5px solid var(--navy);border-radius:3px;display:inline-block}
+
+.sign{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:22px 28px 26px;border-top:2px solid var(--navy)}
+.sign div{border-bottom:1.5px solid var(--navy);padding-top:30px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.sign div span{position:relative;top:22px}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:22px;font-size:14px}
+.bar .note{opacity:.85}
+button.clear{font:600 14px var(--body);background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+button.clear.arm{background:var(--coral);border-color:var(--coral)}
+button.clear:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 18px}
+  .hero-r{min-height:150px}
+  .who,.rules{grid-template-columns:1fr;padding-left:18px;padding-right:18px}
+  .card-sec,.sign{padding-left:18px;padding-right:18px}
+  .sign{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.stamp{transition:none}}
+@media print{
+  @page{size:letter;margin:.4in}
+  body{background:#fff}
+  .wrap{padding:0}
+  .hero-r,.bar,.status .banner{display:none}
+  .hero{grid-template-columns:1fr}.hero-l{border-right:0;padding:14px 18px}
+  h1{font-size:44px}.hero-l p{font-size:13px;margin-top:6px}
+  .rules{padding:10px 18px;font-size:12px}.rules b{font-size:17px}
+  .who{padding:10px 18px}
+  .card-sec{padding:12px 18px}
+  .letters,.grid{min-width:0}
+  .sq{min-height:118px}
+  .sq.on .stamp{opacity:0}.sq.on .txt,.sq.on .cat{opacity:1}
+  .frame,.sq{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+
+<div class="wrap">
+  <div class="topbar"><span>New Hire Training</span><span>Rally</span></div>
+
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">All hourly positions · First weeks</div>
+        <h1 style="margin-top:12px">New Hire<br><em>Bingo</em></h1>
+        <p>Welcome to the team. Work through these squares in your first few weeks to meet the people, learn every position, and get comfortable on Toast and on the floor. Each square needs a manager's initials, and every square has to be complete before you turn in your card.</p>
+      </div>
+      <div class="hero-r">
+        <svg viewBox="0 0 150 160" width="140" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M58 18 Q96 8 116 36 Q132 62 112 92 L96 108 Q78 118 62 104 L44 86 Q30 70 36 50 Q42 26 58 18Z" fill="#174854"/><path d="M62 104 L40 130 M50 96 L30 120"/><path d="M30 120 L22 132 Q30 142 40 132 L40 130" fill="#fffdf8"/><circle cx="118" cy="126" r="13" fill="#f89a1c"/><circle cx="113" cy="121" r="2"/><circle cx="123" cy="124" r="2"/><circle cx="116" cy="131" r="2"/></svg>
+      </div>
+    </div>
+
+    <div class="who">
+      <label for="nm"><span class="label">Your name</span><input id="nm" data-save="nm" autocomplete="off"></label>
+      <label for="pos"><span class="label">Position</span><input id="pos" data-save="pos" autocomplete="off"></label>
+      <label for="start"><span class="label">Start date</span><input id="start" data-save="start" autocomplete="off"></label>
+    </div>
+
+    <div class="rules">
+      <div><b>Do it, then get initials</b>When you finish a square, ask the manager on duty to initial it.</div>
+      <div><b>Fill every square</b>All 24 squares, in any order. The middle is free. Your card isn't done until every square is initialed.</div>
+      <div><b>Turn it in</b>When your card is full, give it to your manager to sign off. A full card means you've seen every part of Rally.</div>
+    </div>
+
+    <div class="card-sec">
+      <div class="status">
+        <div class="count" id="count"><em>0</em> of 24 squares</div>
+        <div class="banner" id="banner" hidden>Card complete!</div>
+      </div>
+      <div class="scroll">
+        <div class="letters" aria-hidden="true"><div>R</div><div>A</div><div>L</div><div>L</div><div>Y</div></div>
+        <div class="grid" id="grid" role="group" aria-label="Bingo card"></div>
+      </div>
+      <div class="legend" aria-label="Square types">
+        <span><i style="background:var(--t-shadow)"></i>Shadow a position</span>
+        <span><i style="background:var(--t-people)"></i>Meet the people</span>
+        <span><i style="background:var(--t-sales)"></i>Toast &amp; sales</span>
+        <span><i style="background:var(--t-floor)"></i>On the floor</span>
+        <span><i style="background:var(--t-know)"></i>Know Rally</span>
+      </div>
+    </div>
+
+    <div class="sign">
+      <div><span>Associate signature &amp; date</span></div>
+      <div><span>Card complete: manager signature &amp; date</span></div>
+    </div>
+  </div>
+
+  <div class="bar">
+    <span class="note" id="saved">Tap a square to stamp it. Your card saves in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear card</button>
+  </div>
+</div>
+
+<script>
+var SQ=[
+ ["shadow","Shadowed a Host"],
+ ["sales","Rang in a $0 club item"],
+ ["people","Told a manager your favorite food item"],
+ ["floor","Did the Two-Foot Rule all shift: eye contact, smile, greeting"],
+ ["know","Can recite the monthly food special"],
+ ["people","Introduced yourself to the chef on duty"],
+ ["shadow","Shadowed a Swarmer"],
+ ["know","Knows what to do with a lost and found item"],
+ ["sales","Rang in a 15% discount for a league player"],
+ ["floor","Set up for an event"],
+ ["floor","Walked a guest to the restroom instead of pointing"],
+ ["know","Found out what's on the event calendar this week"],
+ null,
+ ["shadow","Shadowed a Bartender"],
+ ["people","Introduced yourself to a league player"],
+ ["sales","Rang in a $0 beverage for an event"],
+ ["people","Asked a player how their game went"],
+ ["shadow","Shadowed a Captain"],
+ ["know","Can recite my steps of service to a manager"],
+ ["sales","Told a reservation guest about our leagues and socials"],
+ ["floor","Completed my side work"],
+ ["sales","Upsold an item and told your manager about it"],
+ ["floor","Explained to a first-timer how Rally works: courts, café and bar"],
+ ["people","Asked a manager for feedback after a shift"],
+ ["know","Can name Rally's core values and tell a manager what one means to you"]
+];
+var CAT={shadow:"Shadow",people:"Meet the people",sales:"Toast & sales",floor:"On the floor",know:"Know Rally"};
+var STAMP='<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="#174854" stroke-width="5"/><circle cx="60" cy="60" r="44" fill="#174854" fill-opacity=".9"/><path d="M38 61 L53 76 L83 44" fill="none" stroke="#f89a1c" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var KEYNAME="rally-new-hire-bingo-v1",state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||"{}")||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById("saved").textContent="Your card can't be saved in this browser, so stamps will clear if you close the page.";}}
+
+var grid=document.getElementById("grid"),cells=[];
+SQ.forEach(function(s,i){
+  var b=document.createElement("button");b.type="button";b.className="sq";b.id="sq"+i;
+  if(!s){
+    b.className="sq free";b.disabled=true;b.setAttribute("aria-label","Free space: Welcome to Rally");
+    b.innerHTML='<span class="f1">Free space</span><span class="f2">Welcome to Rally</span>';
+  }else{
+    b.setAttribute("data-c",s[0]);
+    b.innerHTML='<span class="cat">'+CAT[s[0]]+'</span><span class="txt">'+s[1]+'</span><span class="ini">Mgr<span></span></span><span class="stamp">'+STAMP+'</span>';
+    b.setAttribute("aria-pressed",state["s"+i]?"true":"false");
+    if(state["s"+i])b.classList.add("on");
+    b.addEventListener("click",function(){
+      state["s"+i]=!state["s"+i];b.classList.toggle("on",!!state["s"+i]);
+      b.setAttribute("aria-pressed",state["s"+i]?"true":"false");save();update();
+    });
+  }
+  grid.appendChild(b);cells.push(b);
+});
+
+function update(){
+  var n=0;for(var i=0;i<25;i++){if(i!==12&&state["s"+i])n++;}
+  document.getElementById("count").innerHTML="<em>"+n+"</em> of 24 squares";
+  var full=n===24;
+  cells.forEach(function(c){c.classList.toggle("win",full);});
+  document.getElementById("banner").hidden=!full;
+}
+update();
+
+document.querySelectorAll("[data-save]").forEach(function(n){
+  var k=n.getAttribute("data-save");n.value=state[k]||"";
+  n.addEventListener("input",function(){state[k]=n.value;save();});
+});
+
+var clr=document.getElementById("clear"),armT;
+clr.addEventListener("click",function(){
+  if(!clr.classList.contains("arm")){
+    clr.classList.add("arm");clr.textContent="Tap again to clear";
+    armT=setTimeout(function(){clr.classList.remove("arm");clr.textContent="Clear card";},4000);return;
+  }
+  clearTimeout(armT);state={};save();
+  cells.forEach(function(c){c.classList.remove("on");if(!c.disabled)c.setAttribute("aria-pressed","false");});
+  document.querySelectorAll("[data-save]").forEach(function(n){n.value="";});
+  clr.classList.remove("arm");clr.textContent="Clear card";update();
+});
+</script>

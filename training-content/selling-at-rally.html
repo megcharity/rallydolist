@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selling at Rally | Interactive Training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#174854; --deep:#0f2f37; --cream:#fbf6ed; --paper:#fffdf8;
+  --orange:#f89a1c; --coral:#f58664; --green:#4e622c; --ink:#174854;
+  --muted:#5c7a80; --line:#d8dfdc; --good:#4e622c; --bad:#b24a3c;
+  --sage:#cee4cf; --serif:"Instrument Serif",Georgia,"Times New Roman",serif; --sans:"Hanken Grotesk",Arial,Helvetica,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--sans);background:var(--cream);color:var(--ink);line-height:1.6}
+h1,h2,h3{margin:0 0 14px;line-height:1.08;font-weight:400}
+h1,h2{font-family:var(--serif)}
+h1{font-size:clamp(44px,7.5vw,84px)}
+h2{font-size:clamp(32px,4.5vw,52px)}
+h3{font-size:24px;font-weight:500}
+p{font-size:17px;margin:0 0 16px}
+button{font:inherit}
+.hero{min-height:70vh;background:var(--teal);color:#fff;padding:34px 6vw 60px;display:flex;flex-direction:column;justify-content:center}
+.eyebrow{display:inline-block;background:var(--orange);color:var(--deep);font-weight:700;letter-spacing:2px;padding:9px 15px;margin-bottom:26px;width:max-content;font-size:13px}
+.hero .lede{font-size:clamp(20px,2.6vw,26px);max-width:900px;font-weight:400;opacity:.92}
+.hero .hook{margin-top:26px;background:var(--cream);color:var(--deep);max-width:800px;padding:22px 26px;border-left:5px solid var(--orange);font-family:var(--serif);font-size:22px;font-weight:400}
+.progress-wrap{position:sticky;top:0;z-index:20;background:rgba(251,246,237,.96);border-bottom:1px solid var(--line);padding:10px 6vw}
+.progress{height:6px;background:var(--sage);border-radius:10px;overflow:hidden}
+.progress > div{height:100%;width:0;background:var(--orange);transition:.25s}
+main section{padding:60px 6vw;max-width:1180px;margin:auto}
+main section + section{border-top:1.5px solid var(--line)}
+.part{color:var(--coral);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;font-size:14px}
+.intro{font-size:19px;max-width:900px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.card{background:var(--paper);border:1.5px solid var(--line);border-top:3px solid var(--teal);padding:22px;min-height:180px}
+.card .num{font-size:13px;font-weight:700;color:var(--coral);letter-spacing:.08em}
+.card strong{font-size:20px;font-family:var(--serif);font-weight:400}
+.card h3{margin-bottom:8px}
+.window{cursor:pointer;transition:.18s ease}
+.window:hover{border-color:var(--orange)}
+.window.active{border-color:var(--orange);background:var(--sage)}
+.reveal{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.window.active .reveal{display:block}
+.challenge{margin-top:28px;background:var(--deep);color:#fff;padding:26px;border-radius:8px}
+.challenge h3{color:#fff;font-family:var(--serif);font-size:26px}
+.options{display:grid;gap:9px;margin-top:16px}
+.option{background:#fff;color:var(--ink);border:1.5px solid transparent;border-radius:4px;padding:14px 16px;text-align:left;cursor:pointer;font-weight:500;font-size:16px}
+.option:hover{border-color:var(--orange)}
+.option.correct{background:var(--sage);border-color:var(--good)}
+.option.wrong{background:#f8e2db;border-color:var(--bad)}
+.feedback{display:none;margin-top:16px;padding:20px 22px;background:#fff;color:var(--ink);border-left:5px solid var(--orange);border-radius:4px}
+.feedback.show{display:block;animation:popIn .22s ease-out}
+.feedback.good{background:var(--sage);border-left-color:var(--good)}
+.feedback.bad{background:#f8e2db;border-left-color:var(--bad)}
+.feedback .feedback-title{display:block;font-family:var(--serif);font-size:21px;margin-bottom:4px}
+.feedback .feedback-key{font-size:17px;font-weight:600}
+@keyframes popIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.swap{display:grid;grid-template-columns:1fr 50px 1fr;align-items:center;gap:14px;margin:16px 0}
+.phrase{background:var(--paper);border:1.5px solid var(--line);border-radius:4px;padding:18px;font-size:18px}
+.badphrase{text-decoration:line-through;text-decoration-thickness:1.5px;color:var(--muted)}
+.arrow{text-align:center;font-size:24px;color:var(--orange)}
+.goodphrase{border-color:var(--teal);border-left:4px solid var(--teal);font-weight:500}
+.callout{margin:26px 0;background:var(--sage);color:var(--deep);border-left:5px solid var(--orange);padding:20px 24px;font-family:var(--serif);font-size:21px}
+.timeline{display:grid;gap:10px;margin-top:24px}
+.step{display:grid;grid-template-columns:52px 1fr;background:var(--paper);border:1.5px solid var(--line);border-left:4px solid var(--teal);border-radius:4px;padding:16px}
+.stepnum{font-family:var(--serif);font-style:italic;font-size:30px;color:var(--coral)}
+.step p{margin:4px 0 0;color:var(--muted)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}
+.tab{border:1.5px solid var(--teal);background:var(--paper);color:var(--teal);border-radius:999px;padding:10px 16px;font-weight:600;font-size:15px;cursor:pointer}
+.tab.active{background:var(--teal);color:#fff}
+.panel{display:none;background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:24px}
+.panel.active{display:block}
+.panel h3{font-family:var(--serif);font-size:26px}
+.panel li{font-size:17px;margin:10px 0}
+.mini-game{background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:26px;margin-top:26px}
+.mini-game h3{font-family:var(--serif);font-size:24px}
+.big-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.big-choice button{padding:20px;border:1.5px solid var(--teal);border-radius:4px;background:#fff;color:var(--ink);font-size:16px;font-weight:500;cursor:pointer;text-align:left}
+.big-choice button:hover{background:var(--sage)}
+.safety{background:#fdeee6;border-left:5px solid var(--coral);border-radius:4px;padding:22px;margin:22px 0}
+.safety h3{font-family:var(--serif);font-size:23px}
+.quiz-card{background:var(--paper);border:1.5px solid var(--line);border-radius:6px;padding:24px;margin:16px 0}
+.quiz-card legend{font-family:var(--serif);font-size:21px;margin-bottom:10px;padding:0}
+.quiz-card label{display:block;padding:10px;border-radius:4px;cursor:pointer;font-size:16px}
+.quiz-card label:hover{background:var(--sage)}
+.quiz-card label.correct{background:var(--sage);font-weight:600}
+.quiz-card label.wrong{background:#f8e2db}
+.quiz-card label.wrong::after{content:" — your answer";font-size:13px;font-weight:400;opacity:.7}
+.quiz-card label.correct::after{content:" — correct answer";font-size:13px;font-weight:400;opacity:.7}
+.submit{background:var(--orange);color:var(--deep);border:0;border-radius:4px;padding:15px 24px;font-weight:700;font-size:16px;cursor:pointer}
+.score{display:none;margin-top:20px;padding:22px;background:var(--deep);color:#fff;border-radius:6px;font-family:var(--serif);font-size:22px}
+.score.show{display:block}
+footer{background:var(--teal);color:#fff;padding:40px 6vw;text-align:center;font-size:15px}
+@media(max-width:800px){
+ .grid{grid-template-columns:1fr}
+ .swap{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}
+ .big-choice{grid-template-columns:1fr}
+ .step{grid-template-columns:45px 1fr}
+}
+</style>
+</head>
+<body>
+<header class="hero">
+  <span class="eyebrow">Rally Training</span>
+  <h1>Selling at Rally</h1>
+  <p class="lede">Nobody books a court because they're hungry. That's where we come in.</p>
+  <div class="hook">Selling isn't about being pushy. It's about being prepared, present, specific, and making it effortless for a guest to say yes.</div>
+</header>
+
+<div class="progress-wrap"><div class="progress"><div id="progressBar"></div></div></div>
+
+<main>
+<section>
+  <div class="part">Part 1 · Know Your Product</div>
+  <h2>Selling starts with knowing your product.</h2>
+  <p class="intro">You cannot confidently sell something you don't understand. Before you learn <strong>how</strong> to sell at Rally, you need to know <strong>what</strong> you're selling.</p>
+  <div class="grid">
+    <div class="card"><h3>Know what it tastes like</h3><p>Be able to describe our food and drinks in your own words, not just repeat the menu description.</p></div>
+    <div class="card"><h3>Know what you recommend</h3><p>Have favorites you can sell with conviction and explain why you like them.</p></div>
+    <div class="card"><h3>Know the alternatives</h3><p>Be ready with beer, wine, cocktails, coffee, smoothies and non-alcoholic options for different guests.</p></div>
+  </div>
+  <div class="callout">You don't need to memorize a sales pitch. You need to know the product well enough that you don't need one.</div>
+  <div class="mini-game">
+    <h3>Test yourself</h3>
+    <p>Could you confidently answer these questions right now?</p>
+    <p><strong>“What's your favorite cocktail?”</strong> &nbsp; <strong>“What's your favorite food item?”</strong> &nbsp; <strong>“I don't drink. What should I get?”</strong></p>
+    <p>If you can't answer without looking at the menu, that's where your selling training starts.</p>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 2 · Why We Sell</div>
+  <h2>Selling is hospitality.</h2>
+  <p class="intro">Rally guests arrive thinking about pickleball, friends, competition, or the event they came to attend. Food and drinks happen around that experience. Our job is to notice the opportunity, make a genuine recommendation, and make ordering easy.</p>
+  <div class="grid">
+    <div class="card"><span class="num">THE GUEST</span><h3>A better experience</h3><p>A cold drink between games or food after the last point can turn a court reservation into a full night out.</p></div>
+    <div class="card"><span class="num">YOU</span><h3>A stronger check</h3><p>Thoughtful recommendations build the check and can build your tips.</p></div>
+    <div class="card"><span class="num">RALLY</span><h3>A stronger business</h3><p>Food and beverage revenue supports the venue, courts, and team.</p></div>
+  </div>
+  <div class="callout">Sell like a friend who works here: genuine, excited, confident, and true.</div>
+</section>
+
+<section>
+  <div class="part">Part 3 · Read the Court</div>
+  <h2>There are three selling windows.</h2>
+  <p class="intro">Great Captains don't interrupt constantly. They recognize when guests are most open to hearing from them. Click each window.</p>
+  <div class="grid">
+    <div class="card window" onclick="this.classList.toggle('active')"><span class="num">WINDOW 1</span><h3>Before first serve</h3><p>Arrival, check-in and warm-up.</p><div class="reveal"><strong>Your biggest setup opportunity.</strong><p>Build the relationship, get the first drink order from each person, set the check-in plan and plant the food idea.</p></div></div>
+    <div class="card window" onclick="this.classList.toggle('active')"><span class="num">WINDOW 2</span><h3>Between games</h3><p>Water breaks, rotations and natural pauses.</p><div class="reveal"><strong>Fast and specific.</strong><p>Use 10-second check-ins, refill before empty and keep water moving.</p></div></div>
+    <div class="card window" onclick="this.classList.toggle('active')"><span class="num">WINDOW 3</span><h3>After the last point</h3><p>The final game and walk off court.</p><div class="reveal"><strong>The most-missed sale.</strong><p>Guests are hungry, thirsty and finished playing. Invite them to stay and make the next step easy.</p></div></div>
+  </div>
+
+  <div class="challenge" data-answer="2">
+    <h3>You make the call</h3>
+    <p>A group is in a tight game at 9–9. One player's drink is empty. What do you do?</p>
+    <div class="options">
+      <button class="option">Walk onto the court and replace it now.</button>
+      <button class="option">Call out from the sideline so they know you noticed.</button>
+      <button class="option">Wait for the point or game to end, then make a fast, specific offer.</button>
+      <button class="option">Skip the court for the rest of the session.</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 4 · Break the Barrier</div>
+  <h2>Win the first 30 seconds.</h2>
+  <p class="intro">The greeting determines whether guests see you as part of their experience or an interruption. Your goal is to feel like <strong>their person at Rally</strong>.</p>
+  <div class="timeline">
+    <div class="step"><div class="stepnum">1</div><div><strong>Warm energy.</strong><p>A real smile. Be glad they're here.</p></div></div>
+    <div class="step"><div class="stepnum">2</div><div><strong>Introduce yourself.</strong><p>Give your name and learn theirs when you can.</p></div></div>
+    <div class="step"><div class="stepnum">3</div><div><strong>Get comfortable.</strong><p>Meet them at eye level and ask whether it's their first time.</p></div></div>
+    <div class="step"><div class="stepnum">4</div><div><strong>Recommend, don't recite.</strong><p>Point out a couple of things and lead with one drink and one food item you genuinely like.</p></div></div>
+    <div class="step"><div class="stepnum">5</div><div><strong>Ask every person.</strong><p>Don't let one guest answer for the whole group.</p></div></div>
+    <div class="step"><div class="stepnum">6</div><div><strong>Set the plan.</strong><p>Tell them you'll check in between games so your return feels expected, not intrusive.</p></div></div>
+  </div>
+  <div class="callout">The structure matters more than the script: welcome → name → real recommendation → ask every person → set the check-in plan.</div>
+</section>
+
+<section>
+  <div class="part">Part 5 · Language That Sells</div>
+  <h2>Stop making “no” easy.</h2>
+  <p class="intro">Vague yes-or-no questions create vague no's. Be specific. Offer choices. Make recommendations.</p>
+  <div class="mini-game">
+    <h3>Make it feel like part of Rally</h3>
+    <p>Help guests understand that food and drinks are part of the Rally experience. Natural social proof makes a recommendation feel easy and familiar.</p>
+    <p><strong>Try:</strong></p>
+    <div class="phrase goodphrase">“People love getting [shareable item] for the court. It’s perfect to snack on between games.”</div>
+    <div class="phrase goodphrase" style="margin-top:12px">“Our NA Spritzes are also delicious if you want something fun without alcohol.”</div>
+    <p style="margin-top:16px"><strong>Keep it true.</strong> Never invent popularity or exaggerate what other guests are ordering.</p>
+  </div>
+
+  <div class="swap"><div class="phrase badphrase">“Are you good?”</div><div class="arrow">→</div><div class="phrase goodphrase">“Can I get you started with a beer or a smoothie?”</div></div>
+  <div class="swap"><div class="phrase badphrase">“Do you want anything to drink?”</div><div class="arrow">→</div><div class="phrase goodphrase">“What are we drinking today?”</div></div>
+  <div class="swap"><div class="phrase badphrase">“Do you want to see a food menu?”</div><div class="arrow">→</div><div class="phrase goodphrase">“Have you had our pizza yet? I have a favorite.”</div></div>
+  <div class="swap"><div class="phrase badphrase">“Let me know if you need anything.”</div><div class="arrow">→</div><div class="phrase goodphrase">“I'll swing back at the end of this game.”</div></div>
+  <div class="swap"><div class="phrase badphrase">“Anything else?”</div><div class="arrow">→</div><div class="phrase goodphrase">“Should I get another round going for your next game?”</div></div>
+
+  <div class="mini-game">
+    <h3>Fix the phrase</h3>
+    <p>A guest says, “Just water.” Which response best follows Rally's selling approach?</p>
+    <div class="big-choice">
+      <button onclick="phraseFeedback(this,false)">“Okay, just water.”</button>
+      <button onclick="phraseFeedback(this,true)">“Water for sure. Want a beer or smoothie alongside it?”</button>
+    </div>
+    <div id="phraseResult" class="feedback"></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 6 · Stay Present</div>
+  <h2>Check in often. Don't hover.</h2>
+  <div class="grid">
+    <div class="card"><h3>Circulate</h3><p>Keep moving through your section. Guests should see you even when you aren't stopping.</p></div>
+    <div class="card"><h3>Read the empties</h3><p>A drink getting low is your cue. Don't wait for the guest to hunt you down.</p></div>
+    <div class="card"><h3>Never walk empty-handed</h3><p>Carry water, clear empties and bring what the court needs on every pass.</p></div>
+    <div class="card"><h3>Use eye contact</h3><p>A smile and nod can be a check-in without interrupting play.</p></div>
+    <div class="card"><h3>Commit to your return</h3><p>“I'll be back at the end of this game.” Then keep your word.</p></div>
+    <div class="card"><h3>Two-bite check</h3><p>Once food lands, return after a couple of bites. Catch problems and look for the next opportunity.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 7 · Don't Interrupt the Game</div>
+  <h2>Sell smarter, not less.</h2>
+  <div class="safety"><h3>Court safety comes first.</h3><p>Never walk onto an active court or behind a baseline during a point. Wait for play to stop, stay aware of the court, and use natural pauses.</p></div>
+  <div class="tabs">
+    <button class="tab active" data-tab="timing">Timing</button>
+    <button class="tab" data-tab="permission">Permission</button>
+    <button class="tab" data-tab="bench">The Bench</button>
+    <button class="tab" data-tab="food">Time the Food</button>
+    <button class="tab" data-tab="intensity">Read Intensity</button>
+  </div>
+  <div class="panel active" id="timing"><h3>Learn the rhythm.</h3><p>End of a game. Water break. Rotation. Stray ball. These are selling windows. Watch the game so you know when one is coming.</p></div>
+  <div class="panel" id="permission"><h3>Get permission early.</h3><p>At the greet, tell guests you'll check in between games. Now your later visits feel expected instead of intrusive.</p></div>
+  <div class="panel" id="bench"><h3>Sell to the person who isn't playing.</h3><p>Players waiting to rotate, spectators and organizers are easier to engage because they aren't mid-game.</p></div>
+  <div class="panel" id="food"><h3>Work around the game.</h3><p>Offer to time food for a break or the end of the session. Guests don't have to stop playing, and food is ready when they are.</p></div>
+  <div class="panel" id="intensity"><h3>Read the group.</h3><p>If they're locked into a close game, wait. If they're laughing between points, make the quick offer. The same group can change minute to minute.</p></div>
+
+  <div class="challenge" data-answer="1">
+    <h3>You make the call</h3>
+    <p>You approach between games and the group quickly says, “We're good, thanks.” What's the best move?</p>
+    <div class="options">
+      <button class="option">Keep pitching until somebody orders.</button>
+      <button class="option">Take the no gracefully, handle water/empties, and return at the next natural window.</button>
+      <button class="option">Stop checking on them for the rest of the reservation.</button>
+      <button class="option">Tell them to flag down the bar if they change their mind.</button>
+    </div>
+    <div class="feedback"></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 8 · Know Who You're Selling To</div>
+  <h2>Different guests need different approaches.</h2>
+  <div class="tabs">
+    <button class="tab guesttab active" data-tab="reservation">Court Groups</button>
+    <button class="tab guesttab" data-tab="openplay">Open Play</button>
+    <button class="tab guesttab" data-tab="league">League</button>
+    <button class="tab guesttab" data-tab="spectator">Spectators</button>
+    <button class="tab guesttab" data-tab="corporate">Corporate</button>
+  </div>
+  <div class="panel guestpanel active" id="reservation"><h3>Court reservation groups</h3><p>They're here to have fun together and may be celebrating. Think rounds, shareable food and the post-session “stay and hang” invitation.</p></div>
+  <div class="panel guestpanel" id="openplay"><h3>Open play / drop-in</h3><p>They're rotating, meeting people and focused on getting games. The bench is your opportunity. Sell while they're waiting to rotate.</p></div>
+  <div class="panel guestpanel" id="league"><h3>League players</h3><p>They are competitive, distracted and often arrive straight from work. Learn names and usual orders. Keep offers binary and fast, then sell the post-match hang.</p></div>
+  <div class="panel guestpanel" id="spectator"><h3>Spectators & hangers</h3><p>They aren't playing. They have time to eat and drink. Don't overlook them while focusing on the court.</p></div>
+  <div class="panel guestpanel" id="corporate"><h3>Corporate & event groups</h3><p>Corporate groups are one of our <strong>biggest selling opportunities</strong>. Guests are often ordering on a <strong>company card</strong>, so the organizer is usually focused on making sure everyone has a great experience rather than keeping every individual order small.</p><p><strong>Keep selling throughout the event.</strong> Suggest another round, replenish food before it runs out, and look for opportunities to add more shareables.</p><p>Work through the organizer, understand the plan, dietary needs and timing, and make their job easy. <strong>Your goal: make the host look like a hero while keeping the group taken care of.</strong></p></div>
+</section>
+
+<section>
+  <div class="part">Part 9 · Responsible Selling</div>
+  <h2>Trust is worth more than one sale.</h2>
+  <div class="grid">
+    <div class="card"><h3>Water always</h3><p>Our guests are exercising. Offer water consistently, especially in the heat.</p></div>
+    <div class="card"><h3>Take “no” gracefully</h3><p>One confident offer is hospitality. Repeating the same offer after a clear no is pestering.</p></div>
+    <div class="card"><h3>Bold and true</h3><p>Never invent scarcity, popularity or claims. Confidence works only when the recommendation is honest.</p></div>
+    <div class="card"><h3>Alcohol requires judgment</h3><p>Follow Rally's ID and responsible-service procedures. If a guest appears over-intoxicated, stop offering alcohol and involve a manager.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Part 10 · The Rally Steps of Selling</div>
+  <h2>Every group. Every session.</h2>
+  <div class="timeline">
+    <div class="step"><div class="stepnum">1</div><div><strong>Greet fast.</strong><p>Smile, introduce yourself, welcome the group and connect.</p></div></div>
+    <div class="step"><div class="stepnum">2</div><div><strong>Feature one drink + one food item.</strong><p>Match the recommendation to the moment, weather and group.</p></div></div>
+    <div class="step"><div class="stepnum">3</div><div><strong>Ask every person.</strong><p>Get an individual drink response instead of letting one person answer for everyone.</p></div></div>
+    <div class="step"><div class="stepnum">4</div><div><strong>Set the check-in plan.</strong><p>Tell guests when you'll be back and how to get you sooner.</p></div></div>
+    <div class="step"><div class="stepnum">5</div><div><strong>Plant the food.</strong><p>Offer to time it around their play.</p></div></div>
+    <div class="step"><div class="stepnum">6</div><div><strong>Own the between-game windows.</strong><p>Refill before empty. Water always. Make fast, specific offers.</p></div></div>
+    <div class="step"><div class="stepnum">7</div><div><strong>Food drop + two-bite check.</strong><p>Make sure everything is right and look for the next opportunity.</p></div></div>
+    <div class="step"><div class="stepnum">8</div><div><strong>Make the last-game pitch.</strong><p>Invite them to stay instead of letting the parking lot make the decision.</p></div></div>
+    <div class="step"><div class="stepnum">9</div><div><strong>Meaningful goodbye.</strong><p>Use names when you know them, thank them and invite them back.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="part">Final · Knowledge Check</div>
+  <h2>Can you sell the Rally way?</h2>
+  <p class="intro">Choose the best answer. You need 8/10 to pass.</p>
+  <form id="quiz">
+    <fieldset class="quiz-card"><legend>1. Why is “Are you good?” a weak selling question?</legend>
+      <label><input type="radio" name="q1" value="a"> It's rude.</label>
+      <label><input type="radio" name="q1" value="b"> It invites an easy “we're good” and doesn't create a specific opportunity.</label>
+      <label><input type="radio" name="q1" value="c"> It takes too long.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>2. Which selling window is most often missed?</legend>
+      <label><input type="radio" name="q2" value="a"> Before first serve.</label>
+      <label><input type="radio" name="q2" value="b"> Between games.</label>
+      <label><input type="radio" name="q2" value="c"> After the last point.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>3. A guest is mid-point and their glass is empty. What do you do?</legend>
+      <label><input type="radio" name="q3" value="a"> Walk the drink onto the court.</label>
+      <label><input type="radio" name="q3" value="b"> Wait for the point to end, then make a quick offer.</label>
+      <label><input type="radio" name="q3" value="c"> Call to them while they play.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>4. Which is the strongest offer?</legend>
+      <label><input type="radio" name="q4" value="a"> “Do you want anything?”</label>
+      <label><input type="radio" name="q4" value="b"> “Can I get you started with a cold beer or a smoothie?”</label>
+      <label><input type="radio" name="q4" value="c"> “Let me know if you need anything.”</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>5. In a group of five, who gets asked for a drink order?</legend>
+      <label><input type="radio" name="q5" value="a"> The person who booked.</label>
+      <label><input type="radio" name="q5" value="b"> Whoever makes eye contact.</label>
+      <label><input type="radio" name="q5" value="c"> Every person individually.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>6. What's the best league approach?</legend>
+      <label><input type="radio" name="q6" value="a"> Keep offers fast and binary, learn regulars and set up the post-match hang.</label>
+      <label><input type="radio" name="q6" value="b"> Avoid league courts because they're distracted.</label>
+      <label><input type="radio" name="q6" value="c"> Ask long open-ended questions during matches.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>7. Why set the check-in plan during the greeting?</legend>
+      <label><input type="radio" name="q7" value="a"> So you never need to return.</label>
+      <label><input type="radio" name="q7" value="b"> So later check-ins feel expected rather than intrusive.</label>
+      <label><input type="radio" name="q7" value="c"> Because guests must request service.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>8. A guest clearly says no to your recommendation. What next?</legend>
+      <label><input type="radio" name="q8" value="a"> Offer it again in different words immediately.</label>
+      <label><input type="radio" name="q8" value="b"> Take the no gracefully, continue great service, and return at the next appropriate window.</label>
+      <label><input type="radio" name="q8" value="c"> Stop checking on the group.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>9. What should you do with a corporate group?</legend>
+      <label><input type="radio" name="q9" value="a"> Treat them exactly like a two-person reservation.</label>
+      <label><input type="radio" name="q9" value="b"> Work through the organizer and make group ordering easy and proactive.</label>
+      <label><input type="radio" name="q9" value="c"> Wait for each person to order separately.</label>
+    </fieldset>
+    <fieldset class="quiz-card"><legend>10. What best describes selling at Rally?</legend>
+      <label><input type="radio" name="q10" value="a"> Convincing guests to buy as much as possible.</label>
+      <label><input type="radio" name="q10" value="b"> Waiting until guests ask for something.</label>
+      <label><input type="radio" name="q10" value="c"> Reading the guest, making genuine specific recommendations, and making it easy to say yes.</label>
+    </fieldset>
+    <button type="button" class="submit" onclick="gradeQuiz()">Check my score</button>
+    <div class="score" id="score"></div>
+  </form>
+</section>
+</main>
+
+<footer><strong>The Rally standard:</strong> Be present. Read the court. Recommend with confidence. Ask every person. Make it easy. Never be pushy.</footer>
+
+<script>
+const challenges=document.querySelectorAll('.challenge');
+challenges.forEach(c=>{
+  const answer=Number(c.dataset.answer);
+  const opts=[...c.querySelectorAll('.option')];
+  const fb=c.querySelector('.feedback');
+  opts.forEach((o,i)=>o.addEventListener('click',()=>{
+    opts.forEach(x=>x.classList.remove('correct','wrong'));
+    fb.classList.remove('good','bad');
+    if(i===answer){
+      o.classList.add('correct');
+      fb.classList.add('good');
+      fb.innerHTML='<span class="feedback-title">✓ Nice work</span><span class="feedback-key">Wait for the natural pause.</span><br>Great selling respects the game. When play stops, be quick, confident and specific.';
+    } else {
+      o.classList.add('wrong'); opts[answer].classList.add('correct');
+      fb.classList.add('bad');
+      fb.innerHTML='<span class="feedback-title">Not quite</span><span class="feedback-key">Respect the game and use the natural selling window.</span><br>Stay present without pestering, then make a quick, specific offer when the moment is right.';
+    }
+    fb.classList.add('show');
+  }));
+});
+
+function phraseFeedback(btn,correct){
+  const r=document.getElementById('phraseResult');
+  [...btn.parentElement.children].forEach(b=>b.style.borderColor='');
+  btn.style.borderColor=correct?'#2d6a4f':'#9b3a34';
+  r.classList.remove('good','bad');
+  r.classList.add(correct?'good':'bad');
+  r.innerHTML=correct
+   ? '<span class="feedback-title">✓ Nice work</span><span class="feedback-key">Accept the water, then make one specific additional offer.</span><br>The guest can still say no.'
+   : '<span class="feedback-title">Try again</span><span class="feedback-key">“Just” shrinks the order and closes the conversation.</span><br>Accept the water and make one specific, easy add-on offer.';
+  r.classList.add('show');
+}
+
+document.querySelectorAll('.tab:not(.guesttab)').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.tab:not(.guesttab)').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.panel:not(.guestpanel)').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active');
+}));
+document.querySelectorAll('.guesttab').forEach(b=>b.addEventListener('click',()=>{
+ document.querySelectorAll('.guesttab').forEach(x=>x.classList.remove('active'));
+ document.querySelectorAll('.guestpanel').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active');
+}));
+
+const key={q1:'b',q2:'c',q3:'b',q4:'b',q5:'c',q6:'a',q7:'b',q8:'b',q9:'b',q10:'c'};
+function gradeQuiz(){
+ let score=0;
+ Object.entries(key).forEach(([q,a])=>{
+   const el=document.querySelector(`input[name="${q}"]:checked`);
+   if(el && el.value===a) score++;
+   document.querySelectorAll(`input[name="${q}"]`).forEach(opt=>{
+     const label=opt.closest('label');
+     label.classList.remove('correct','wrong');
+     if(opt.value===a) label.classList.add('correct');
+     else if(opt.checked) label.classList.add('wrong');
+   });
+ });
+ const box=document.getElementById('score');
+ box.classList.add('show');
+ box.innerHTML=score>=8
+   ? `You scored ${score}/10. <br>Pass — you’re ready to sell the Rally way.`
+   : `You scored ${score}/10. <br>Review the training and try again. The passing score is 8/10.`;
+ box.scrollIntoView({behavior:'smooth',block:'center'});
+ if(window.parent!==window) window.parent.postMessage({rallyQuiz:true,title:document.title,score:score,total:10},window.location.origin);
+}
+window.addEventListener('scroll',()=>{
+ const h=document.documentElement;
+ const pct=(h.scrollTop/(h.scrollHeight-h.clientHeight))*100;
+ document.getElementById('progressBar').style.width=pct+'%';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toast at Rally | Hourly Team Training</title>
+<style>
+:root{--teal:#0c5961;--deep:#123f45;--cream:#f6f1e7;--paper:#fffdf8;--orange:#f4a01c;--coral:#df705b;--ink:#17383d;--line:#d6dedb;--green:#2f6b50;--red:#a5433c}
+*{box-sizing:border-box} body{margin:0;background:var(--cream);color:var(--ink);font-family:Arial,Helvetica,sans-serif;line-height:1.55}
+h1,h2{font-family:Georgia,"Times New Roman",serif;font-weight:500;line-height:1.05;margin:0 0 16px} h1{font-size:clamp(52px,8vw,100px)} h2{font-size:clamp(38px,5vw,66px)} h3{font-size:23px;margin:0 0 12px} p{font-size:18px}
+.hero{min-height:90vh;background:var(--teal);color:white;padding:6vw;display:flex;flex-direction:column;justify-content:center}
+.tag{background:var(--orange);color:var(--deep);font-weight:900;letter-spacing:3px;padding:10px 15px;width:max-content;margin-bottom:25px}
+.lede{font-size:clamp(22px,3vw,34px);max-width:900px}.hero-card{background:white;color:var(--deep);padding:24px 28px;border-left:8px solid var(--orange);max-width:900px;font-size:23px;font-weight:800;margin-top:28px}
+.sticky{position:sticky;top:0;z-index:20;background:#fffdf8ee;padding:10px 6vw;border-bottom:1px solid var(--line)}.track{height:8px;background:#e5e3dc;border-radius:9px;overflow:hidden}.bar{height:100%;width:0;background:var(--orange)}
+section{max-width:1250px;margin:auto;padding:70px 6vw}.part{color:var(--coral);font-weight:900;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}.intro{font-size:22px;max-width:950px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:26px 0}.card{background:var(--paper);border:2px solid var(--teal);padding:23px;box-shadow:5px 5px 0 #0c59611a}.card .kicker{font-size:13px;color:var(--coral);font-weight:900;letter-spacing:2px}
+.steps{display:grid;gap:12px;margin-top:25px}.step{display:grid;grid-template-columns:55px 1fr;background:white;border-left:5px solid var(--teal);padding:18px}.n{font:34px Georgia;color:var(--coral)}.step p{margin:4px 0}
+.rule{background:var(--orange);padding:25px 28px;font-size:23px;font-weight:900;margin:28px 0}.danger{background:#f7e9e6;border-left:8px solid var(--red);padding:24px;margin:25px 0}.safe{background:#e6f1e9;border-left:8px solid var(--green);padding:24px;margin:25px 0}
+.challenge{background:var(--deep);color:white;padding:28px;margin:32px 0}.challenge h3{color:white}.options{display:grid;gap:10px;margin-top:18px}.option{background:white;color:var(--ink);border:3px solid transparent;padding:16px;text-align:left;font-weight:800;font-size:17px;cursor:pointer}.option:hover{border-color:var(--orange)}.option.correct{background:#e4f2e9;border-color:var(--green)}.option.wrong{background:#f8e5e2;border-color:var(--red)}
+.feedback{display:none;background:white;color:var(--ink);padding:22px;margin-top:16px;border-left:8px solid var(--orange);box-shadow:4px 4px 0 #0002}.feedback.show{display:block;animation:pop .2s ease-out}.feedback.good{background:#e4f2e9;border-color:var(--green)}.feedback.bad{background:#f8e5e2;border-color:var(--red)}.ft{display:block;font-size:22px;font-weight:900}.fk{font-size:19px;font-weight:900}@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.sim{background:#253d42;border:10px solid #1a2b2e;border-radius:14px;padding:18px;color:white;max-width:850px;margin:25px auto}.simtop{display:flex;justify-content:space-between;border-bottom:1px solid #698085;padding-bottom:12px;margin-bottom:14px}.simgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.simb{background:#f4f1e9;color:var(--ink);padding:18px 10px;text-align:center;font-weight:900;border:0;border-radius:4px}.accent{background:var(--orange)}.red{background:#e9a59c}.green{background:#9fc7a8}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.tab{border:2px solid var(--teal);background:white;color:var(--teal);padding:11px 15px;font-weight:900;cursor:pointer}.tab.active{background:var(--teal);color:white}.panel{display:none;background:white;border:2px solid var(--teal);padding:25px}.panel.active{display:block}
+.checklist{display:grid;grid-template-columns:1fr 1fr;gap:10px}.check{background:white;border:1px solid var(--line);padding:14px;font-size:17px}
+.quiz{background:white;border:2px solid var(--teal);padding:24px;margin:18px 0}.quiz legend{font-size:20px;font-weight:900}.quiz label{display:block;padding:9px}.submit{border:0;background:var(--orange);color:var(--deep);padding:16px 25px;font-weight:900;font-size:18px;cursor:pointer}.score{display:none;background:var(--deep);color:white;padding:24px;margin-top:20px;font-size:23px;font-weight:900}.score.show{display:block}
+footer{background:var(--teal);color:white;text-align:center;padding:42px 6vw;font-size:19px}
+@media(max-width:800px){.grid,.checklist{grid-template-columns:1fr}.simgrid{grid-template-columns:1fr 1fr}}
+
+.training-maps{display:grid;grid-template-columns:1fr;gap:24px;margin:28px 0}
+.mapcard{background:#1d2d31;border:8px solid #132327;padding:18px;color:white;border-radius:8px}
+.mapcard h3{margin:0 0 4px}.mapcard .mapnote{font-size:14px;color:#cbd7d8;margin:0 0 14px}
+.toastmap{position:relative;width:100%;aspect-ratio:16/9;background:#263a3f;border:1px solid #65777a;overflow:hidden;border-radius:4px}
+.zone{position:absolute;border:2px dashed #a9d0df;color:white;display:flex;align-items:center;justify-content:center;font-weight:900;background:#ffffff0b;min-width:28px;min-height:28px}
+.zone.round{border-radius:50%}.zone.table{border-radius:7px}.zone.court{border-radius:4px;background:#ffffff08}
+.maplabel{position:absolute;color:#fff;font-size:clamp(10px,1.7vw,17px);font-weight:900}
+.maprect{position:absolute;border:2px solid #d8dfdf;background:#ffffff08}
+.maptabs{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-weight:800;font-size:13px}.maptabs span{opacity:.65}.maptabs .on{background:#f5f1e8;color:#263a3f;padding:6px 12px;border-radius:20px;opacity:1}
+@media(max-width:650px){.toastmap{aspect-ratio:4/3}.maplabel{font-size:9px}.zone{font-size:10px}}
+.mustdo{background:var(--orange);color:var(--deep);padding:28px;margin:28px 0;border:4px solid var(--deep);text-align:center}
+.mustdo .big{display:block;font-size:clamp(28px,4vw,48px);font-weight:900;line-height:1}
+.mustdo p{margin:10px 0 0;font-weight:800}
+.practice-shell{background:#172f34;color:white;padding:26px;margin:30px 0;border-radius:8px}
+.practice-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;border-bottom:1px solid #60777b;padding-bottom:16px;margin-bottom:18px}
+.ticket{background:#fff;color:var(--ink);padding:20px;border-left:7px solid var(--orange);margin:16px 0}
+.ticket .label{font-size:12px;font-weight:900;letter-spacing:2px;color:var(--coral)}
+.practice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.practice-field{background:#f7f4ed;color:var(--ink);padding:15px}
+.practice-field label{display:block;font-weight:900;margin-bottom:8px}
+.practice-field select,.practice-field input{width:100%;min-height:46px;font-size:16px;padding:8px;border:2px solid #9aabae;background:white}
+.practice-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.practice-btn{border:0;padding:14px 18px;font-weight:900;font-size:16px;cursor:pointer;background:var(--orange);color:var(--deep)}
+.practice-btn.secondary{background:white;color:var(--deep)}
+.practice-result{display:none;margin-top:16px;padding:18px;background:white;color:var(--ink);border-left:7px solid var(--orange)}
+.practice-result.show{display:block}.practice-result.pass{background:#e4f2e9;border-color:var(--green)}.practice-result.fail{background:#f8e5e2;border-color:var(--red)}
+.map-quiz{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:20px}
+.mapq{background:white;color:var(--ink);padding:18px;border-top:5px solid var(--teal)}
+.mapq select{width:100%;min-height:44px;font-size:16px;margin-top:8px}
+.smallnote{font-size:14px;color:#d9e3e1}
+@media(max-width:800px){.real-floorplans,.practice-grid,.map-quiz{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<header class="hero">
+<div class="tag">RALLY TRAINING</div>
+<h1>Toast at Rally</h1>
+<p class="lede">Hourly Team Training</p>
+<div class="hero-card">Toast should make service faster, not harder. The goal is simple: open the right check, ring the right items, communicate important details, send accurately, and close the right check.</div>
+</header>
+<div class="sticky"><div class="track"><div class="bar" id="bar"></div></div></div>
+<main>
+<section>
+<div class="part">Part 1 · System Basics</div><h2>Start clean. Start correctly.</h2>
+<p class="intro">Before speed comes accuracy. You should be able to log in, clock in, navigate the home screen, switch between the areas you use, and find menu categories without guessing.</p>
+<div class="steps">
+<div class="step"><div class="n">1</div><div><strong>Log in.</strong><p>Turn on the terminal or handheld and enter your 4-digit passcode.</p></div></div>
+<div class="step"><div class="n">2</div><div><strong>Select your role.</strong><p>Choose the correct job role when prompted.</p></div></div>
+<div class="step"><div class="n">3</div><div><strong>Clock in.</strong><p>If Toast prompts you at the start of your shift, complete the clock-in.</p></div></div>
+<div class="step"><div class="n">4</div><div><strong>Know your screen.</strong><p>Practice finding the floor plan, New Tab/New Check, menu categories and the functions you use during service.</p></div></div>
+</div>
+<div class="sim"><div class="simtop"><strong>TOAST PRACTICE SCREEN</strong><span>Training</span></div><div class="simgrid"><button class="simb">Floor Plan</button><button class="simb accent">New Tab</button><button class="simb">Quick Order</button><button class="simb">Food</button><button class="simb">Drinks</button><button class="simb">More •••</button></div></div>
+</section>
+
+<section>
+<div class="part">Part 2 · Starting Checks & Learning the Map</div>
+<h2>Courts or tables. Know where your guest is.</h2>
+<p class="intro">Rally checks live on a real floor plan. Before you ring anything in, you need to know whether the guest is on a <strong>court</strong> or at a <strong>table</strong>, choose the correct floor-plan area, and open the correct location.</p>
+
+<div class="training-maps">
+<div class="mapcard">
+<h3>101 South</h3><p class="mapnote">Training map recreated from the Rally Toast floor plan. Learn the relative positions of courts and tables.</p>
+<div class="maptabs"><span class="on">101 South</span><span>PDR</span><span>The Beer Garden</span><span>Henrietta's</span><span>Outdoor Courts</span></div>
+<div class="toastmap" aria-label="Schematic 101 South Toast floor plan">
+<span class="maplabel" style="left:24%;top:10%">Door</span>
+<div class="zone round" style="left:34%;top:9%;width:7%;height:11%">G1</div><div class="zone round" style="left:42%;top:9%;width:7%;height:11%">G2</div><div class="zone round" style="left:50%;top:9%;width:7%;height:11%">G3</div><div class="zone round" style="left:58%;top:9%;width:7%;height:11%">G4</div><div class="zone round" style="left:66%;top:9%;width:7%;height:11%">G5</div>
+<div class="zone table" style="left:52%;top:23%;width:6%;height:10%">70</div><div class="zone table" style="left:59%;top:22%;width:6%;height:11%">71</div><div class="zone table" style="left:66%;top:22%;width:6%;height:11%">72</div>
+<div class="zone table" style="left:72%;top:34%;width:7%;height:9%">73</div><div class="zone table" style="left:72%;top:44%;width:7%;height:9%">74</div><div class="zone table" style="left:72%;top:54%;width:7%;height:9%">75</div><div class="zone round" style="left:73%;top:65%;width:6%;height:10%">76</div><div class="zone round" style="left:73%;top:76%;width:6%;height:10%">77</div>
+<div class="zone table" style="left:7%;top:36%;width:8%;height:8%">60</div><div class="zone round" style="left:8%;top:47%;width:6%;height:9%">61</div><div class="zone table" style="left:8%;top:58%;width:6%;height:12%">62</div><div class="zone round" style="left:9%;top:73%;width:6%;height:9%">63</div><div class="zone table" style="left:9%;top:84%;width:8%;height:8%">64</div>
+<div class="zone court" style="left:18%;top:35%;width:7%;height:26%">C3</div><div class="zone court" style="left:19%;top:66%;width:7%;height:24%">C4</div><div class="zone court" style="left:64%;top:34%;width:7%;height:24%">C2</div><div class="zone court" style="left:64%;top:63%;width:7%;height:24%">C1</div>
+<div class="maprect" style="left:31%;top:40%;width:16%;height:14%"></div><div class="maprect" style="left:48%;top:39%;width:17%;height:14%"></div><div class="maprect" style="left:32%;top:67%;width:16%;height:14%"></div><div class="maprect" style="left:49%;top:66%;width:17%;height:14%"></div>
+<span class="maplabel" style="left:12%;top:91%">Good Room</span><span class="maplabel" style="left:15%;top:96%">Nest</span>
+<span class="maplabel" style="left:31%;top:91%">P1</span><span class="maplabel" style="left:49%;top:90%">P2 / P3</span><span class="maplabel" style="left:59%;top:91%">P4</span>
+<span class="maplabel" style="left:82%;top:10%">Door</span><span class="maplabel" style="left:82%;top:28%">B1–B9</span>
+<div class="zone round" style="left:80%;top:58%;width:5%;height:8%">78</div><div class="zone round" style="left:84%;top:73%;width:5%;height:8%">79</div><div class="zone round" style="left:89%;top:73%;width:5%;height:8%">80</div><div class="zone round" style="left:94%;top:73%;width:5%;height:8%">81</div>
+</div></div>
+<div class="mapcard">
+<h3>Outdoor Courts</h3><p class="mapnote">Training map recreated from the Rally Toast floor plan.</p>
+<div class="maptabs"><span>101 South</span><span>PDR</span><span>The Beer Garden</span><span>Henrietta's</span><span class="on">Outdoor Courts</span></div>
+<div class="toastmap" aria-label="Schematic Outdoor Courts Toast floor plan">
+<span class="maplabel" style="left:30%;top:14%;font-size:18px">Outside Bar Seating</span>
+<div class="zone round" style="left:12%;top:28%;width:5%;height:9%">30</div><div class="zone round" style="left:18%;top:28%;width:5%;height:9%">31</div><div class="zone round" style="left:24%;top:28%;width:5%;height:9%">32</div><div class="zone round" style="left:30%;top:28%;width:5%;height:9%">33</div><div class="zone round" style="left:36%;top:28%;width:5%;height:9%">34</div><div class="zone round" style="left:42%;top:28%;width:5%;height:9%">35</div><div class="zone round" style="left:48%;top:28%;width:5%;height:9%">36</div><div class="zone round" style="left:54%;top:28%;width:5%;height:9%">37</div><div class="zone round" style="left:60%;top:28%;width:5%;height:9%">38</div><div class="zone round" style="left:66%;top:28%;width:5%;height:9%">39</div><div class="zone round" style="left:72%;top:28%;width:5%;height:9%">40</div><div class="zone round" style="left:78%;top:28%;width:5%;height:9%">41</div>
+<div class="zone court" style="left:40%;top:42%;width:6%;height:21%">C7</div><div class="zone court" style="left:40%;top:68%;width:6%;height:21%">C8</div><div class="zone court" style="left:62%;top:42%;width:6%;height:21%">C6</div><div class="zone court" style="left:62%;top:68%;width:6%;height:21%">C5</div>
+<div class="maprect" style="left:22%;top:43%;width:17%;height:18%"></div><div class="maprect" style="left:69%;top:43%;width:17%;height:18%"></div><div class="maprect" style="left:22%;top:68%;width:17%;height:18%"></div><div class="maprect" style="left:69%;top:68%;width:17%;height:18%"></div>
+<div class="zone round" style="left:90%;top:33%;width:5%;height:9%">50</div><div class="zone round" style="left:90%;top:45%;width:5%;height:9%">51</div><div class="zone round" style="left:90%;top:57%;width:5%;height:9%">52</div><div class="zone round" style="left:90%;top:69%;width:5%;height:9%">53</div><div class="zone round" style="left:90%;top:81%;width:5%;height:9%">54</div>
+</div></div></div>
+
+<div class="mustdo"><span class="big">NEW CHECK = GUEST COUNT</span><p>Every time you create a new check, enter the correct guest count. Every check. Every court. Every table. <strong>Even during events.</strong></p></div>
+
+<div class="grid">
+<div class="card"><span class="kicker">COURTS & TABLES</span><h3>Learn the map</h3><p>Know which floor-plan tab contains the court or table you need. Do not guess during service.</p></div>
+<div class="card"><span class="kicker">NEW CHECK</span><h3>Enter guest count</h3><p>The guest count is part of creating the check. It is not optional and should never be skipped because the building is busy or because you're working an event.</p></div>
+<div class="card"><span class="kicker">BAR TAB</span><h3>Name it clearly</h3><p>For a bar guest, use New Tab and enter the guest's name clearly so teammates can identify the correct check.</p></div>
+</div>
+
+<div class="challenge" data-answer="1"><h3>STARTING A COURT CHECK</h3><p>You find the correct court on the floor plan and tap it. What must be entered when the new check is created?</p><div class="options"><button class="option">Only the first guest's name.</button><button class="option">The correct guest count.</button><button class="option">Nothing. Guest count is only for restaurant tables.</button></div><div class="feedback"></div></div>
+</section>
+
+<section>
+<div class="part">Part 3 · Ringing Orders</div><h2>Accuracy before Send.</h2>
+<p class="intro">Once a check is open, choose the category, select the item, complete the required prompts and modifiers, review the check, then Send.</p>
+<div class="steps">
+<div class="step"><div class="n">1</div><div><strong>Choose the category.</strong><p>Food, drinks or the appropriate menu section.</p></div></div>
+<div class="step"><div class="n">2</div><div><strong>Select the item.</strong><p>Add the correct item to the check.</p></div></div>
+<div class="step"><div class="n">3</div><div><strong>Add modifiers.</strong><p>Complete item-specific prompts and customizations such as “No Tomato” or “Add Cheese.”</p></div></div>
+<div class="step"><div class="n">4</div><div><strong>Review before Send.</strong><p>Catch mistakes before they become kitchen or bar problems.</p></div></div>
+<div class="step"><div class="n">5</div><div><strong>Send.</strong><p>Fire the order to the appropriate production area. Send drinks promptly so the bar can get started.</p></div></div>
+</div>
+<div class="rule">PAUSE BEFORE YOU HIT SEND: Is the item right? Are the modifiers right? Is it on the right check?</div>
+<div class="challenge" data-answer="2"><h3>WHAT'S THE BEST NEXT STEP?</h3><p>You entered a food order with two modifications. Your finger is on Send.</p><div class="options"><button class="option">Send immediately so the kitchen gets it faster.</button><button class="option">Ask the guest to repeat the whole order again.</button><button class="option">Review the check and modifiers, then Send.</button></div><div class="feedback"></div></div>
+</section>
+
+<section>
+<div class="part">Part 4 · Allergies</div><h2>Allergies are not just a note.</h2>
+<div class="danger"><h3>ALLERGY STANDARD</h3><p>If a guest mentions an allergy, use the allergy-specific modifier, enter the allergy in <strong>RED ALL CAPS</strong>, and notify the kitchen in person. Do not assume the Toast note alone is enough.</p></div>
+<div class="challenge" data-answer="2"><h3>SCENARIO: NUT ALLERGY</h3><p>A guest orders an item without mushrooms and tells you they have a severe nut allergy. What do you do?</p><div class="options"><button class="option">Add “no mushrooms” and Send. The guest told you, so that's enough.</button><button class="option">Type “nut allergy” as a normal note and Send.</button><button class="option">Apply the food modification, flag the allergy correctly in Toast, and verbally notify the kitchen.</button></div><div class="feedback"></div></div>
+</section>
+
+<section>
+<div class="part">Part 5 · To-Go Orders</div><h2>Set the dining option first.</h2>
+<div class="steps">
+<div class="step"><div class="n">1</div><div><strong>New Check.</strong></div></div>
+<div class="step"><div class="n">2</div><div><strong>Set Dining Option to To-Go.</strong><p>Do this before selecting the items.</p></div></div>
+<div class="step"><div class="n">3</div><div><strong>Add the guest's name.</strong><p>Use a clear label such as “Mike S - To-Go.”</p></div></div>
+<div class="step"><div class="n">4</div><div><strong>Ring and modify normally.</strong><p>Add relevant notes such as sauce on side, no utensils or extra napkins.</p></div></div>
+<div class="step"><div class="n">5</div><div><strong>Send.</strong><p>Fire the ticket to the kitchen.</p></div></div>
+</div>
+</section>
+
+<section>
+<div class="part">Part 6 · Payments & Splits</div><h2>Close the right check.</h2>
+<p class="intro">Payment accuracy matters. Before completing a payment, confirm you are working on the correct guest's check.</p>
+<div class="tabs"><button class="tab active" data-tab="card">Card</button><button class="tab" data-tab="cash">Cash</button><button class="tab" data-tab="split">Split Check</button></div>
+<div class="panel active" id="card"><h3>Card</h3><p>Tap <strong>Pay</strong>, choose Card, and follow the prompts. On a handheld, hand the device to the guest when appropriate.</p></div>
+<div class="panel" id="cash"><h3>Cash</h3><p>Choose Cash and enter the amount the guest gives you. Toast will calculate the change due.</p></div>
+<div class="panel" id="split"><h3>Split Check</h3><p>Tap the three dots / More, then <strong>Split Check</strong>. Move selected items to new checks or use <strong>Split Evenly</strong>. Each resulting check can be paid separately.</p></div>
+<div class="challenge" data-answer="1"><h3>TWO CARDS, EVENLY SPLIT</h3><p>A table asks to split the total evenly between two cards. What's the best path?</p><div class="options"><button class="option">Run the first card for the full amount and refund half.</button><button class="option">Open Split Check, split evenly into two checks, then process each card.</button><button class="option">Ask the guests to calculate their totals themselves.</button></div><div class="feedback"></div></div>
+</section>
+
+<section>
+<div class="part">Part 7 · Voids, Comps & Corrections</div><h2>Know when to get a manager.</h2>
+<div class="safe"><h3>BEFORE SEND</h3><p>If you made an order-entry mistake before sending, select the item and use the appropriate Remove/Void function and reason.</p></div>
+<div class="danger"><h3>AFTER SEND</h3><p><strong>Once an item has been sent, a manager is required to void or comp it.</strong> Don't improvise a workaround. Get a manager and explain what happened.</p></div>
+<div class="challenge" data-answer="2"><h3>YOU SENT THE WRONG ITEM</h3><p>You realize the wrong food item was entered, but the ticket has already been sent. What now?</p><div class="options"><button class="option">Delete it yourself.</button><button class="option">Start a new check and ignore the first item.</button><button class="option">Get a manager to handle the void/comp and explain the correction needed.</button></div><div class="feedback"></div></div>
+</section>
+
+<section>
+<div class="part">Part 8 · End of Shift</div><h2>No mystery checks left behind.</h2>
+<div class="steps">
+<div class="step"><div class="n">1</div><div><strong>Review your checks.</strong><p>Use Shift Review to identify anything still open.</p></div></div>
+<div class="step"><div class="n">2</div><div><strong>Close or transfer.</strong><p>Every open tab must be appropriately closed or transferred to another team member.</p></div></div>
+<div class="step"><div class="n">3</div><div><strong>Clock out.</strong><p>Once your shift responsibilities are complete, use your name/menu to Clock Out.</p></div></div>
+</div>
+</section>
+
+
+
+<section>
+<div class="part">Part 9 · Hands-On Practice</div><h2>Knowing it isn't the same as doing it.</h2>
+<p class="intro">During training, practice these workflows on the terminal or handheld. Trainers should introduce complications and make trainees complete the full workflow.</p>
+<div class="grid">
+<div class="card"><span class="kicker">SCENARIO 1</span><h3>Simple Service</h3><p>Open a check, enter food and drinks, add a modification, Send, and process one card payment.</p></div>
+<div class="card"><span class="kicker">SCENARIO 2</span><h3>Bar Tab</h3><p>Start a named tab, add drinks over time, add food, then split payment between two cards.</p></div>
+<div class="card"><span class="kicker">SCENARIO 3</span><h3>Allergy</h3><p>Ring a modified food order, correctly flag a severe allergy, and demonstrate the verbal kitchen notification.</p></div>
+<div class="card"><span class="kicker">SCENARIO 4</span><h3>To-Go</h3><p>Set the dining option, name the order, add items and modifiers, and Send.</p></div>
+<div class="card"><span class="kicker">SCENARIO 5</span><h3>End of Shift</h3><p>Find open checks, determine which need to close or transfer, and complete the shift review.</p></div>
+<div class="card"><span class="kicker">TRAINER CHECK</span><h3>Can they do it without prompting?</h3><p>Training is complete when the team member can perform the workflow accurately, not just describe it.</p></div>
+</div>
+</section>
+
+<section>
+<div class="part">Part 10 · Proficiency Checklist</div><h2>Before you work independently...</h2>
+<div class="checklist">
+<div class="check">☐ Log in/out and navigate Toast smoothly</div><div class="check">☐ Open the correct court/table check or named bar tab</div><div class="check">☐ Enter the correct guest count on EVERY new check, including events</div>
+<div class="check">☐ Navigate menu sections</div><div class="check">☐ Enter orders accurately</div>
+<div class="check">☐ Apply modifiers correctly</div><div class="check">☐ Handle allergy flags and verbal notification</div>
+<div class="check">☐ Send orders correctly</div><div class="check">☐ Process card and cash payments</div>
+<div class="check">☐ Split checks correctly</div><div class="check">☐ Know when a manager is required for a void/comp</div>
+<div class="check">☐ Process a to-go order</div><div class="check">☐ Close/transfer open checks before clocking out</div>
+</div>
+</section>
+
+<section>
+<div class="part">Final · Knowledge Check</div><h2>Can you run Toast accurately?</h2><p class="intro">Choose the best answer. Passing score: 9/11.</p>
+<form id="quiz">
+<fieldset class="quiz"><legend>1. How should a bar tab be started?</legend><label><input type="radio" name="q1" value="a"> New Tab + clear guest name</label><label><input type="radio" name="q1" value="b"> Empty table on floor plan</label><label><input type="radio" name="q1" value="c"> Ring items first</label></fieldset>
+<fieldset class="quiz"><legend>2. When is guest count required?</legend><label><input type="radio" name="q11" value="a"> Only restaurant tables</label><label><input type="radio" name="q11" value="b"> Every new check, including courts and events</label><label><input type="radio" name="q11" value="c"> Only when a manager asks</label></fieldset>
+<fieldset class="quiz"><legend>2. What should happen immediately before Send?</legend><label><input type="radio" name="q2" value="a"> Review the check and modifiers</label><label><input type="radio" name="q2" value="b"> Close the check</label><label><input type="radio" name="q2" value="c"> Split the check</label></fieldset>
+<fieldset class="quiz"><legend>3. A guest states a severe allergy. What is required?</legend><label><input type="radio" name="q3" value="a"> A normal note only</label><label><input type="radio" name="q3" value="b"> Allergy modifier/RED ALL CAPS plus verbal kitchen notification</label><label><input type="radio" name="q3" value="c"> Tell the guest to tell the kitchen</label></fieldset>
+<fieldset class="quiz"><legend>4. When should a To-Go dining option be set?</legend><label><input type="radio" name="q4" value="a"> After payment</label><label><input type="radio" name="q4" value="b"> Before selecting items</label><label><input type="radio" name="q4" value="c"> After Send</label></fieldset>
+<fieldset class="quiz"><legend>5. Where do you access Split Check?</legend><label><input type="radio" name="q5" value="a"> Three dots / More</label><label><input type="radio" name="q5" value="b"> Clock Out</label><label><input type="radio" name="q5" value="c"> Menu category</label></fieldset>
+<fieldset class="quiz"><legend>6. You made a mistake before Send. What can you do?</legend><label><input type="radio" name="q6" value="a"> Correct/remove the item using the appropriate function</label><label><input type="radio" name="q6" value="b"> Only a manager can touch it</label><label><input type="radio" name="q6" value="c"> Leave it and explain later</label></fieldset>
+<fieldset class="quiz"><legend>7. The wrong item has already been sent. Who handles the void/comp?</legend><label><input type="radio" name="q7" value="a"> Any hourly team member</label><label><input type="radio" name="q7" value="b"> A manager</label><label><input type="radio" name="q7" value="c"> The guest</label></fieldset>
+<fieldset class="quiz"><legend>8. What should happen to open checks before clock-out?</legend><label><input type="radio" name="q8" value="a"> Leave them for the next shift</label><label><input type="radio" name="q8" value="b"> Close or appropriately transfer them</label><label><input type="radio" name="q8" value="c"> Delete them</label></fieldset>
+<fieldset class="quiz"><legend>9. Why label tabs clearly?</legend><label><input type="radio" name="q9" value="a"> So teammates can identify and assist with the correct guest</label><label><input type="radio" name="q9" value="b"> It changes the menu</label><label><input type="radio" name="q9" value="c"> It automatically closes the tab</label></fieldset>
+<fieldset class="quiz"><legend>10. What proves Toast training proficiency?</legend><label><input type="radio" name="q10" value="a"> Reading the guide once</label><label><input type="radio" name="q10" value="b"> Watching someone else</label><label><input type="radio" name="q10" value="c"> Accurately completing the workflows during hands-on practice</label></fieldset>
+<button type="button" class="submit" onclick="grade()">CHECK MY SCORE</button><div id="score" class="score"></div>
+</form>
+</section>
+</main>
+<footer><strong>THE TOAST STANDARD:</strong> Right guest. Right check. Right item. Right modifiers. Review before Send. Close the right check.</footer>
+<script>
+document.querySelectorAll('.challenge').forEach(c=>{const a=+c.dataset.answer,opts=[...c.querySelectorAll('.option')],f=c.querySelector('.feedback');opts.forEach((o,i)=>o.onclick=()=>{opts.forEach(x=>x.classList.remove('correct','wrong'));f.classList.remove('good','bad');if(i===a){o.classList.add('correct');f.classList.add('good');f.innerHTML='<span class="ft">✓ NICE WORK</span><span class="fk">Accuracy first.</span><br>You chose the workflow that protects the guest experience and keeps Toast clean.'}else{o.classList.add('wrong');opts[a].classList.add('correct');f.classList.add('bad');f.innerHTML='<span class="ft">NOT QUITE</span><span class="fk">Look at the workflow again.</span><br>The correct answer is highlighted. Make sure you understand why before moving on.'}f.classList.add('show')})});
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.getElementById(b.dataset.tab).classList.add('active')});
+const key={q1:'a',q2:'a',q3:'b',q4:'b',q5:'a',q6:'a',q7:'b',q8:'b',q9:'a',q10:'c',q11:'b'};
+function grade(){let n=0;Object.entries(key).forEach(([q,a])=>{const x=document.querySelector(`input[name="${q}"]:checked`);if(x&&x.value===a)n++});const s=document.getElementById('score');s.classList.add('show');s.innerHTML=n>=9?`You scored ${n}/11.<br>PASS — Now demonstrate the workflows during hands-on practice.`:`You scored ${n}/11.<br>Review the training and try again. Passing score is 9/11.`;s.scrollIntoView({behavior:'smooth',block:'center'});if(window.parent!==window) window.parent.postMessage({rallyQuiz:true,title:document.title,score:n,total:11},window.location.origin)}
+
+
+addEventListener('scroll',()=>{const d=document.documentElement;document.getElementById('bar').style.width=(d.scrollTop/(d.scrollHeight-d.clientHeight)*100)+'%'});
+</script>
+</body></html>

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Hospitality Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}.card{cursor:pointer}.card .back{display:none}.card.open{background:var(--sage)}.card.open .front{display:none}.card.open .back{display:block}.card .tap{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55;margin-top:10px}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.four-as li{margin-bottom:6px}
+.four-as li b{font-family:"Instrument Serif",serif;font-size:1.5em;font-style:italic;color:var(--orange);display:block;line-height:1.1}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}.card .front{display:none}.card .back{display:block}.card .tap{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 1 of 12 · Hospitality Playbook</div>
+        <h1 style="margin-top:12px">Rally’s Hospitality<br><em>Playbook</em></h1>
+        <p>Hand-Holding Hospitality is the foundation of every guest interaction at Rally. As a manager, your team will copy what you do, so you have to live these eight principles yourself and coach them on every shift.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 150 160" width="140" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M58 18 Q96 8 116 36 Q132 62 112 92 L96 108 Q78 118 62 104 L44 86 Q30 70 36 50 Q42 26 58 18Z" fill="#174854"/><path d="M62 104 L40 130 M50 96 L30 120" /><path d="M30 120 L22 132 Q30 142 40 132 L40 130" fill="#fffdf8"/><circle cx="118" cy="126" r="13" fill="#fffdf8"/><circle cx="113" cy="121" r="2"/><circle cx="123" cy="124" r="2"/><circle cx="116" cy="131" r="2"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">Our promise</span><p>Every guest feels welcomed, guided, and confident from arrival to departure, always knowing what to do, where to go, and what comes next.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>Service <em>vs.</em> Hospitality</h3><ul><li>What we do vs. how guests feel</li><li>Why Rally needs both</li><li>Hand-Holding Hospitality</li></ul></div><div><h3>The Eight <em>Principles</em></h3><ul><li>We hand hold</li><li>We acknowledge every guest</li><li>We see, we do</li><li>We bring the energy</li></ul></div><div><h3>…and the <em>rest</em></h3><ul><li>We deliver Magic Moments</li><li>We care about the details</li><li>We find a way to say yes</li><li>We work as a team</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Service <em>vs.</em> Hospitality</h2><p>At Rally, we embody <b>Hand-Holding Hospitality</b>: service and genuine warmth working together, so every guest feels guided, cared for, and glad they chose to be here. That's what turns a great visit into one people can't stop talking about.</p></div></div>
+      <div class="compare"><div><span class="label">Service · what you do</span><ul><li>Taking orders correctly</li><li>Delivering food and drinks on time</li><li>Executing systems and standards</li><li>Detailing and resetting sections</li><li>Following checklists and SOPs</li><li>Moving with urgency so guests never wait longer than they should</li><li>Knowing the menu inside and out</li></ul></div><div><span class="label">Hospitality · how they feel</span><ul><li>Making guests feel seen and valued</li><li>Anticipating needs before they're spoken</li><li>Creating a sense of belonging and warmth</li><li>Greeting, guiding, and connecting</li><li>Being fully present in every interaction</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>The Eight <em>Principles</em></h2><p>Eight principles. Every shift. No exceptions.</p></div></div>
+      <div class="cards"><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">01</div><h3>We hand hold</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">01</div><h3>We hand hold</h3><p class="tl">Guide every guest. Anticipate every need.</p><ul><li>Anticipate needs and step in before guests have to ask</li><li>Actively guide guests through each step of their visit</li><li>Explain what's happening and what comes next</li><li>Take ownership of the experience: every guest, every time</li></ul><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">02</div><h3>We acknowledge every guest</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">02</div><h3>We acknowledge every guest</h3><p class="tl">Anyone within two feet: eye contact, energy, smile.</p><ul><li>Eye contact and a genuine smile</li><li>Speak up with confidence. A greeting only lands if it's heard</li><li>Give full attention, every single time</li><li>Mid-task? Pause, smile and say <i>“I'll be right with you!”</i> Then finish what you were doing</li></ul><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">03</div><h3>We see, we do</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">03</div><h3>We see, we do</h3><p class="tl">Stay proactive. Move as a team.</p><ul><li>Spot something that needs doing? Do it right away</li><li>See a teammate stretched? Step in without being asked</li><li>Notice a guest who could use help? Go to them</li><li>Keep the whole venue in view, not just your section</li></ul><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">04</div><h3>We bring the energy</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">04</div><h3>We bring the energy</h3><p class="tl">Be the Cruise Director.</p><ul><li>Move with pep and purpose. Your body language should say you're happy to be here</li><li>Guide guests through courts, café, bar and what's coming up next</li><li>Read the room: high-energy group on the courts, quiet couple at the café</li><li>When it's busy, stay grounded and solution-focused. Your steadiness sets the tone</li></ul><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">05</div><h3>We deliver Magic Moments</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">05</div><h3>We deliver Magic Moments</h3><p class="tl">Elevate the good. Recover with care.</p><p>Athletic hospitality: we play both offense and defense. See below.</p><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">06</div><h3>We care about the details</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">06</div><h3>We care about the details</h3><p class="tl">The little things are the big things.</p><ul><li>Tables cleared and reset promptly</li><li>Surfaces wiped between covers, not just at the end</li><li>Restrooms checked all shift, not just at open</li><li>Glassware, cutlery and condiments clean and stocked</li><li>Courts free of loose balls and debris</li></ul><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">07</div><h3>We find a way to say yes</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">07</div><h3>We find a way to say yes</h3><p class="tl">Search for the yes. Ask before you decline.</p><p>Our instinct is to find a solution, not a reason something can't happen. See below.</p><span class="tap">Tap to flip back</span></div></div><div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}"><div class="front"><div class="num">08</div><h3>We work as a team</h3><span class="tap">Tap to reveal</span></div><div class="back"><div class="num">08</div><h3>We work as a team</h3><p class="tl">One floor. One goal. No ego.</p><ul><li>Communicate proactively. If something changes, say so right away</li><li>Treat every role with equal respect: host, busser, barback, GM</li><li>Celebrate each other's wins and step in when a teammate needs support</li><li>Handle interpersonal moments privately, promptly and professionally</li><li>Over-communicate. Silence is never the plan</li></ul><span class="tap">Tap to flip back</span></div></div></div><div class="note"><b>The Cruise Director effect:</b> a cruise director holds the whole experience together. They know what's happening, they make sure every guest knows too, and they set the tone without waiting to be asked. One manager who's fully present can lift the entire room. <i>Guests feed off your energy.</i></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Magic <em>Moments</em></h2><p>Going the extra mile, both proactively and reactively. When things go well, make them better. When something needs turning around, move fast and with care.</p></div></div>
+      <div class="compare"><div><span class="label">Offense · elevate</span><ul><li>Notice a milestone and mark it</li><li>Recommend the next drink before the glass is empty</li><li>Bring something small and unexpected</li><li>Connect a first-timer to the Rally community</li></ul></div><div><span class="label">Defense · recover with the four A's</span><ul class="four-as"><li><b>Apologize</b> for how it affected them, even if it wasn't our fault</li><li><b>Acknowledge</b> it: if the guest feels there's a problem, there is one</li><li><b>Act:</b> loop in a manager without hesitation and fix it fast</li><li><b>Assess:</b> go back after the fix to make sure they feel taken care of</li></ul></div></div><div class="callout"><span class='label'>What a Magic Moment looks like</span><ul><li>A guest mentions in passing it's their birthday, and a candle appears</li><li>A regular sits down, and their usual order is already on its way</li><li>A first-timer finishes their first court session, and you introduce them to a regular</li><li>An order needs to be remade, and it comes back fast with something extra</li></ul></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Find a way to <em>say yes</em></h2><p>A well-timed yes builds loyalty. These are the kinds of yeses we look for:</p></div></div>
+      <ul><li>Extend a reservation for free if no other guests are waiting for the space</li><li>Accommodate a party size increase, and search for the solution</li><li>Go off-menu for a guest who needs something (check with the kitchen first)</li><li>Make thoughtful exceptions for regulars and VIPs where appropriate</li><li>Walk guests to the restroom instead of pointing</li><li>Offer water for guests' dogs</li><li>Be a helpful concierge: directions, suggestions, local knowledge</li><li>When you bend a rule, let the guest know you're doing it for them</li></ul><div class="alert"><b>As a manager:</b> your team is told to ask their direct report before saying no to a guest. That's you. Make it easy for them to ask, and look for the yes first. The answer is often yes.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>Opportunity Hospitality</b>: the five types of guests who walk through our doors, and what each one needs from you and your team.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Model the Two-Foot Rule on every Figure of 8, even mid-task.", "Spot a guest need and step in before the guest has to ask.", "Create (or approve) at least one Magic Moment on offense.", "Lead a service recovery with the four A's: apologize, acknowledge, act, assess.", "Find a “yes” for an unusual guest request, or help a teammate find one.", "Recognize a team member, specifically, for living one of the eight principles.", "Step in to cover a teammate's blind spot without being asked."];
+var OUTCOMES=["Explain Hand-Holding Hospitality in my own words.", "Tell the difference between service and hospitality.", "Name all eight principles and what each looks like.", "Run Magic Moments on offense and defense.", "Search for the yes before declining a request.", "Coach the principles to my team in real time."];
+var SCEN=[{"q": "A first-time guest is standing by the entrance looking unsure, and your host is busy checking in another group. What do you do?", "pts": ["Walk over before they have to approach anyone.", "Eye contact, a smile and a warm, audible greeting.", "Ask if it's their first time, and guide them: what happens next, where to go.", "Stay with them until they're handed off or settled."], "listen": "Hand holding: the manager moves to the guest instead of waiting or pointing."}, {"q": "A guest's order comes out wrong and they're visibly frustrated. Walk through your recovery.", "pts": ["Apologize right away, with genuine care: no excuses, no blaming the kitchen.", "Acknowledge the problem: if they feel there's a problem, there is one.", "Act: get it fixed fast, ideally with something small and extra.", "Assess: come back after the fix to make sure they feel taken care of.", "If you comp anything, document it in the shift report."], "listen": "All four A's, especially going back to assess after the fix."}, {"q": "A group's court time ends in 10 minutes and they ask if they can keep playing. How do you decide?", "pts": ["Check whether anyone is waiting for the court.", "If no one is, extend it for free.", "Tell them you're doing it for them.", "If you can't, offer an alternative (the bar, the next open slot)."], "listen": "Searching for the yes first, and letting the guest know when a rule is bent for them."}, {"q": "On a busy night your bartender is buried while two captains chat by expo. What do you do?", "pts": ["See it, do it: step in and help yourself.", "Quietly redirect the captains to support the bar.", "After the rush, coach the captains privately, not in front of the team.", "Recognize the bartender for holding it together."], "listen": "Modeling teamwork, plus correcting in private."}, {"q": "A new team member asks, “What's the difference between good service and hospitality?” How do you explain it?", "pts": ["Service is what we do: orders right, on time, to standard.", "Hospitality is how guests feel: seen, valued, looked after.", "Rally needs both. Service without warmth feels transactional.", "Give a real example from the floor."], "listen": "A clear split between what we do and how guests feel, with a concrete example."}];
+var KEYNAME="rally-mgr-hospitality-playbook-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

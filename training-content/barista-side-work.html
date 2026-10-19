@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barista Side Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+
+.phases{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.phase{background:var(--paper);border:1px solid var(--navy);border-radius:6px;padding:18px 20px}
+.phase .ph-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.phase .ph-n{width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px;flex:none}
+.phase h3{margin:0}
+.phase .goal{font-style:italic;margin-bottom:10px}
+.phase ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px}
+.term{border-top:2px solid var(--sage);padding-top:10px}
+.term b{display:block;font-weight:600;font-size:17px;margin-bottom:2px}
+.nums{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:22px}
+.num{background:var(--sage);border-radius:6px;padding:16px 18px}
+.num .big{font-family:"Instrument Serif",serif;font-size:44px;line-height:1}
+.num p{margin-top:6px;font-size:15px}
+@media (max-width:720px){.phases,.terms,.nums{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Barista Training</span><span>Rally</span></div>
+
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Barista Training · Side Work</div>
+        <h1 style="margin-top:12px">Side Work<br><em>in the Cafe</em></h1>
+        <p>A stocked, clean, dialed-in cafe is what lets you focus on guests instead of scrambling. This chapter walks you through how we open and close the cafe, and why each step matters. The printed checklist lives in the cafe; this is where you learn it.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 120 150" width="120" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 22 Q60 10 102 22 L104 34 Q60 26 16 34 Z"/><path d="M22 36 L32 138 Q60 146 88 138 L98 36"/><path d="M26 66 L94 66 L90 104 L30 104 Z" fill="#174854" fill-opacity=".85"/><path d="M42 16 Q46 4 58 8 Q70 2 76 14" stroke-width="2.5"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The Rally Standard</span>
+        <p>Know every task and the standard it has to meet, then exceed it. If you're ever unsure about a task, ask the MOD. We're here to help.</p>
+      </div>
+      <div class="connect">
+        <div>
+          <h3>Set up the <em>next person</em></h3>
+          <p>The closer sets up the opener. The opener sets up service. Every task on the checklist is a favor to whoever is behind the counter next, so leave it better than you found it, and initial each section when it's done.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <h2>How a Shift <em>Flows</em></h2>
+          <p>Cafe side work happens in four parts. Here's what each part is for and every task it covers.</p>
+        </div>
+      </div>
+      <div class="phases">
+        <div class="phase"><div class="ph-top"><div class="ph-n">1</div><h3>First thing in</h3></div><p class="goal">Goal: start the things that take time to heat up.</p><ul><li>Run the rinse cycle on the coffee urn.</li><li>Turn on the oven.</li></ul></div>
+        <div class="phase"><div class="ph-top"><div class="ph-n">2</div><h3>Opening</h3></div><p class="goal">Goal: the cafe is ready before the first guest walks up.</p><ul>
+          <li><b>Condiment bar</b>: restock sugars, stir sticks and drink stoppers</li>
+          <li><b>Espresso bar</b>: pull out syrups and put pour spouts on (note any that need to be made), put scale chargers away, fill hoppers with beans, dial in espresso, put rags out, fill the spoon cup with water, stock cups, lids and sleeves</li>
+          <li><b>Pastry case</b>: put pastries in the case and make sure the signs look good</li>
+          <li><b>Brew bar</b>: weigh out and grind beans, brew Rally Blend, fill the ice bin</li>
+          <li><b>Front of house</b>: tidy retail bags and coffee signs at the register, put away the "Cafe Closed" signs, put out cornhole boards and bags</li>
+        </ul></div>
+        <div class="phase"><div class="ph-top"><div class="ph-n">3</div><h3>Closing: espresso &amp; brew bar</h3></div><p class="goal">Goal: clean equipment and a fully stocked bar for the opener.</p><ul>
+          <li><b>Wash</b>: steaming pitchers, stir spoons, stainless steel cups, drip mats, matcha/beet scoops and shot glasses</li>
+          <li><b>Restock</b>: milk (make half and half and sweet cream if needed), syrups and tea concentrates, tea shelf, to-go cups and lids, sleeves, straws and napkins, condiment bar</li>
+          <li><b>Fridges</b>: wipe them out</li>
+          <li><b>Syrups</b>: wash spouts, wipe bottles, put bottles away</li>
+          <li><b>Espresso machine</b>: back flush each grouphead with Cafiza and clean around the gaskets, soak and scrub portafilters (not the rubber part), wipe down the machine and stainless, clean the pitcher rinser</li>
+          <li><b>Grinders</b>: wipe the hopper and espresso grinder, clean up loose grounds</li>
+          <li><b>Brewed coffee</b>: dump leftover coffee, wipe the urn, run a rinse cycle on the coffee maker</li>
+          <li><b>Kegerator</b>: wipe with a microfiber rag</li>
+        </ul></div>
+        <div class="phase"><div class="ph-top"><div class="ph-n">4</div><h3>Closing: pastry case &amp; general</h3></div><p class="goal">Goal: the opener walks into a clean, reset cafe.</p><ul>
+          <li><b>Pastry case</b>: put leftover pastries in a container in the fridge (2:45pm), wash plates and tongs, restock bags and wax bags, wipe the inside and top of the case</li>
+          <li><b>Oven</b>: cool it down (2:30pm), then clean the oven and trays</li>
+          <li><b>Ice well</b>: pour hot water down until melted</li>
+          <li><b>Dishes</b>: all clean and put away</li>
+          <li><b>Counters</b>: sanitize, including the condiment bar and the side counter under the window</li>
+          <li><b>Floors</b>: sweep and mop (Monday and Tuesday only)</li>
+          <li><b>Finish</b>: put dirty rags away, take out all cafe trash and re-line the cans</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <h2>Words to <em>Know</em></h2>
+          <p>Terms you'll see on the checklist and hear behind the counter.</p>
+        </div>
+      </div>
+      <div class="terms">
+        <div class="term"><b>Dialing in</b>Adjusting the grind each morning until espresso shots taste right. Bitter usually means grind coarser; sour usually means grind finer.</div>
+        <div class="term"><b>Hopper</b>The container on top of the grinder that holds whole beans. Fill it at open; wipe it at close.</div>
+        <div class="term"><b>Rally Blend</b>Our brewed coffee. Weigh and grind the beans fresh before brewing.</div>
+        <div class="term"><b>Cafiza</b>The espresso machine cleaner used to back flush groupheads and soak portafilters.</div>
+        <div class="term"><b>Back flushing</b>Running Cafiza through each grouphead to clean out coffee oils, then cleaning around the gaskets.</div>
+        <div class="term"><b>Portafilter</b>The handle that holds the coffee basket. Soak and scrub it at close, but not the rubber part.</div>
+        <div class="term"><b>Pitcher rinser</b>The rinser for steaming pitchers. Leftover Cafiza water goes down it at close, then clean it.</div>
+        <div class="term"><b>Rinse</b>The cleaner used for the brewed coffee maker and steam wands on deep-clean days.</div>
+      </div>
+      <div class="nums">
+        <div class="num"><div class="big">2:30pm</div><p>Cool the oven down, then clean the oven and trays.</p></div>
+        <div class="num"><div class="big">2:45pm</div><p>Put leftover pastries in a container and into the fridge.</p></div>
+        <div class="num"><div class="big">Sun · Tue · Thu</div><p>Deep-clean days: 1 oz rinse in the brewed coffee maker (then another hot water cycle), and soak both steam wands in a pitcher with ½ oz rinse and hot water.</p></div>
+        <div class="num"><div class="big">Mon · Tue</div><p>Sweep and mop the floors at close.</p></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-orange">Practice during service</span>
+          <p class="hint" style="margin-top:8px">Your trainer checks these off during your shift.</p>
+        </div>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead>
+        <tbody id="skills"></tbody>
+      </table>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of today, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-coral">Around the cafe</span>
+          <p>Answer each one in your own words, then review your answers with your MOD.</p>
+        </div>
+      </div>
+      <div class="scen" id="scen"></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw today</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, I'd like you to focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px">
+        <span class="label">Looking ahead</span>
+        <p>Next up: put it into practice. Open and close the cafe with your trainer, initialing each section of the printed checklist as you go.</p>
+      </div>
+    </div>
+  </div>
+
+  <details class="key">
+    <summary>
+      <div>
+        <h2>MOD <em>Cheat Sheet</em></h2>
+        <p class="hint" style="margin-top:6px">For MODs reviewing answers. Trainees — finish your answers first.</p>
+      </div>
+      <span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span>
+    </summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. A trainee's answer is on track when it hits the main ideas in their own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+
+  <div class="bar">
+    <span class="saved" id="saved">Your answers save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all answers</button>
+  </div>
+</div>
+
+<script>
+var SKILLS=["Run the rinse cycle on the coffee urn and turn on the oven as soon as you come in.", "Complete the opening checklist alongside your trainer and initial each section.", "Dial in espresso at open.", "Weigh, grind and brew Rally Blend.", "Set up the pastry case so it looks full and the signs look good.", "Back flush each grouphead with Cafiza and clean around the gaskets.", "Soak and scrub the portafilters in Cafiza.", "Cool the oven at 2:30 and put pastries away at 2:45.", "Complete the closing checklist and leave the cafe fully reset."];
+var OUTCOMES=["Explain why side work matters for great cafe service.", "Name the first two things to do when you come in.", "Walk through the opening checklist section by section.", "Know which closing tasks happen only on certain days.", "Clean the espresso machine at close without missing a step.", "Close the cafe so the opener can start clean.", "Use the printed checklist without guessing."];
+var SCEN=["You just walked in to open the cafe. What are the first two things you do?", "While setting up the espresso bar, you notice a syrup bottle is almost empty. What do you do?", "It's 2:30pm. What needs to happen in the cafe?", "It's Tuesday close. What extra cleaning steps happen today that don't happen every day?", "Walk through how you clean the espresso machine at close.", "You're closing and notice the fridge is low on milk and sweet cream. What do you do?"];
+var KEY=[{"pts": ["Run the rinse cycle on the coffee urn.", "Turn on the oven."], "listen": "Both tasks, before starting the rest of the opening checklist."}, {"pts": ["Put a pour spout on it and set it out with the other syrups.", "Note that it needs to be made.", "Make it when there's time, or pass it on so it gets made."], "listen": "Noting what needs to be made at open, not waiting until it runs out."}, {"pts": ["Cool the oven down at 2:30pm.", "Pastries get put away at 2:45pm: into a container and into the fridge."], "listen": "The two closing times: oven at 2:30, pastries at 2:45."}, {"pts": ["Run the brewed coffee maker with a 1 oz rinse, then another hot water cycle (Sunday, Tuesday, Thursday).", "Soak both steam wands in a steaming pitcher with 1/2 oz rinse and hot water (Sunday, Tuesday, Thursday).", "Sweep and mop the floors (Monday and Tuesday only)."], "listen": "All three: the coffee maker rinse, the steam wand soak, and the floors."}, {"pts": ["Back flush each grouphead with Cafiza and clean around the gaskets with a microfiber towel or brush.", "Soak the portafilters in Cafiza and scrub them clean (not the rubber part). Pour the leftover Cafiza water down the pitcher rinser.", "Wipe down the machine and stainless steel with a microfiber rag and sanitizer.", "Wipe the grinder and clean up loose grounds, then clean the pitcher rinser."], "listen": "Back flush, portafilters, wipe down, grinder, and not scrubbing the rubber part of the portafilter."}, {"pts": ["Restock the fridge with milk.", "Make half and half and sweet cream if needed.", "Wipe out the fridges as part of close."], "listen": "Restocking for the opener, so the morning starts fully stocked."}];
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    var cb=el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s});
+    lab.appendChild(cb);td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+});
+var ky=document.getElementById('key');
+KEY.forEach(function(k,i){
+  var d=el('div',{'class':'ans'});d.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+SCEN[i]));
+  var ul=el('ul');k.pts.forEach(function(p){ul.appendChild(el('li',{},p));});d.appendChild(ul);
+  d.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+k.listen));ky.appendChild(d);
+});
+
+var KEYNAME='rally-barista-sidework-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+</script>
+</body>
+</html>

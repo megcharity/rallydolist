@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Coaching &amp; Corrective Action</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 8 of 12 · Coaching &amp; Corrective Action</div>
+        <h1 style="margin-top:12px">Coaching <em>&amp;<br>Corrective Action</em></h1>
+        <p>The best managers at Rally don't only speak up when something goes wrong. They're constantly in conversation with their team: celebrating what's working, addressing what isn't, and helping people grow. This chapter also covers how to document and when to bring in HR.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 160 140" width="150" height="130" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 28 Q14 14 30 14 H92 Q106 14 106 28 V62 Q106 76 92 76 H50 L30 94 L34 76 H30 Q14 76 14 62Z" fill="#fffdf8"/><path d="M68 66 Q68 54 82 54 H132 Q146 54 146 68 V100 Q146 112 132 112 H126 L130 128 L112 112 H82 Q68 112 68 100Z" fill="#174854"/><path d="M32 38 H86 M32 52 H72"/><path d="M86 76 H126 M86 90 H118" stroke="#fbf6ed"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>Tough on standards, not on people.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>Feedback <em>culture</em></h3><ul><li>The four rules</li><li>Praise in public, correct in private</li><li>No surprises</li></ul></div><div><h3>Coaching <em>conversations</em></h3><ul><li>The five steps</li><li>Writing it up: the two formulas</li><li>Witnesses</li></ul></div><div><h3>Corrective <em>action</em></h3><ul><li>Warning levels and HR approval</li><li>Sending someone home</li><li>Open door and workplace conduct</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>The four <em>rules</em></h2></div></div>
+      <div class="rules"><div>Praise in public. Correct in private.</div><div>Tough on standards, not on people.</div><div>Constant feedback, positive and corrective.</div><div>If it’s not documented, it didn’t happen.</div></div><div class="callout"><span class='label'>What a feedback culture looks like</span><ul><li>Catching someone doing something great, and telling them specifically, in the moment</li><li>Checking in with team members mid-shift, not just at the start or end</li><li>Addressing small issues before they become patterns</li><li>Making coaching feel like a conversation, not a verdict</li><li>Following up after feedback: did it land? Do they need more support?</li></ul></div><div class="note"><b>No surprises.</b> No team member should ever be surprised by a corrective action conversation. If they are, we waited too long to give them feedback that could have helped earlier.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Praise in public. <em>Correct in private.</em></h2><p>Where and how you deliver feedback matters as much as what you say.</p></div></div>
+      <div class="compare"><div><span class="label">Praise in public</span><ul><li>Call out great work in lineups, team channels and end-of-shift recaps</li><li>Be specific: “great energy on the floor tonight” lands harder than “good job”</li><li>Recognize effort as well as results</li><li>Make it a habit: frequent small recognition beats rare big moments</li></ul></div><div><span class="label">Correct in private</span><ul><li>Always in a private space, away from the floor and other team members</li><li>Preferably at the end of the shift, never in the heat of the moment if it can wait</li><li>Have a second manager as a witness for any formal conversation</li><li>Stay calm, specific and focused on behavior, not personality</li></ul></div></div><div class="alert"><b>Never</b> call someone out in front of their peers or guests, whatever the situation. The goal of corrective feedback is always to help the person succeed, not to punish them.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>The five <em>steps</em></h2><p>How we approach every coaching conversation, from a quick check-in to a formal corrective session.</p></div></div>
+      <ol class="steps"><li><b>Prepare</b>Gather the facts first: attendance records, schedules, policies, witness statements. Have specific examples, decide what success looks like, and prepare the documentation in advance. Choose a private space and arrange a witness.</li><li><b>Be specific, not general</b>Not “you seemed checked out tonight” but “you weren't acknowledging guests at the host desk between 7pm and 8pm.”</li><li><b>Make it a conversation</b>Give them space to respond and share context. Ask questions before making assumptions. You're solving a problem together.</li><li><b>Agree on a path forward</b>What needs to change, by when, and what support they need. Confirm expectations, next steps, and the consequences if improvement isn't achieved.</li><li><b>Document and follow up</b>Note it in the shift report, complete the form where applicable, and check in over the following shifts.</li></ol>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Who can do <em>what</em></h2><p>Coaching conversations and verbal warnings can generally be handled by the manager. Anything more serious needs HR or senior leadership <b>before</b> you meet with the employee.</p></div></div>
+      <div class="tw"><table class="tbl"><thead><tr><th>Level</th><th>What it is</th><th>Before you meet</th></tr></thead><tbody><tr><td>Coaching conversation</td><td>Addressing a concern early with clear expectations</td><td>Manager can handle</td></tr><tr><td>Verbal warning</td><td>A documented conversation; the team member is made aware of the issue and given a clear path to improvement</td><td>Manager can handle</td></tr><tr><td>Written warning</td><td>The issue continued or escalated; consequences of continued noncompliance are clearly stated</td><td><b>HR or senior leadership must review and approve</b></td></tr><tr><td>Final warning</td><td>The last step before termination</td><td><b>HR or senior leadership must review and approve</b></td></tr><tr><td>Suspension or termination recommendation</td><td>—</td><td><b>HR or senior leadership must review and approve</b></td></tr></tbody></table></div><div class="note"><b>Not sure which level fits?</b> Consider how serious the issue is, the employee's prior history and the circumstances, and consult HR before proceeding. Thinking about skipping a step? Consult HR first.</div><div class="alert"><b>Needs immediate action, or the employee shouldn't stay at work?</b> Contact HR or senior leadership right away. If they're unavailable and it's in the best interest of the business, you may send the employee home pending review. Tell them they are <b>not being terminated</b>, but shouldn't return until HR or senior leadership directs them to. Don't make promises or speculate about the outcome.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Writing <em>it up</em></h2><p>Pick the warning level and the warning type (attendance, tardiness, performance, conduct, policy violation, safety, insubordination or other). Name the policy, or write “N/A” if it's a performance or coaching issue.</p></div></div>
+      <div class="cards"><div class="card"><h3>Description of <em>the issue</em></h3><p class="formula">What happened + when + the expectation not met + the impact</p><p class="ex"><s>“John has a bad attitude.”</s></p><p class="ex">“On July 10, John interrupted a guest while they were speaking and walked away before resolving the concern.”</p></div><div class="card"><h3>Expected <em>improvement</em></h3><p class="formula">What must change + when + how success is measured</p><p class="ex">“Arrive ready to work at your scheduled start time for every shift. If you can't report as scheduled, notify your manager as soon as possible per company policy. Immediate and sustained improvement is expected.”</p></div></div><div class="mt"></div><div class="tw"><table class="tbl"><thead><tr><th>Instead of…</th><th>Write…</th></tr></thead><tbody><tr><td>“Needs a better attitude”</td><td>The specific behavior that needs to change</td></tr><tr><td>“Always late”</td><td>The specific dates and times</td></tr><tr><td>“Needs to improve”</td><td>Exactly what successful improvement looks like</td></tr></tbody></table></div><div class="callout"><b>Observable facts only.</b> No opinions, assumptions, labels or emotionally charged language. Let the employee respond, and record any relevant comments on the form.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Witnesses <em>& paperwork</em></h2></div></div>
+      <div class="compare"><div><span class="label">Before the conversation</span><ul><li>Know the objective: performance or conduct?</li><li>Quiet, private space with few interruptions</li><li>A second manager present as a witness. Best practice: the witness is the opposite sex of the employee</li><li>Be ready with specifics and a timeline for change</li><li>Come ready to listen</li><li>Have the form ready to complete during or right after</li></ul></div><div><span class="label">After the conversation</span><ul><li>Both parties sign the form</li><li>Save it to the employee's file and submit it to HR for their personnel file</li><li>Note the conversation in the shift report: factual and brief</li><li>Sensitive details go to HR, <b>never</b> into the shift report</li><li>Follow up in the following shifts to monitor progress and offer support</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>Open door <em>& workplace conduct</em></h2><p>Any team member can bring a work-related or personal concern to anyone on the leadership team, at any time, without fear of retaliation.</p></div></div>
+      <div class="compare"><div><span class="label">If a team member comes to you</span><ul><li>Listen fully and thank them for trusting you</li><li>Document the conversation</li><li>Address it, or escalate immediately if it's beyond your scope</li><li>Handle it with care, urgency and discretion</li></ul></div><div><span class="label">Report to HR immediately</span><ul><li>Harassment</li><li>Discrimination</li><li>Retaliation</li><li>Workplace violence or threats</li><li>Safety concerns and other policy violations</li></ul></div></div><div class="alert"><b>Retaliation of any kind is strictly prohibited.</b> Talking about a guest or team member in a demeaning way isn't tolerated anywhere: on the floor, in the back of house, or elsewhere. Conduct that creates a hostile environment is addressed immediately and escalated to leadership and HR.</div><div class="note"><b>HR contact:</b> HR@rallypickleball.com. Unsure how to handle an employee relations issue? Contact HR before you act.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>Operational Guidelines</b>: attendance, timekeeping, Form I-9, GroupMe and payroll rules.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Give specific public recognition in a lineup or team channel.", "Address a small issue privately before it becomes a pattern.", "Run a coaching conversation using the five steps, with your trainer observing.", "Write a description and expected improvement using the two formulas.", "Document the coaching in the shift report.", "Follow up with a team member on earlier feedback."];
+var OUTCOMES=["Explain the four rules of feedback at Rally.", "Run a coaching conversation in five steps.", "Know which actions need HR approval first.", "Write facts, not opinions, on the form.", "Know when and how to send someone home pending review.", "Handle an open-door concern correctly."];
+var SCEN=[{"q": "Rewrite this for the form: “Sam has a bad attitude and is always late.”", "pts": ["List the specific dates and arrival times.", "Describe the observable behavior instead of “attitude”.", "Use the formula: what happened + when + expectation + impact.", "Add the expected improvement: what must change + when + how it's measured."], "listen": "Facts, dates and both formulas. No labels."}, {"q": "A captain texted 20 minutes before their shift to say they couldn't come. Another manager calls it a no call, no show and wants to write a final warning tonight. What do you say?", "pts": ["It's not a no call, no show: they notified management, even if the absence is unapproved.", "Verify the attendance facts and the right category first.", "Unexcused absences are documented and addressed with HR.", "A final warning needs HR or senior leadership approval before any meeting."], "listen": "The no call, no show definition plus the HR approval rule."}, {"q": "A team member tells you a coworker keeps making comments that make her uncomfortable. What do you do?", "pts": ["Listen fully and thank her.", "Document the conversation.", "Report it to HR immediately (possible harassment).", "Keep it confidential: not in the shift report or GroupMe.", "Make sure there's no retaliation."], "listen": "Immediate HR escalation, with discretion."}, {"q": "During a rush, a bartender snaps at a barback in front of guests. What do you do now, and later?", "pts": ["Now: defuse it calmly and keep service moving. No public correction.", "Later: a private conversation, ideally at the end of the shift.", "Be specific, make it a conversation, agree on a path forward.", "Witness if formal. Document it and follow up."], "listen": "Correct in private, and timing."}, {"q": "Mid-shift, a team member appears unfit to keep working and you can't reach HR or senior leadership. What are your options?", "pts": ["Keep trying to reach HR or senior leadership.", "If it's in the best interest of the business, send them home pending review.", "Tell them they're not being terminated, and not to return until directed by HR or senior leadership.", "No promises or speculation about the outcome. Document everything."], "listen": "The exact send-home language, and no promises."}, {"q": "You're about to hold a formal corrective conversation. What's on your checklist?", "pts": ["Performance or conduct issue?", "Facts and examples gathered; HR approval if it's a written or final warning.", "Private space and a second manager as witness.", "Form prepared.", "Ready to listen."], "listen": "Preparation, a witness and HR approval where it applies."}];
+var KEYNAME="rally-mgr-coaching-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

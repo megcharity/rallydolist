@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · PULSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Chapter 4 of 12 · PULSE</div>
+        <h1 style="margin-top:12px">Managing<br>the <em>PULSE</em></h1>
+        <p>PULSE is how we manage the energy and environment of Rally. Managers need to know the specific standard for each component and get into the habit of checking and adjusting all shift, not just at open.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 140 160" width="130" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M70 22 Q104 22 106 56 Q106 76 90 92 Q84 100 84 112 H56 Q56 100 50 92 Q34 76 34 56 Q36 22 70 22Z" fill="#fffdf8"/><path d="M56 120 H84 M58 130 H82 M64 140 H76"/><path d="M60 92 Q62 70 70 62 Q78 70 80 92"/><path d="M14 56 H24 M116 56 H126 M30 18 L38 26 M110 18 L102 26 M70 4 V12"/><path d="M118 104 q6 -4 4 -14 m6 10 l0 18 a6 5 0 1 1 -6 -5" fill="#174854"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>The room is always communicating something. Our job is to make sure it’s always working for us, not against us.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>The <em>framework</em></h3><ul><li>Playlists</li><li>Upkeep</li><li>Lighting</li><li>Screens</li><li>Environment</li></ul></div><div><h3>The <em>settings</em></h3><ul><li>Volume by space and daypart</li><li>Lighting scenes</li><li>Screen defaults</li><li>Garage doors and temperature</li></ul></div><div><h3>The <em>routine</em></h3><ul><li>The PULSE check</li><li>Running it on every Figure of 8</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Five components. <em>One standard.</em></h2><p>Rally is warm, inviting, premium and effortlessly cool, and the space has to reflect that at every hour. Get these right and guests linger longer, spend more and come back more often.</p></div></div>
+      <div class="pulse"><div><b>P</b><span>Playlists</span></div><div><b>U</b><span>Upkeep</span></div><div><b>L</b><span>Lighting</span></div><div><b>S</b><span>Screens</span></div><div><b>E</b><span>Environment</span></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2><em>P</em> · Playlists</h2><p>Music and volume should be intentional, not incidental. Music should always feel like it was chosen, not defaulted to.</p></div></div>
+      <ul><li>Only Rally-approved playlists. No personal playlists, no algorithm-generated stations</li><li>Adjust volume when the venue is particularly busy or empty</li></ul><div class="mt"></div><div class="tw"><table class="tbl"><thead><tr><th>Space</th><th>Morning 7–11am</th><th>Mid-day 12–4pm</th><th>Evening 4pm–close</th></tr></thead><tbody><tr><td>Outdoor courts &amp; lounges</td><td>30–40</td><td>30–40</td><td>45–50</td></tr><tr><td>Indoor courts</td><td>25–30</td><td>25–30</td><td>35–40</td></tr><tr><td>Other spaces</td><td>25</td><td>25–30</td><td>35–40</td></tr></tbody></table></div><div class="callout"><ul><li><b>Indoor courts:</b> lower end when courts are empty, higher end when players are active</li><li><b>Other spaces:</b> lower end when the venue is quieter, higher end as energy builds</li><li><b>Evenings</b> should feel like a lively social venue: not a nightclub, not a library</li></ul></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2><em>U</em> · Upkeep</h2><p>Upkeep is the foundation everything else sits on. A beautifully lit, perfectly soundtracked room still falls flat if the tables are sticky.</p></div></div>
+      <div class="cards c3"><div class="card"><h3>Guest-facing <em>areas</em></h3><ul><li>All surfaces free of food debris and liquid rings, including the café and condiment table</li><li>Bar stools tucked in and aligned at a slight angle from the bar</li><li>Chairs straight and tucked into tables</li><li>Table signage in place and presentable</li><li>Umbrellas open and positioned correctly (weather permitting)</li></ul></div><div class="card"><h3>Courts <em>& outdoor</em></h3><ul><li>All courts clean: no stray balls, barriers straight</li><li>All outdoor tables, chairs, benches and bar wiped clean of dust and pollen</li></ul></div><div class="card"><h3>Back of <em>house</em></h3><ul><li>Captains' quarters, manager offices and BOH areas clean and sanitary</li><li>Supplies, radios and equipment out of guest sight when open</li></ul></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2><em>L</em> · Lighting</h2><p>Bright and open during the day, warm and intimate as the evening builds. The venue should always feel moody and intentional, never overly bright.</p></div></div>
+      <div class="tw"><table class="tbl"><thead><tr><th>Time of day</th><th>Scene</th><th>Notes</th></tr></thead><tbody><tr><td>Daytime</td><td>Scene 4</td><td>Bright, open, energized</td></tr><tr><td>Evening / night</td><td>Scene 3</td><td>Warmer and dimmer. The dimmer the better as the night goes on</td></tr></tbody></table></div><div class="note"><b>Transition gradually.</b> Move from Scene 4 to Scene 3 as the evening builds. Don't wait until it's fully dark, and when in doubt, err on the side of dimmer. Adjust the <b>ping pong wing</b> lighting to match activity and the mood of the rest of the venue.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2><em>S</em> · Screens</h2><p>Every screen either reinforces the Rally brand or undercuts it. Default settings matter.</p></div></div>
+      <div class="tw"><table class="tbl"><thead><tr><th>Screen</th><th>Default content</th><th>Notes</th></tr></thead><tbody><tr><td>Player's Lounge TVs</td><td>Current promo graphic, or the Rally logo screen if there's no promo</td><td>—</td></tr><tr><td>All other TVs</td><td>Alternate: promo graphic on one, Rally logo screen on the next</td><td>Live sports on request only</td></tr><tr><td>Courtside RallyTrack displays</td><td>On and showing the correct screen</td><td>Confirm guest names are showing correctly</td></tr></tbody></table></div><div class="alert"><b>No news. No talk shows. No sports highlights.</b> They pull guests into passive watching instead of engaging with the space and each other.</div><div class="callout"><span class='label'>TV check</span><ul><li>All TVs on and working at open. Flag any that are off or showing errors</li><li>RallyTrack courtside displays on and showing correct information</li><li>Content updated when new promo graphics are available</li></ul></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2><em>E</em> · Environment</h2><p>Physical comfort matters as much as how the space looks and sounds. Open garage doors create an indoor-outdoor feel in the Main House.</p></div></div>
+      <div class="compare"><div><span class="label">Garage doors</span><ul><li><b>Below 50°F:</b> keep doors closed</li><li><b>55–60°F:</b> open all doors</li><li><b>60–70°F:</b> one to three doors. Use judgment</li><li><b>80°F+:</b> keep doors closed</li></ul></div><div><span class="label">Main House temperature</span><ul><li><b>Winter:</b> 60–62°F for comfortable playing</li><li><b>Summer:</b> 60–70°F for comfortable playing</li></ul></div></div><div class="alert"><b>Garage doors open = outdoor fans on.</b> Fans are required by health code. This is non-negotiable.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><h2>The <em>PULSE check</em></h2><p>Run it on every Figure of 8 and walkthrough. It should become a trained instinct, not a formal checklist.</p></div></div>
+      <ol class="duties"><li><div><b>P · Playlists</b>Is the music right? Volume correct for the time of day and the energy in the room? Rally-approved playlist playing?</div></li><li><div><b>U · Upkeep</b>Is every guest-facing area clean, tidy and reset? Stools aligned, tables cleared, outdoor areas wiped, courts clean?</div></li><li><div><b>L · Lighting</b>Is the lighting scene correct? Transitioning as the evening builds? Ping pong wing adjusted?</div></li><li><div><b>S · Screens</b>Are all TVs on and showing the right content? No news, no highlights. RallyTrack displays on and correct?</div></li><li><div><b>E · Environment</b>Is the temperature comfortable? Garage doors right for the weather? Fans on if the doors are open?</div></li></ol><div class="note">PULSE isn't a one-time opening task. It's a continuous standard, all shift long.</div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is <b>Manager Responsibilities</b>: the daily, weekly and monthly duties you own.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Run a full PULSE check during a Figure of 8 and fix what you find.", "Set music volume correctly for the space and daypart.", "Move the lighting from Scene 4 to Scene 3 as the evening builds.", "Set every TV to its correct default content.", "Decide on garage doors from the temperature, and turn on the fans.", "Confirm RallyTrack courtside displays are showing the correct guest names."];
+var OUTCOMES=["Name the five PULSE components.", "Know the volume ranges by space and daypart.", "Know the lighting scenes and when to switch.", "Know the screen defaults and what's never on.", "Make the garage door and temperature calls.", "Make the PULSE check a habit on every walkthrough."];
+var SCEN=[{"q": "It's 6:30pm on a Friday, the outdoor courts are full, and the outdoor music is at 35. What do you do?", "pts": ["Evening outdoor volume is 45–50. Turn it up.", "Confirm a Rally-approved playlist is playing.", "Check the other spaces while you're at it."], "listen": "Knowing the evening range and adjusting to the energy."}, {"q": "It's 58°F and sunny at noon. What do you do with the garage doors?", "pts": ["55–60°F: open all doors.", "Turn on the outdoor fans. It's health code and non-negotiable."], "listen": "The fans. Doors and fans always go together."}, {"q": "A guest asks you to put the game on. What's your answer?", "pts": ["Yes. Live sports are allowed on request.", "Otherwise TVs alternate between the promo graphic and the Rally logo.", "Never news, talk shows or highlights.", "Switch back to the default when they're done."], "listen": "Saying yes to the request while knowing the defaults."}, {"q": "It's 5:45pm in October, still light out, and the lights are on Scene 4. Anything to change?", "pts": ["Start transitioning to Scene 3 now. Don't wait for full dark.", "Make it gradual, and err on the dimmer side.", "Adjust the ping pong wing to match."], "listen": "Proactive, gradual transitions."}, {"q": "Your trainer stops you mid-walkthrough: “Give me one thing you're checking for each letter of PULSE.”", "pts": ["P: playlist and volume.", "U: surfaces, stools, courts, BOH items hidden.", "L: right scene for the time of day.", "S: TVs on correct content, RallyTrack correct.", "E: temperature, doors, fans."], "listen": "All five, with a concrete check for each."}];
+var KEYNAME="rally-mgr-pulse-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

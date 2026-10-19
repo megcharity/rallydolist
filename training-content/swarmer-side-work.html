@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swarmer Side Work</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+
+.phases{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.phase{background:var(--paper);border:1px solid var(--navy);border-radius:6px;padding:18px 20px}
+.phase .ph-top{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.phase .ph-n{width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px;flex:none}
+.phase h3{margin:0}
+.phase .goal{font-style:italic;margin-bottom:10px}
+.phase ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:15px}
+.phase.wide{grid-column:1/-1}
+.nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:22px}
+.num{background:var(--sage);border-radius:6px;padding:16px 18px}
+.num .big{font-family:"Instrument Serif",serif;font-size:40px;line-height:1}
+.num p{margin-top:6px;font-size:15px}
+.terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px}
+.term{border-top:2px solid var(--sage);padding-top:10px}
+.term b{display:block;font-weight:600;font-size:17px;margin-bottom:2px}
+@media (max-width:720px){.phases,.nums,.terms{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Swarmer Training</span><span>Rally</span></div>
+
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Swarmer Training · Side Work</div>
+        <h1 style="margin-top:12px">Side Work<br><em>Around the Venue</em></h1>
+        <p>Swarmers run and buss across the whole venue, connecting front of house to back of house. Clean tables, full waters and stocked captains' quarters keep service moving. This chapter walks you through how we open, run and close the venue.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 140 150" width="130" height="140" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M24 70 H116 L106 120 Q104 128 96 128 H44 Q36 128 34 120 Z" fill="#fffdf8"/><path d="M20 62 H120 V72 H20 Z" fill="#174854"/><circle cx="50" cy="86" r="10"/><path d="M70 78 L72 116 M84 80 L88 114"/><path d="M96 96 Q104 90 110 98"/><circle cx="46" cy="140" r="6"/><circle cx="94" cy="140" r="6"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The Rally Standard</span>
+        <p>Know every task and the standard it has to meet, then exceed it. If you're ever unsure about a task, ask the MOD. We're here to help.</p>
+      </div>
+      <div class="connect">
+        <div>
+          <h3>Always on the <em>move</em></h3>
+          <p>A swarmer is never standing still. Every lap is a chance to buss a table, refill a water, run dishes or spot a guest who needs something. Your work keeps the captains free to take care of guests.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <h2>How a Shift <em>Flows</em></h2>
+          <p>Swarmer side work happens in three parts. Here's what each part is for and every task it covers.</p>
+        </div>
+      </div>
+      <div class="phases"><div class="phase"><div class="ph-top"><div class="ph-n">1</div><h3>Opening</h3></div><p class="goal">Goal: the floor is stocked and set before the first guest.</p><ul><li>Open the buss cart (flip the bin carts)</li><li>Help stock captains' quarters for service: plates, cups, carafes and rolls</li><li>Set up the outside lounges: menus, QR codes, water, cups and cold towels</li><li>Check tables for stickiness and water marks</li><li>Make sure the lounges are crumb-free</li><li>Fill up the water in the lounges</li><li>Wipe down the drink trays</li></ul></div><div class="phase"><div class="ph-top"><div class="ph-n">2</div><h3>During the shift</h3></div><p class="goal">Goal: keep moving. Every lap leaves the venue cleaner than you found it.</p><ul><li>Do continuous laps around the venue: sweep, wipe down tables, and buss tables and courts</li><li>Reset setups and rolls with plates as tables turn over</li><li>Clean all surfaces, including side tables</li><li>Keep waters full and cold towels stocked: lounges, the cafe water station and outside</li><li>Wipe down menus and reset them in the lounges</li><li>Run dirty dishes to the kitchen throughout the shift</li><li>Put the correct F&B menus on all courts</li><li>Spot sweep as needed</li><li>Polish silverware and glassware (from the kitchen or the bar)</li><li>Discard broken glass</li><li>Restock plates</li><li>Refill rolls in the pizza kitchen and C4 captains' quarters, and tidy as needed</li><li>Remove outdoor couch cushions once the last reservations leave; straighten indoor couch pillows</li></ul></div><div class="phase wide"><div class="ph-top"><div class="ph-n">3</div><h3>Closing</h3></div><p class="goal">Goal: the opener walks into a clean, stocked venue.</p><ul><li>Help captains clean the dining area tables</li><li>Sweep the venue so floors are free of food and debris</li><li>Help clean the captains' quarters work surfaces</li><li>Stock captains' quarters to par: paper supplies, glassware, plateware, sauces and more</li><li>Roll silverware and fold napkins (the lead captain or MOD gives the count)</li><li>Take out all trash, indoors and outdoors</li><li>Break down and discard any boxes</li><li>Clean the trash cans</li><li>Make sure all handhelds are accounted for and charging</li><li>Tell management about any facility issues: wobbly tables, lightbulbs out, broken handhelds and more</li><li>Dump any mop water and empty the buckets</li><li>Check out with the MOD (the lead captain signs your checkout first)</li><li>All other duties as assigned by the MOD</li></ul></div></div>
+      <div class="nums">
+        <div class="num"><div class="big">Laps</div><p>Continuous laps all shift: sweep, wipe, buss.</p></div>
+        <div class="num"><div class="big">Par</div><p>Stock captains' quarters to par at close.</p></div>
+        <div class="num"><div class="big">2 sign-offs</div><p>Lead captain signs your checkout, then check out with the MOD.</p></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <h2>Words to <em>Know</em></h2>
+          <p>Terms you'll see on the checklist and hear on the floor.</p>
+        </div>
+      </div>
+      <div class="terms">
+        <div class="term"><b>Captains' quarters</b>The captain service stations, stocked with plates, cups, carafes and rolls. There's one in the pizza kitchen and one at C4.</div>
+        <div class="term"><b>Par</b>The set amount of each item a station should have. Stock captains' quarters to par at close.</div>
+        <div class="term"><b>Rolls / rollups</b>Silverware rolled in a napkin. At close, roll to the count the lead captain or MOD gives you.</div>
+        <div class="term"><b>Setups</b>A table's full reset: rolls and plates in place, ready for the next guests.</div>
+        <div class="term"><b>Buss cart</b>The cart for bussed dishes. Open it at the start of the shift by flipping the bin carts.</div>
+        <div class="term"><b>Handhelds</b>The handheld devices the team uses on the floor. All of them get accounted for and put on charge at close.</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-orange">Practice during service</span>
+          <p class="hint" style="margin-top:8px">Your trainer checks these off during your shift.</p>
+        </div>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead>
+        <tbody id="skills"></tbody>
+      </table>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of today, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <div>
+          <span class="tag t-coral">On the floor</span>
+          <p>Answer each one in your own words, then review your answers with your MOD.</p>
+        </div>
+      </div>
+      <div class="scen" id="scen"></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw today</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, I'd like you to focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px">
+        <span class="label">Looking ahead</span>
+        <p>Next up: put it into practice. Open, run and close the venue with your trainer, using the printed checklist as you go.</p>
+      </div>
+    </div>
+  </div>
+
+  <details class="key">
+    <summary>
+      <div>
+        <h2>MOD <em>Cheat Sheet</em></h2>
+        <p class="hint" style="margin-top:6px">For MODs reviewing answers. Trainees — finish your answers first.</p>
+      </div>
+      <span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span>
+    </summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. A trainee's answer is on track when it hits the main ideas in their own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+
+  <div class="bar">
+    <span class="saved" id="saved">Your answers save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all answers</button>
+  </div>
+</div>
+
+<script>
+var SKILLS=["Open the buss cart and help stock captains' quarters at open.", "Set up the outside lounges with menus, QR codes, water, cups and cold towels.", "Do continuous laps: sweep, wipe down and buss tables and courts.", "Run dirty dishes to the kitchen throughout the shift.", "Keep waters full and cold towels stocked all shift.", "Polish silverware and glassware, and discard broken glass safely.", "Stock captains' quarters to par at close.", "Roll silverware and fold napkins to the count given.", "Make sure all handhelds are accounted for and charging.", "Get your checkout signed by the lead captain, then check out with the MOD."];
+var OUTCOMES=["Explain the swarmer's role: connecting front of house to back of house.", "Walk through the opening checklist.", "Keep the venue clean with continuous laps.", "Know what to stock in captains' quarters, and to what par.", "Close the venue so the opener can start clean.", "Report facility issues to management.", "Complete the checkout process."];
+var SCEN=["You're opening. What needs to be set up in the outside lounges?", "It's busy and you're not sure what to do next. What should you be doing?", "You find broken glass under a lounge table. What do you do?", "You notice a wobbly table and a lightbulb out during close. What do you do?", "How many silverware rolls should you roll at close?", "Your closing tasks are done. Walk through how you check out."];
+var KEY=[{"pts": ["Menus and QR codes", "Water and cups", "Cold towels"], "listen": "All five items: menus, QR codes, water, cups and cold towels."}, {"pts": ["Continuous laps around the venue: sweep, wipe down tables, buss tables and courts.", "Run dirty dishes to the kitchen.", "Keep waters and cold towels stocked; refill rolls in captains' quarters."], "listen": "Keep moving. A swarmer is never standing still."}, {"pts": ["Discard it safely right away so no guest or teammate gets hurt.", "Sweep the area to catch small pieces."], "listen": "Dealing with it immediately, not leaving it for later."}, {"pts": ["Communicate it to management.", "Note anything like wobbly tables, lightbulbs out, or broken handhelds."], "listen": "Reporting it, not ignoring it."}, {"pts": ["The lead captain or MOD gives the count.", "Fold napkins at the same time."], "listen": "Asking for the count instead of guessing."}, {"pts": ["Dump mop water and empty the buckets.", "Make sure all handhelds are accounted for and charging.", "The lead captain signs your checkout first.", "Then check out with the MOD."], "listen": "The lead captain signs before the MOD checkout."}];
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    var cb=el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s});
+    lab.appendChild(cb);td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+});
+var ky=document.getElementById('key');
+KEY.forEach(function(k,i){
+  var d=el('div',{'class':'ans'});d.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+SCEN[i]));
+  var ul=el('ul');k.pts.forEach(function(p){ul.appendChild(el('li',{},p));});d.appendChild(ul);
+  d.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+k.listen));ky.appendChild(d);
+});
+
+var KEYNAME='rally-swarmer-sidework-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+</script>
+</body>
+</html>

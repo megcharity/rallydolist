@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manager Training Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.cards.c3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{border-top:2px solid var(--orange);padding-top:12px}
+.card h3{margin-bottom:4px}
+.card .tl{font-style:italic;font-size:15px;margin-bottom:10px;opacity:.9}
+.card .num{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.tw{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 12px;background:var(--paper);vertical-align:top}
+.tbl .grp td{background:rgba(206,228,207,.55);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:46px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:26px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties .ref{display:block;font-size:13.5px;font-style:italic;opacity:.85;margin-top:3px}
+.pulse{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.pulse div{border:2px solid var(--navy);border-radius:6px;padding:12px 6px;text-align:center;background:var(--paper)}
+.pulse b{font-family:"Instrument Serif",serif;font-weight:400;font-size:46px;line-height:1;display:block}
+.pulse span{font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rules div{border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;font-family:"Instrument Serif",serif;font-style:italic;font-size:21px;line-height:1.15;background:var(--paper);text-align:center}
+.formula{font-family:"Instrument Serif",serif;font-size:22px;line-height:1.2;margin:6px 0 10px}
+.ex{font-size:15px;margin-top:4px}
+.ex s{opacity:.7}
+.mt{margin-top:22px}
+.sub{margin-bottom:10px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.steps.c2,.checks,.cards,.cards.c3,.rules{grid-template-columns:1fr}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .pulse{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+
+.jump{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.jump a{display:inline-block;padding:6px 12px;border:1.5px solid var(--navy);border-radius:999px;font-size:14px;font-weight:600;color:var(--navy);text-decoration:none;background:var(--paper)}
+.jump a:hover{background:var(--sage)}
+.prog{display:flex;align-items:center;gap:14px;margin-top:18px}
+.prog-bar{flex:1;height:12px;border:1.5px solid var(--navy);border-radius:999px;overflow:hidden;background:var(--paper)}
+.prog-fill{height:100%;width:0;background:var(--orange);transition:width .2s}
+.prog-txt{font-weight:600;font-size:14px;white-space:nowrap}
+.skills .grp td{background:var(--sage);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px}
+.sec-count{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.06em;white-space:nowrap}
+.inperson{display:inline-block;margin-left:6px;padding:1px 9px;border-radius:999px;background:var(--coral);font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;vertical-align:1px;white-space:nowrap}
+.skills td small{display:block;opacity:.8;font-size:13.5px;margin-top:3px}
+.notes-label{margin-top:16px;display:block}
+.signs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+.signs div{border-top:1.5px solid var(--navy);padding-top:6px;font-size:13px;margin-top:40px}
+.how{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.how>div{border-top:2px solid var(--orange);padding-top:10px}
+.how>div>b{display:block;font-size:17px;margin-bottom:4px}
+.who{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.who label{display:block}
+.who input{margin-top:6px}
+@media (max-width:720px){.how,.signs,.who{grid-template-columns:1fr}}
+@media print{.jump,.bar,.prog{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Manager Training · Checklist</div>
+        <h1 style="margin-top:12px">Manager Training<br><em>Checklist</em></h1>
+        <p>Everything a new Rally manager or team lead needs to walk through with the manager they report to. Each item points to where it's covered. Items marked <span class="inperson">Cover in person</span> don't have an SOP yet, so talk them through face to face.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 130 160" width="120" height="150" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="22" width="90" height="126" rx="8" fill="#fffdf8"/><path d="M46 16 H84 V32 H46Z" fill="#174854"/><path d="M36 56 L42 62 L52 50 M60 57 H94 M36 84 L42 90 L52 78 M60 85 H94 M36 112 H52 M60 113 H88"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="who">
+        <div><label class="label" for="t-name">Trainee</label><input type="text" id="t-name" data-save="t-name" placeholder="Name"></div>
+        <div><label class="label" for="t-trainer">Trainer (who you report to)</label><input type="text" id="t-trainer" data-save="t-trainer" placeholder="Name"></div>
+        <div><label class="label" for="t-start">Start date</label><input type="text" id="t-start" data-save="t-start" placeholder="MM/DD/YYYY"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="standard"><span class="label">The goal</span><p>Cover every topic with your trainer until you can run it on your own, with confidence, on any shift.</p></div>
+      <div class="how" style="margin-top:22px">
+        <div><b>1 · Learn it</b><p>Read the page or SOP the item points to, or set a time to cover it in person.</p></div>
+        <div><b>2 · Review it</b><p>Walk through it together with your trainer. Check <b>Reviewed</b>.</p></div>
+        <div><b>3 · Do it</b><p>Once you've done it on a real shift on your own, your trainer checks <b>Can do it</b>.</p></div>
+      </div>
+      <div class="prog"><div class="prog-bar"><div class="prog-fill" id="pfill"></div></div><span class="prog-txt" id="ptxt">0 of 37 ready</span></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:14px"><span class="tag t-orange">Jump to a section</span></div>
+      <ul class="jump"><li><a href="#cash">Cash &amp; paperwork</a></li><li><a href="#daily">Opening &amp; closing</a></li><li><a href="#positions">All positions</a></li><li><a href="#events">Events</a></li><li><a href="#systems">Systems</a></li><li><a href="#own">Ownership &amp; problem solving</a></li><li><a href="#chapters">Manager training chapters</a></li></ul>
+    </div>
+
+    <div class="sec" id="cash">
+      <div class="sec-head">
+        <div><h2>Cash <em>&amp; paperwork</em></h2></div>
+        <span class="sec-count" data-count="cash">0 of 5 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Cash drawers: counting at open and close, the cash log, escalating discrepancies<small>→ Cash Handling SOP (SharePoint) · Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash0r" data-sec="cash" aria-label="Reviewed: Cash drawers: counting at open and close, the cash log, escalating discrepancies"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash0d" data-sec="cash" aria-label="Can do it: Cash drawers: counting at open and close, the cash log, escalating discrepancies"></label></td></tr><tr><td>Cash sheet: cash drops and tips at close<small>→ Cash Handling SOP (SharePoint) · Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash1r" data-sec="cash" aria-label="Reviewed: Cash sheet: cash drops and tips at close"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash1d" data-sec="cash" aria-label="Can do it: Cash sheet: cash drops and tips at close"></label></td></tr><tr><td>Lineup sheet: filling it out, and the one-on-one lineup with every associate<small>→ Lineup Sheet Template (SharePoint) · Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash2r" data-sec="cash" aria-label="Reviewed: Lineup sheet: filling it out, and the one-on-one lineup with every associate"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash2d" data-sec="cash" aria-label="Can do it: Lineup sheet: filling it out, and the one-on-one lineup with every associate"></label></td></tr><tr><td>Shift report: completing every field and submitting it<small>→ Chapter 6 · The Shift Report</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash3r" data-sec="cash" aria-label="Reviewed: Shift report: completing every field and submitting it"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash3d" data-sec="cash" aria-label="Can do it: Shift report: completing every field and submitting it"></label></td></tr><tr><td>Incident reports<small>→ Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash4r" data-sec="cash" aria-label="Reviewed: Incident reports"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="cash4d" data-sec="cash" aria-label="Can do it: Incident reports"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-cash">Notes</label>
+      <textarea id="n-cash" data-save="n-cash" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="daily">
+      <div class="sec-head">
+        <div><h2>Opening <em>&amp; closing</em></h2></div>
+        <span class="sec-count" data-count="daily">0 of 5 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Opening &amp; closing daily checklists<small>→ Opening and Closing Checklists (SharePoint) · Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily0r" data-sec="daily" aria-label="Reviewed: Opening &amp; closing daily checklists"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily0d" data-sec="daily" aria-label="Can do it: Opening &amp; closing daily checklists"></label></td></tr><tr><td>Venue readiness walkthrough and sign-off<small>→ Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily1r" data-sec="daily" aria-label="Reviewed: Venue readiness walkthrough and sign-off"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily1d" data-sec="daily" aria-label="Can do it: Venue readiness walkthrough and sign-off"></label></td></tr><tr><td>Roster and floor chart<small>→ Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily2r" data-sec="daily" aria-label="Reviewed: Roster and floor chart"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily2d" data-sec="daily" aria-label="Can do it: Roster and floor chart"></label></td></tr><tr><td>Figure of 8s and PULSE checks<small>→ Chapter 4 · PULSE · Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily3r" data-sec="daily" aria-label="Reviewed: Figure of 8s and PULSE checks"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily3d" data-sec="daily" aria-label="Can do it: Figure of 8s and PULSE checks"></label></td></tr><tr><td>Closing walkthrough, checks paid, clock-outs, shift reviews and lock-up<small>→ Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily4r" data-sec="daily" aria-label="Reviewed: Closing walkthrough, checks paid, clock-outs, shift reviews and lock-up"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="daily4d" data-sec="daily" aria-label="Can do it: Closing walkthrough, checks paid, clock-outs, shift reviews and lock-up"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-daily">Notes</label>
+      <textarea id="n-daily" data-save="n-daily" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="positions">
+      <div class="sec-head">
+        <div><h2>All <em>positions</em></h2></div>
+        <span class="sec-count" data-count="positions">0 of 4 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Side work for all positions<small>→ Host, Captain, Barista, Bar and Swarmer Side Work pages</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions0r" data-sec="positions" aria-label="Reviewed: Side work for all positions"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions0d" data-sec="positions" aria-label="Can do it: Side work for all positions"></label></td></tr><tr><td>Steps of service for all positions<small>→ Guiding the Experience pages and each position&#x27;s training checklist</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions1r" data-sec="positions" aria-label="Reviewed: Steps of service for all positions"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions1d" data-sec="positions" aria-label="Can do it: Steps of service for all positions"></label></td></tr><tr><td>All host training<small>→ Host Training Checklist</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions2r" data-sec="positions" aria-label="Reviewed: All host training"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions2d" data-sec="positions" aria-label="Can do it: All host training"></label></td></tr><tr><td>Food equipment guide <span class="inperson">Cover in person</span><small>→ Food Equipment Guide</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions3r" data-sec="positions" aria-label="Reviewed: Food equipment guide"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="positions3d" data-sec="positions" aria-label="Can do it: Food equipment guide"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-positions">Notes</label>
+      <textarea id="n-positions" data-save="n-positions" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="events">
+      <div class="sec-head">
+        <div><h2><em>Events</em></h2></div>
+        <span class="sec-count" data-count="events">0 of 5 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Battle plan for events<small>→ Chapter 7 · Private Events</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events0r" data-sec="events" aria-label="Reviewed: Battle plan for events"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events0d" data-sec="events" aria-label="Can do it: Battle plan for events"></label></td></tr><tr><td>How to ring in a BEO<small>→ Chapter 11 · Toast for Managers</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events1r" data-sec="events" aria-label="Reviewed: How to ring in a BEO"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events1d" data-sec="events" aria-label="Can do it: How to ring in a BEO"></label></td></tr><tr><td>How to close out a BEO <span class="inperson">Cover in person</span></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events2r" data-sec="events" aria-label="Reviewed: How to close out a BEO"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events2d" data-sec="events" aria-label="Can do it: How to close out a BEO"></label></td></tr><tr><td>How additional sales work for an event <span class="inperson">Cover in person</span></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events3r" data-sec="events" aria-label="Reviewed: How additional sales work for an event"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events3d" data-sec="events" aria-label="Can do it: How additional sales work for an event"></label></td></tr><tr><td>Tripleseat, the BEO meeting and the event POC check-in<small>→ Chapter 6 · The Shift Report · Chapter 7 · Private Events</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events4r" data-sec="events" aria-label="Reviewed: Tripleseat, the BEO meeting and the event POC check-in"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="events4d" data-sec="events" aria-label="Can do it: Tripleseat, the BEO meeting and the event POC check-in"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-events">Notes</label>
+      <textarea id="n-events" data-save="n-events" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="systems">
+      <div class="sec-head">
+        <div><h2><em>Systems</em></h2></div>
+        <span class="sec-count" data-count="systems">0 of 4 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Toast: moving items, combining checks, changing servers, reopening checks, shift reviews<small>→ Chapter 11 · Toast for Managers</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems0r" data-sec="systems" aria-label="Reviewed: Toast: moving items, combining checks, changing servers, reopening checks, shift reviews"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems0d" data-sec="systems" aria-label="Can do it: Toast: moving items, combining checks, changing servers, reopening checks, shift reviews"></label></td></tr><tr><td>Discounts, comps &amp; voids<small>→ Chapter 11 · Toast for Managers</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems1r" data-sec="systems" aria-label="Reviewed: Discounts, comps &amp; voids"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems1d" data-sec="systems" aria-label="Can do it: Discounts, comps &amp; voids"></label></td></tr><tr><td>PlayByPoint: Academy courses, reservations, check-in, blocking courts, court status<small>→ Chapter 12 · PlayByPoint</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems2r" data-sec="systems" aria-label="Reviewed: PlayByPoint: Academy courses, reservations, check-in, blocking courts, court status"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems2d" data-sec="systems" aria-label="Can do it: PlayByPoint: Academy courses, reservations, check-in, blocking courts, court status"></label></td></tr><tr><td>New hires and departures: iSolve, Toast, HotSchedules, Tip Haus, GroupMe<small>→ Chapter 10 · Onboarding &amp; Offboarding</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems3r" data-sec="systems" aria-label="Reviewed: New hires and departures: iSolve, Toast, HotSchedules, Tip Haus, GroupMe"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="systems3d" data-sec="systems" aria-label="Can do it: New hires and departures: iSolve, Toast, HotSchedules, Tip Haus, GroupMe"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-systems">Notes</label>
+      <textarea id="n-systems" data-save="n-systems" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="own">
+      <div class="sec-head">
+        <div><h2>Ownership <em>&amp; problem solving</em></h2></div>
+        <span class="sec-count" data-count="own">0 of 2 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>Owning problems: solve it, don&#x27;t just report it. Bring the GM a plan when payment approval is needed<small>→ Chapter 5 · Manager Responsibilities</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="own0r" data-sec="own" aria-label="Reviewed: Owning problems: solve it, don&#x27;t just report it. Bring the GM a plan when payment approval is needed"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="own0d" data-sec="own" aria-label="Can do it: Owning problems: solve it, don&#x27;t just report it. Bring the GM a plan when payment approval is needed"></label></td></tr><tr><td>Repairs &amp; maintenance: who to call and how to report it <span class="inperson">Cover in person</span></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="own1r" data-sec="own" aria-label="Reviewed: Repairs &amp; maintenance: who to call and how to report it"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="own1d" data-sec="own" aria-label="Can do it: Repairs &amp; maintenance: who to call and how to report it"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-own">Notes</label>
+      <textarea id="n-own" data-save="n-own" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec" id="chapters">
+      <div class="sec-head">
+        <div><h2>Manager training <em>chapters</em></h2></div>
+        <span class="sec-count" data-count="chapters">0 of 12 ready</span>
+      </div>
+      <table class="skills"><thead><tr><th>Topic</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead><tbody><tr><td>1 · Hospitality Playbook<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters0r" data-sec="chapters" aria-label="Reviewed: 1 · Hospitality Playbook"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters0d" data-sec="chapters" aria-label="Can do it: 1 · Hospitality Playbook"></label></td></tr><tr><td>2 · Opportunity Hospitality<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters1r" data-sec="chapters" aria-label="Reviewed: 2 · Opportunity Hospitality"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters1d" data-sec="chapters" aria-label="Can do it: 2 · Opportunity Hospitality"></label></td></tr><tr><td>3 · Rally Presentation<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters2r" data-sec="chapters" aria-label="Reviewed: 3 · Rally Presentation"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters2d" data-sec="chapters" aria-label="Can do it: 3 · Rally Presentation"></label></td></tr><tr><td>4 · PULSE<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters3r" data-sec="chapters" aria-label="Reviewed: 4 · PULSE"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters3d" data-sec="chapters" aria-label="Can do it: 4 · PULSE"></label></td></tr><tr><td>5 · Manager Responsibilities<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters4r" data-sec="chapters" aria-label="Reviewed: 5 · Manager Responsibilities"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters4d" data-sec="chapters" aria-label="Can do it: 5 · Manager Responsibilities"></label></td></tr><tr><td>6 · The Shift Report<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters5r" data-sec="chapters" aria-label="Reviewed: 6 · The Shift Report"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters5d" data-sec="chapters" aria-label="Can do it: 6 · The Shift Report"></label></td></tr><tr><td>7 · Private Events<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters6r" data-sec="chapters" aria-label="Reviewed: 7 · Private Events"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters6d" data-sec="chapters" aria-label="Can do it: 7 · Private Events"></label></td></tr><tr><td>8 · Coaching &amp; Corrective Action<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters7r" data-sec="chapters" aria-label="Reviewed: 8 · Coaching &amp; Corrective Action"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters7d" data-sec="chapters" aria-label="Can do it: 8 · Coaching &amp; Corrective Action"></label></td></tr><tr><td>9 · Operational Guidelines<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters8r" data-sec="chapters" aria-label="Reviewed: 9 · Operational Guidelines"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters8d" data-sec="chapters" aria-label="Can do it: 9 · Operational Guidelines"></label></td></tr><tr><td>10 · Onboarding &amp; Offboarding<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters9r" data-sec="chapters" aria-label="Reviewed: 10 · Onboarding &amp; Offboarding"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters9d" data-sec="chapters" aria-label="Can do it: 10 · Onboarding &amp; Offboarding"></label></td></tr><tr><td>11 · Toast for Managers<small>→ Complete the chapter page and review your answers together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters10r" data-sec="chapters" aria-label="Reviewed: 11 · Toast for Managers"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters10d" data-sec="chapters" aria-label="Can do it: 11 · Toast for Managers"></label></td></tr><tr><td>12 · PlayByPoint<small>→ Complete the chapter page and work through the checklist together</small></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters11r" data-sec="chapters" aria-label="Reviewed: 12 · PlayByPoint"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="chapters11d" data-sec="chapters" aria-label="Can do it: 12 · PlayByPoint"></label></td></tr></tbody></table>
+      <label class="label notes-label" for="n-chapters">Notes</label>
+      <textarea id="n-chapters" data-save="n-chapters" placeholder="Anything to revisit, questions, dates covered"></textarea>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-sage">Sign-off</span></div>
+      <p>Every topic has been reviewed, and the trainee can run each one on their own.</p>
+      <div class="field" style="margin-top:14px"><label class="label" for="final-notes">Final notes</label><textarea id="final-notes" data-save="final-notes" placeholder="Strengths, areas to keep working on, follow-up dates"></textarea></div>
+      <div class="signs"><div>Trainee signature &amp; date</div><div>Trainer / GM signature &amp; date</div></div>
+    </div>
+  </div>
+  <div class="bar">
+    <span class="saved" id="saved">Your checkmarks and notes save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all</button>
+  </div>
+</div>
+<script>
+var TOTAL=37;
+var KEYNAME='rally-manager-checklist-v2',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Checkmarks can’t be saved in this browser — they’ll clear if you close the page.';}}
+function progress(){
+  var done=0;
+  document.querySelectorAll('[data-count]').forEach(function(c){
+    var s=c.getAttribute('data-count'),boxes=document.querySelectorAll('input[data-sec="'+s+'"][data-save$="d"]'),k=0;
+    boxes.forEach(function(b){if(b.checked)k++;});done+=k;c.textContent=k+' of '+boxes.length+' ready';
+  });
+  document.getElementById('ptxt').textContent=done+' of '+TOTAL+' ready';
+  document.getElementById('pfill').style.width=(done/TOTAL*100)+'%';
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();progress();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every checkmark and note on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+  progress();
+});
+progress();
+</script>
+</body>
+</html>

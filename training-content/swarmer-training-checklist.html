@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swarmer Training Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(46px,8vw,72px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px}
+.sec-head p{margin-top:8px;max-width:560px}
+.illo{display:block;flex:none;pointer-events:none}
+
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;position:relative;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+
+.connect{display:flex;gap:20px;align-items:center;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:18px 20px;margin-top:18px}
+.connect h3{margin-bottom:6px}
+
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.explore ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+
+.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:6px}
+.steps li::before{content:counter(s);width:32px;height:32px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-family:"Instrument Serif",serif;font-size:21px}
+.steps b{font-weight:600;font-size:17px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+
+textarea{width:100%;min-height:84px;resize:vertical;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px;margin-top:8px}
+textarea::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:180px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.steps,.checks{grid-template-columns:1fr}
+  .connect{flex-direction:column;align-items:flex-start}
+  .skills td.c{width:64px}
+  .sec-head .illo{display:none}
+}
+
+.jump{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.jump a{display:inline-block;padding:6px 12px;border:1.5px solid var(--navy);border-radius:999px;font-size:14px;font-weight:600;color:var(--navy);text-decoration:none;background:var(--paper)}
+.jump a:hover{background:var(--sage)}
+.prog{display:flex;align-items:center;gap:14px;margin-top:18px}
+.prog-bar{flex:1;height:12px;border:1.5px solid var(--navy);border-radius:999px;overflow:hidden;background:var(--paper)}
+.prog-fill{height:100%;width:0;background:var(--orange);transition:width .2s}
+.prog-txt{font-weight:600;font-size:14px;white-space:nowrap}
+.skills .grp td{background:var(--sage);font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px}
+.skills td small{display:block;opacity:.8;font-size:13.5px;margin-top:2px}
+.newtag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--orange);font-size:11px;font-weight:700;letter-spacing:.04em;vertical-align:1px}
+.sec-count{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.06em;white-space:nowrap}
+.notes-label{margin-top:16px;display:block}
+.signs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:8px}
+.signs div{border-top:1.5px solid var(--navy);padding-top:6px;font-size:13px;margin-top:40px}
+.how{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.how>div{border-top:2px solid var(--orange);padding-top:10px}
+.how>div>b{display:block;font-size:17px;margin-bottom:4px}
+@media (max-width:720px){.how,.signs{grid-template-columns:1fr}}
+@media print{.jump,.bar,.prog{display:none}.sec{break-inside:avoid-page}textarea{min-height:60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Swarmer Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Swarmer Training · Checklist</div>
+        <h1 style="margin-top:12px">Swarmer Training<br><em>Checklist</em></h1>
+        <p>Everything a Rally swarmer needs to know, in one checklist. Swarmers run and buss across the whole venue, and they're hospitality people first. Sit down with your manager and work through it together. When every item is reviewed and you can do it on your own, you're ready for the floor.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 140 150" width="130" height="140" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="28" y="22" width="84" height="112" rx="8" fill="#fffdf8"/><rect x="52" y="14" width="36" height="16" rx="5" fill="#174854"/><path d="M44 56 l7 7 l12 -14"/><path d="M72 56 H98"/><path d="M44 84 l7 7 l12 -14"/><path d="M72 84 H98"/><rect x="44" y="104" width="18" height="18" rx="3"/><path d="M72 113 H98"/></svg></div>
+    </div>
+
+    <div class="sec">
+      <div class="standard">
+        <span class="label">The goal</span>
+        <p>Review every item with a manager until you know how to do all of it, on your own, with confidence.</p>
+      </div>
+      <div class="how two-col" style="margin-top:22px">
+        <div><b>1 · Review it</b><p>Your manager walks you through the item: tells you, shows you, then has you try it. Check <b>Reviewed</b>.</p></div>
+        <div><b>2 · Do it</b><p>Once you can do it on your own, your manager checks <b>Can do it</b>.</p></div>
+      </div>
+      <div class="prog"><div class="prog-bar"><div class="prog-fill" id="pfill"></div></div><span class="prog-txt" id="ptxt">0 of 36 ready</span></div>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:14px"><span class="tag t-orange">Jump to a section</span></div>
+      <ul class="jump"><li><a href="#culture">Culture &amp; Rally basics</a></li><li><a href="#hosp">Hospitality</a></li><li><a href="#run">Running &amp; bussing</a></li><li><a href="#side">Side work</a></li><li><a href="#ops">Operations</a></li></ul>
+    </div>
+    <div class="sec" id="culture">
+      <div class="sec-head">
+        <div><h2>Culture <em>&amp; Rally basics</em></h2></div>
+        <span class="sec-count" data-count="culture">0 of 13</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Core values</td></tr><tr><td>Review core values</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesr" data-sec="culture" aria-label="Reviewed: Review core values"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="coreValuesd" data-sec="culture" aria-label="Can do it: Review core values"></label></td></tr><tr class="grp"><td colspan="3">Operating principles</td></tr><tr><td>Review operating principles</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesr" data-sec="culture" aria-label="Reviewed: Review operating principles"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="opPrinciplesd" data-sec="culture" aria-label="Can do it: Review operating principles"></label></td></tr><tr class="grp"><td colspan="3">Pickleball</td></tr><tr><td>The Ways to Play at Rally</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11r" data-sec="culture" aria-label="Reviewed: The Ways to Play at Rally"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture11d" data-sec="culture" aria-label="Can do it: The Ways to Play at Rally"></label></td></tr><tr><td>Traditional pickleball scoring</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture12r" data-sec="culture" aria-label="Reviewed: Traditional pickleball scoring"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="culture12d" data-sec="culture" aria-label="Can do it: Traditional pickleball scoring"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="hosp">
+      <div class="sec-head">
+        <div><h2><em>Hospitality</em></h2><p>You&#x27;re on the floor more than anyone. Every lap is a chance to take care of a guest.</p></div>
+        <span class="sec-count" data-count="hosp">0 of 5</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Guests</td></tr><tr><td>Acknowledge every guest you pass with eye contact and a smile</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp0r" data-sec="hosp" aria-label="Reviewed: Acknowledge every guest you pass with eye contact and a smile"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp0d" data-sec="hosp" aria-label="Can do it: Acknowledge every guest you pass with eye contact and a smile"></label></td></tr><tr><td>Directing guests around the venue</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp1r" data-sec="hosp" aria-label="Reviewed: Directing guests around the venue"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp1d" data-sec="hosp" aria-label="Can do it: Directing guests around the venue"></label></td></tr><tr><td>Spotting a guest who needs something and getting them help</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp2r" data-sec="hosp" aria-label="Reviewed: Spotting a guest who needs something and getting them help"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp2d" data-sec="hosp" aria-label="Can do it: Spotting a guest who needs something and getting them help"></label></td></tr><tr><td>When a guest has a problem: the four A&#x27;s, and when to get a manager</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp3r" data-sec="hosp" aria-label="Reviewed: When a guest has a problem: the four A&#x27;s, and when to get a manager"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp3d" data-sec="hosp" aria-label="Can do it: When a guest has a problem: the four A&#x27;s, and when to get a manager"></label></td></tr><tr><td>Allergies: never guess; get the captain or MOD</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp4r" data-sec="hosp" aria-label="Reviewed: Allergies: never guess; get the captain or MOD"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="hosp4d" data-sec="hosp" aria-label="Can do it: Allergies: never guess; get the captain or MOD"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="run">
+      <div class="sec-head">
+        <div><h2>Running <em>&amp; bussing</em></h2></div>
+        <span class="sec-count" data-count="run">0 of 8</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Running</td></tr><tr><td>Table numbers, courts and sections</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run0r" data-sec="run" aria-label="Reviewed: Table numbers, courts and sections"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run0d" data-sec="run" aria-label="Can do it: Table numbers, courts and sections"></label></td></tr><tr><td>Reading the floor chart: which captain has which section</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run1r" data-sec="run" aria-label="Reviewed: Reading the floor chart: which captain has which section"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run1d" data-sec="run" aria-label="Can do it: Reading the floor chart: which captain has which section"></label></td></tr><tr><td>Running food and drinks: a tray for more than two drinks</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run2r" data-sec="run" aria-label="Reviewed: Running food and drinks: a tray for more than two drinks"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run2d" data-sec="run" aria-label="Can do it: Running food and drinks: a tray for more than two drinks"></label></td></tr><tr><td>On courts, approach only between points or games</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run3r" data-sec="run" aria-label="Reviewed: On courts, approach only between points or games"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run3d" data-sec="run" aria-label="Can do it: On courts, approach only between points or games"></label></td></tr><tr class="grp"><td colspan="3">Bussing</td></tr><tr><td>Bussing tables, lounges and courts</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run4r" data-sec="run" aria-label="Reviewed: Bussing tables, lounges and courts"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run4d" data-sec="run" aria-label="Can do it: Bussing tables, lounges and courts"></label></td></tr><tr><td>Running dirty dishes to the kitchen</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run5r" data-sec="run" aria-label="Reviewed: Running dirty dishes to the kitchen"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run5d" data-sec="run" aria-label="Can do it: Running dirty dishes to the kitchen"></label></td></tr><tr><td>Polishing silverware and glassware</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run6r" data-sec="run" aria-label="Reviewed: Polishing silverware and glassware"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run6d" data-sec="run" aria-label="Can do it: Polishing silverware and glassware"></label></td></tr><tr><td>Discarding broken glass safely</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run7r" data-sec="run" aria-label="Reviewed: Discarding broken glass safely"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="run7d" data-sec="run" aria-label="Can do it: Discarding broken glass safely"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="side">
+      <div class="sec-head">
+        <div><h2>Side <em>work</em></h2><p>Learn it on the Swarmer Side Work page; the printed checklist is what you initial on shift.</p></div>
+        <span class="sec-count" data-count="side">0 of 5</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Shift</td></tr><tr><td>Opening checklist</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side0r" data-sec="side" aria-label="Reviewed: Opening checklist"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side0d" data-sec="side" aria-label="Can do it: Opening checklist"></label></td></tr><tr><td>Continuous laps during the shift</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side1r" data-sec="side" aria-label="Reviewed: Continuous laps during the shift"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side1d" data-sec="side" aria-label="Can do it: Continuous laps during the shift"></label></td></tr><tr><td>Closing checklist</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side2r" data-sec="side" aria-label="Reviewed: Closing checklist"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side2d" data-sec="side" aria-label="Can do it: Closing checklist"></label></td></tr><tr><td>Stocking captains&#x27; quarters to par</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side3r" data-sec="side" aria-label="Reviewed: Stocking captains&#x27; quarters to par"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side3d" data-sec="side" aria-label="Can do it: Stocking captains&#x27; quarters to par"></label></td></tr><tr><td>Rolling silverware and folding napkins to the count given</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side4r" data-sec="side" aria-label="Reviewed: Rolling silverware and folding napkins to the count given"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="side4d" data-sec="side" aria-label="Can do it: Rolling silverware and folding napkins to the count given"></label></td></tr></tbody>
+      </table>
+    </div>
+    <div class="sec" id="ops">
+      <div class="sec-head">
+        <div><h2><em>Operations</em></h2></div>
+        <span class="sec-count" data-count="ops">0 of 5</span>
+      </div>
+      <table class="skills">
+        <thead><tr><th>Item</th><th>Reviewed</th><th>Can<br>do it</th></tr></thead>
+        <tbody><tr class="grp"><td colspan="3">Tools &amp; communication</td></tr><tr><td>Radio calls</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0r" data-sec="ops" aria-label="Reviewed: Radio calls"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops0d" data-sec="ops" aria-label="Can do it: Radio calls"></label></td></tr><tr><td>Handhelds: accounted for and charging at close</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1r" data-sec="ops" aria-label="Reviewed: Handhelds: accounted for and charging at close"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops1d" data-sec="ops" aria-label="Can do it: Handhelds: accounted for and charging at close"></label></td></tr><tr><td>Reporting facility issues to management</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2r" data-sec="ops" aria-label="Reviewed: Reporting facility issues to management"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops2d" data-sec="ops" aria-label="Can do it: Reporting facility issues to management"></label></td></tr><tr class="grp"><td colspan="3">End of shift</td></tr><tr><td>Checkout: the lead captain signs first, then check out with the MOD</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3r" data-sec="ops" aria-label="Reviewed: Checkout: the lead captain signs first, then check out with the MOD"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops3d" data-sec="ops" aria-label="Can do it: Checkout: the lead captain signs first, then check out with the MOD"></label></td></tr><tr><td>Dog policy</td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4r" data-sec="ops" aria-label="Reviewed: Dog policy"></label></td><td class="c"><label class="cell-label"><input type="checkbox" data-save="ops4d" data-sec="ops" aria-label="Can do it: Dog policy"></label></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-sage">Sign-off</span></div>
+      <p>Every item is reviewed and checked "Can do it."</p>
+      <div class="signs"><div>Swarmer signature &amp; date</div><div>Manager signature &amp; date</div></div>
+    </div>
+  </div>
+  <div class="bar">
+    <span class="saved" id="saved">Your checkmarks save automatically in this browser.</span>
+    <button type="button" class="clear" id="clear">Clear all</button>
+  </div>
+</div>
+<script>
+var TOTAL=36;
+var KEYNAME='rally-swarmer-checklist-v1',state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Checkmarks can’t be saved in this browser — they’ll clear if you close the page.';}}
+function progress(){
+  var done=0;
+  document.querySelectorAll('[data-count]').forEach(function(c){
+    var s=c.getAttribute('data-count'),boxes=document.querySelectorAll('input[data-sec="'+s+'"][data-save$="d"]'),k=0;
+    boxes.forEach(function(b){if(b.checked)k++;});done+=k;c.textContent=k+' of '+boxes.length+' ready';
+  });
+  document.getElementById('ptxt').textContent=done+' of '+TOTAL+' ready';
+  document.getElementById('pfill').style.width=(done/TOTAL*100)+'%';
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();progress();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every checkmark on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+  progress();
+});
+progress();
+</script>
+</body>
+</html>
