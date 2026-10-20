@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Owning the Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.hint{font-size:14px;font-style:italic;opacity:.9}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.illo{display:block;flex:none;pointer-events:none}
+.hero{display:grid;grid-template-columns:1.35fr .65fr}
+.hero-l{padding:30px 28px;border-right:2px solid var(--navy)}
+.hero-l p{margin-top:16px;font-size:17px;text-wrap:pretty}
+.hero-r{display:flex;align-items:center;justify-content:center;padding:20px;min-height:220px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;line-height:1.15;margin-top:4px}
+.explore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.explore>div{border-top:2px solid var(--orange);padding-top:12px}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b,.note b{font-weight:600}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.callout{margin-top:20px;background:var(--sage);border-radius:4px;padding:14px 18px}
+.sub-p{margin-top:16px}
+.skills{width:100%;border-collapse:collapse}
+.skills th{font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 6px;border:1px solid var(--navy);background:var(--sage);text-align:center;line-height:1.15}
+.skills th:first-child{text-align:left;padding-left:12px}
+.skills td{border:1px solid var(--navy);padding:10px 12px;background:var(--paper)}
+.skills td.c{width:88px;text-align:center;padding:0}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible,textarea:focus-visible,input[type=text]:focus-visible,button:focus-visible,summary:focus-visible,a:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.cell-label{display:flex;align-items:center;justify-content:center;min-height:48px;cursor:pointer}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+textarea,input[type=text]{width:100%;font:inherit;font-size:15px;color:var(--navy);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical;margin-top:8px}
+textarea::placeholder,input::placeholder{color:#6b8389}
+.scen{display:grid;gap:20px}
+.scen .q{display:flex;gap:10px}
+.scen .q b{font-family:"Instrument Serif",serif;font-weight:400;font-size:24px;line-height:1;min-width:22px}
+.field+.field{margin-top:16px}
+.ahead{background:var(--sage);border-radius:4px;padding:16px 20px}
+.ahead p{margin-top:4px}
+details.key{margin-top:28px;border:2px solid var(--navy);background:var(--paper)}
+details.key summary{list-style:none;cursor:pointer;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary .chev{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+details.key[open] summary{border-bottom:2px solid var(--navy)}
+details.key[open] .chev .closed,details.key:not([open]) .chev .open{display:none}
+.key-body{padding:24px 28px 28px}
+.key-note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin-bottom:22px}
+.ans{padding:16px 0;border-top:1px solid var(--line)}
+.ans:first-of-type{border-top:0;padding-top:0}
+.ans h4{margin:0 0 8px;font-size:16px;font-weight:600}
+.ans h4 span{font-family:"Instrument Serif",serif;font-weight:400;font-size:22px;margin-right:6px}
+.ans ul{padding-left:20px;gap:4px}
+.ans .listen{margin-top:8px;font-size:14px}
+.ans .listen b{font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:24px;font-size:14px}
+button.clear{font:600 14px "Hanken Grotesk",sans-serif;background:transparent;color:var(--navy);border:1.5px solid var(--navy);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.saved{opacity:.85}
+@media (max-width:720px){
+  .hero{grid-template-columns:1fr}
+  .hero-l{border-right:0;border-bottom:2px solid var(--navy);padding:24px 20px}
+  .hero-r{min-height:170px}
+  .sec,.key-body{padding:22px 18px}
+  details.key summary{padding:18px}
+  .explore,.checks{grid-template-columns:1fr}
+  .sec-head .illo{display:none}
+}
+@media print{.bar,details.key{display:none}.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hero-l">
+        <div class="hand">Start here · Owning the Shift</div>
+        <h1 style="margin-top:12px">Owning<br><em>the Shift</em></h1>
+        <p>Of course, we have our checklists and daily responsibilities — ordering, inventory, opening and closing tasks, and more. But your job as a manager is bigger than that. You have a much larger responsibility for our people, our guests, and the performance of the business.</p>
+      </div>
+      <div class="hero-r"><svg class="illo" viewBox="0 0 150 150" width="140" height="140" aria-hidden="true" fill="none" stroke="#174854" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="75" cy="75" r="54" fill="#fffdf8"/><path d="M75 30 A45 45 0 1 1 30 75" stroke-dasharray="6 7"/><path d="M75 75 L75 48 M75 75 L95 90"/><circle cx="75" cy="75" r="4" fill="#174854"/></svg></div>
+    </div>
+    <div class="sec">
+      <div class="standard"><span class="label">The Rally Standard</span><p>When you're the manager on duty, think about the business as a whole — our people, our guests, our standards, our sales — and take responsibility for how all of it is performing.</p></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:18px"><span class="tag t-orange">What you'll cover</span></div>
+      <div class="explore"><div><h3>Team <em>& the shift</em></h3><ul><li>Coaching selling & guest experience</li><li>Setting priorities in downtime</li><li>Feedback in the moment</li></ul></div><div><h3><em>Guests</em></h3><ul><li>Manager table touches</li><li>Owning guest recovery</li><li>Bringing first-timers back</li></ul></div><div><h3>The <em>business</em></h3><ul><li>Making sure the team is selling</li><li>Spotting what could be better</li><li>Planning ahead</li></ul></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Team Development, <em>Accountability & the Shift</em></h2><p>It's our responsibility to make sure the team knows the menu, specials, service standards, and how to sell.</p></div></div>
+      <p>Think of it like coaching a soccer team. You wouldn't put everyone on the field without a plan or coaching. That means actively managing and coaching throughout the entire shift — not just doing lineup and then letting everyone run on their own. We need to be constantly observing, redirecting, recognizing great performance, and giving feedback in the moment. That feedback can't only come from a GM — it's on you, every shift.</p>
+      <p class="sub-p"><b>Coach two things every shift: selling and guest experience.</b> Is the team suggesting something, not just taking orders? Are they making guests feel welcomed and remembered? Catch it in the moment — recognize it when it's happening, redirect it when it's not.</p>
+      <p class="sub-p">We also need to actively direct the shift. If there's downtime, what needs attention?</p>
+      <ul style="margin-top:10px"><li>Is the bar clean?</li><li>Are syrups prepped?</li><li>Are guest areas looking great?</li><li>What can we get ahead on?</li></ul>
+      <div class="note"><b>The team should always know their priorities.</b> Setting and managing those priorities, shift after shift, is your job.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Guest <em>Satisfaction</em></h2><p>We own the guest experience.</p></div></div>
+      <p>Connect with guests throughout every shift — introducing yourself, welcoming them, thanking them for coming, and anticipating their needs. Think of this like a manager "table touch." Connecting with our guests is a required part of managing the floor.</p>
+      <div class="callout"><b>Every complaint goes to a manager.</b> Never leave it for an associate to handle. Guest recovery is a critical manager responsibility — when something goes wrong, step in, listen, resolve the issue, and make sure that guest leaves feeling taken care of.</div>
+      <p class="sub-p"><b>Getting first-time guests back is on you, too.</b> A great first visit is only half the job — it's our responsibility to make sure that guest has a reason to come back. Notice who's new, make the introduction count, and give them something specific to return for before they leave.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Business <em>Performance</em></h2><p>We're responsible for the business, not just for showing up.</p></div></div>
+      <p>Make sure your team is selling and looking for opportunities throughout the shift — that's on you to set up and reinforce, not something that happens on its own. Constantly ask: What could be better? Where are we losing opportunities? What can we improve?</p>
+      <div class="alert"><b>Maintaining the business isn't enough.</b> Our responsibility isn't simply to maintain the business while we're on duty. We should be actively looking for ways to make it better.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Planning <em>Ahead</em></h2><p>Strong shifts start before the shift begins.</p></div></div>
+      <p>Look ahead at reservations, programming, events, staffing and potential pressure points, and build battle plans when needed. The goal is to anticipate problems instead of reacting to them once they happen.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Zoom <em>out</em></h2></div></div>
+      <div class="standard"><p>When you are the manager on duty, think about the business as a whole — our people, our guests, our standards, our sales — and take responsibility for how all of those pieces are performing.</p></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-orange">Practice on shift</span><p class="hint" style="margin-top:8px">Your trainer checks these off while you work a shift together.</p></div></div>
+      <table class="skills"><thead><tr><th>Skill</th><th>Got it</th><th>Keep<br>working</th></tr></thead><tbody id="skills"></tbody></table>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:16px"><span class="tag t-sage">By the end of this chapter, I can…</span></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-coral">On the floor</span><p>Answer each one in your own words, then talk through your answers with your trainer.</p></div></div>
+      <div class="scen" id="scen"></div>
+    </div>
+    <div class="sec">
+      <div style="margin-bottom:12px"><span class="tag t-orange">Trainer feedback</span></div>
+      <div class="field"><label class="label" for="fb1">Strength I saw</label><textarea id="fb1" data-save="fb1" placeholder="Trainer writes here"></textarea></div>
+      <div class="field"><label class="label" for="fb2">Next time, focus on</label><textarea id="fb2" data-save="fb2" placeholder="Trainer writes here"></textarea></div>
+      <div class="ahead" style="margin-top:24px"><span class="label">Looking ahead</span><p>Next up is the <b>Hospitality Playbook</b>: Rally's core standards for every guest interaction.</p></div>
+    </div>
+  </div>
+  <details class="key">
+    <summary><div><h2>Trainer <em>Cheat Sheet</em></h2><p class="hint" style="margin-top:6px">For the GM or trainer reviewing answers. Trainees, finish your answers first.</p></div><span class="chev"><span class="closed">Open ▾</span><span class="open">Close ▴</span></span></summary>
+    <div class="key-body">
+      <div class="key-note">These aren't scripts. An answer is on track when it hits the main ideas in the trainee's own words. Use the "listen for" line to coach what's missing.</div>
+      <div id="key"></div>
+    </div>
+  </details>
+  <div class="bar"><span class="saved" id="saved">Your answers save automatically in this browser.</span><button type="button" class="clear" id="clear">Clear all answers</button></div>
+</div>
+<script>
+var SKILLS=["Coach the team in the moment — observe, redirect, recognize and give feedback all shift long.", "Coach the team specifically on selling and guest experience, not just general performance.", "Set the team's priorities during downtime.", "Do a manager table touch with guests throughout the shift.", "Take ownership of a guest complaint, start to finish.", "Make a first-time guest feel like they have a reason to come back.", "Actively drive the team's selling, not just hope it happens.", "Build a plan ahead of a shift with real pressure points."];
+var OUTCOMES=["Explain why being a manager is bigger than running checklists.", "Coach the team throughout a shift, not just at lineup.", "Own a guest complaint from start to finish.", "Explain what it means to get a first-time guest back.", "Actively drive selling and look for business opportunities.", "Plan ahead of a shift instead of reacting to it."];
+var SCEN=[{"q": "It's 4pm, things are slow, and your team is standing around. What do you do?", "pts": ["Decide what needs attention: bar clean? syrups prepped? guest areas?", "Set clear priorities and redirect the team to them.", "Use the downtime to coach, not just to wait it out."], "listen": "Taking ownership of downtime instead of letting it run itself."}, {"q": "A guest tells an associate their food was wrong, and the associate just apologizes and moves on. What should have happened?", "pts": ["The complaint should have been escalated to a manager immediately.", "A manager steps in: listens, resolves it, and makes sure the guest leaves taken care of.", "Guest recovery is a manager responsibility, not an associate's to handle alone."], "listen": "Recognizing the complaint should never have stayed with the associate."}, {"q": "A guest came in for the first time tonight and had a great visit. What's your job before they leave?", "pts": ["Notice they're new and make sure the visit felt that way.", "Give them a specific reason to come back — an event, a program, a membership.", "Getting them back is part of the job, not just giving them a good night."], "listen": "Thinking past tonight's visit to the next one."}, {"q": "Sales are flat this week and nobody's flagged why. What's your responsibility?", "pts": ["Don't just maintain the shift — ask what could be better.", "Make sure the team is actually selling, not just taking orders.", "Look for where you're losing opportunities and fix it."], "listen": "Taking ownership of performance, not waiting for someone else to notice."}];
+var KEYNAME="rally-mgr-owning-the-shift-v1";
+
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var sk=document.getElementById('skills');
+SKILLS.forEach(function(s,i){
+  var tr=el('tr');tr.appendChild(el('td',{},s));
+  ['got','work'].forEach(function(k){
+    var td=el('td',{'class':'c'});var lab=el('label',{'class':'cell-label'});
+    lab.appendChild(el('input',{type:'checkbox','data-save':'sk'+i+k,'aria-label':(k=='got'?'Got it: ':'Keep working: ')+s.replace(/<[^>]+>/g,'')}));
+    td.appendChild(lab);tr.appendChild(td);
+  });
+  sk.appendChild(tr);
+});
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var sc=document.getElementById('scen'),ky=document.getElementById('key');
+SCEN.forEach(function(s,i){
+  var d=el('div');var q=el('div',{'class':'q'});q.appendChild(el('b',{},(i+1)+'.'));q.appendChild(el('label',{'for':'sc'+i},s.q));d.appendChild(q);
+  d.appendChild(el('textarea',{id:'sc'+i,'data-save':'sc'+i,placeholder:'Your answer'}));sc.appendChild(d);
+  var a=el('div',{'class':'ans'});a.appendChild(el('h4',{},'<span>'+(i+1)+'.</span>'+s.q));
+  var u=el('ul');s.pts.forEach(function(p){u.appendChild(el('li',{},p));});a.appendChild(u);
+  a.appendChild(el('p',{'class':'listen'},'<b>Listen for:</b> '+s.listen));ky.appendChild(a);
+});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
+  else{n.value=state[k]||'';n.addEventListener('input',function(){state[k]=n.value;save();});}
+});
+document.getElementById('clear').addEventListener('click',function(){
+  if(!confirm('Clear every answer and checkbox on this page?'))return;
+  state={};save();
+  document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
+});
+
+</script>
+</body>
+</html>

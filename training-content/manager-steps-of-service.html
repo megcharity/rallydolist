@@ -336,7 +336,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
         <div class="step-num">1</div>
         <div class="step-body"><div class="front"><h3>Drop off towels and the review card</h3><span class="tap">Tap to see the steps</span></div><div class="back"><h3>Drop off towels and the review card</h3>
           <p>When the Host calls "15 minutes left," head to that court.</p>
-          <div class="note"><strong>Review card incentive</strong>If players fill out the review card, $10 is added to their account, per person.</div>
+          <div class="note"><strong>Review card incentive</strong>Players get an incentive for filling out the review card. Ask your GM for the current offer — it changes.</div>
         <span class="tap">Tap to flip back</span></div></div>
       </li>
       <li class="step" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
@@ -447,7 +447,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
         <h3>After</h3>
         <p class="count">Thank, reset &amp; close</p>
         <ul class="check">
-          <li><label><input type="checkbox"><span>Hand the POC an event review card and a free Courts &amp; Coffee card as a thank-you.</span></label></li>
+          <li><label><input type="checkbox"><span>Follow the event retention effort with the POC as a thank-you — ask your GM what it currently is.</span></label></li>
           <li><label><input type="checkbox"><span>Make sure the area is reset.</span></label></li>
           <li><label><input type="checkbox"><span>Make sure Captains and Bartenders rang everything in correctly.</span></label></li>
           <li><label><input type="checkbox"><span>Close out the event on Toast.</span></label></li>
@@ -561,9 +561,9 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
         <tbody>
           <tr><td>Complimentary chips</td><td>Court reservations, as needed. Captains check with you first.</td></tr>
           <tr><td>Towels</td><td>Court reservations, dropped off with the review card.</td></tr>
-          <tr><td>Review card, $10 per person</td><td>Court reservations. $10 is added to the account of each person who fills it out.</td></tr>
-          <tr><td>Event review card + free Courts &amp; Coffee card</td><td>Event POCs, after the event.</td></tr>
-          <tr><td>50% discount</td><td>Confirm Captains offered it to every reservation, except $20 reservations and reservations that played for free.</td></tr>
+          <tr><td>Review card incentive</td><td>Court reservations. Ask your GM for the current offer — it changes.</td></tr>
+          <tr><td>Event retention</td><td>Event POCs, after the event. Ask your GM what this effort is — it changes.</td></tr>
+          <tr><td>Court discount</td><td>Ask your GM which reservations currently qualify and what the discount is — it changes.</td></tr>
         </tbody>
       </table>
     </div>
@@ -625,7 +625,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
     {q:'Two Captains are chatting at the service well. What do you do?', o:['Let them catch a break','Get them roaming','Ignore it if tables look fine'], a:1, why:'Make sure Captains are always roaming, never chatting at the service well.'},
     {q:'A Captain misses a step of service. Whose responsibility is it?', o:['Only the Captain\'s','Yours, as the Manager','The Host\'s'], a:1, why:'Know every position\'s steps of service. If steps are missed, it\'s your responsibility.'},
     {q:'What\'s your cue to visit a court reservation?', o:['The Host\'s "15 minutes left" radio call','When they check in','When they close their tab'], a:0, why:'At the "15 minutes left" call, visit the court with towels and the review card.'},
-    {q:'What does a court reservation player get for filling out the review card?', o:['A free drink','$10 added to their account, per person','A free court hour'], a:1, why:'$10 is added to their account for each person who fills it out.'},
+    {q:'What does a court reservation player get for filling out the review card?', o:['A free drink','The current incentive your GM gives you','A free court hour'], a:1, why:'The incentive changes, so always check with your GM for the current offer.'},
     {q:'After talking with a court group, where do you record what you learned?', o:['PlayByPoint notes','Toast','The floor chart'], a:0, why:'Add notes on PlayByPoint: reason for visit, preferences, anything worth tracking.'},
     {q:'When do you check in with walk-in diners?', o:['When the check is dropped','Before they order','Only if there\'s a complaint'], a:0, why:'Stop by the table as the check goes down.'},
     {q:'You\'re running tonight\'s league. What\'s expected?', o:['Stay outside with the league all night','Start the program, then roam, including court touching inside','Hand it off to a Captain'], a:1, why:'Start the program, then roam. Your presence is needed inside, and court touching is still required.'},
@@ -633,7 +633,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
     {q:'For an event, by when do you meet the kitchen about replens and ring the event into Toast?', o:['Before 9am','30 minutes before the event','When the POC arrives'], a:0, why:'Both happen before 9am.'},
     {q:'When must event setup be complete?', o:['30 minutes before the event starts','When the first guest arrives','10 minutes before'], a:0, why:'Setup is complete 30 minutes before start, then you review it against our standards.'},
     {q:'During an event, how often do you check in with the POC?', o:['Once at the start','About every 20 minutes','Only at the end'], a:1, why:'Check in about every 20 minutes and make sure replens are being rung in. Events aren\'t "set it and forget it."'},
-    {q:'What does the event POC receive after the event?', o:['An event review card and a free Courts & Coffee card','A discount on their bill','Nothing'], a:0, why:'An event review card plus a free Courts & Coffee card as a thank-you.'},
+    {q:'What does the event POC receive after the event?', o:['The current event retention effort, from your GM','A discount on their bill','Nothing'], a:0, why:'Ask your GM what the current event retention effort is — it changes.'},
     {q:'What are Figure of 8s?', o:['A league format','Walking loops of the venue, including the kitchen and outdoor courts','A drink special'], a:1, why:'Loops through the whole venue to spot tables to buss. Buss them yourself and radio a Captain if you need more hands.'},
     {q:'A Captain wants to switch sections mid-shift. Can they?', o:['Yes, if another Captain agrees','Only with your approval','Never'], a:1, why:'Captains can\'t switch sections unless you approve it. Know who is on which court or section at all times.'},
     {q:'You spot an unpaid check on the KDS. When should it be caught?', o:['At the end of the night','Before the guest leaves','During the next shift\'s audit'], a:1, why:'Catching unpaid items before the guest leaves is your responsibility.'},

@@ -489,18 +489,11 @@ const POSITIONS = [
   {key:"downtime", label:"Down-time tasks",
    lead:"These are mandatory. Down time is never idle time. If you’re not actively helping a guest, you should be working through these tasks.",
    groups:[
-    {g:"Task 1: Proactive rebooking calls (3 months and back)", items:[
-      "Call guests who haven’t been back to Rally in a while. Offer them 50% off and try to book them for any time that week.",
-      "If they say yes, book the reservation on the spot. If they’re unsure, let them know the offer is good for this week.",
-      "When you call, leave a note so we know they’ve been contacted. When you make the reservation, add a note on that reservation too."],
-     script:["“Hi! Is this [Name]?”","“Hey [Name], this is [Host] from Rally! We’re running 50% off reservations this week and wondering if you’d like to book a court.”"]},
-    {g:"Task 2: First-timer feedback calls", items:[
-      "Call first-time guests and ask for their feedback in exchange for $10 in club credit.",
-      "Add the $10 Rally credit to their account.",
-      "Send feedback to your MOD via Teams."],
-     script:["“Hi! Is this [Name]?”","“Hey [Name], this is [Host] from Rally! I saw you visited us for the first time recently and just wanted to see how your experience was. If you have a minute, I’d love to ask you a few quick questions. As a thank-you, we’ll add a $10 Rally credit to your account.”"],
-     ask:["What brought you into Rally?","Were you celebrating anything, or just coming in to check us out?","How was your experience?","Was there anything we could have done better?","Is there anything you’d like to come back and try?"]},
-    {g:"Task 3: Respond to emails", items:[
+    {g:"Task 1: Retention efforts", items:[
+      "Rally always has a retention effort running — reconnecting with guests who haven’t been back, or following up with first-timers.",
+      "The tactic (calls, emails, or both) and the incentive change over time, so ask your manager what the current effort is before you start.",
+      "Leave a note whenever you make contact, so the team knows who’s been reached."]},
+    {g:"Task 2: Respond to emails", items:[
       "Log in to the hello@rallypickleball.com inbox and respond to every email waiting.",
       "Use AI to help with grammar.",
       "Copy the GM on every email and response."]}
@@ -673,9 +666,8 @@ host:{
     "sidework|Guest & member prep":"Members should feel expected. Write their visit time on their welcome sign and keep the members list up to date.",
     "sidework|Cleanliness & organization":"The host desk is the first thing guests see. Get packages to the right owner and keep lost and found organized.",
     "sidework|Paddles & equipment":"Every paddle bag gets four paddles and two balls, wiped down and ready.",
-    "downtime|Task 1: Proactive rebooking calls (3 months and back)":"Call guests who haven’t visited in about three months. The goal is a booking on the spot.",
-    "downtime|Task 2: First-timer feedback calls":"Feedback from first-time guests tells us what’s working and what isn’t. Pass every response to the MOD on Teams.",
-    "downtime|Task 3: Respond to emails":"Nothing waits on a reply. Copy the GM so there’s a record, and use AI to tighten up the grammar before you send."
+    "downtime|Task 1: Retention efforts":"The tactic and incentive change over time, so check with your manager before you start. Leave a note after every contact so no one reaches out twice.",
+    "downtime|Task 2: Respond to emails":"Nothing waits on a reply. Copy the GM so there’s a record, and use AI to tighten up the grammar before you send."
   }
 },
 swarmer:{
