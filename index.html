@@ -9,265 +9,6 @@ window.RALLY_SUPABASE_URL = 'https://dndnkvxefjgcufllkkpj.supabase.co';
 window.RALLY_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZG5rdnhlZmpnY3VmbGxra3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwNDU5MTAsImV4cCI6MjA4OTYyMTkxMH0.IF6Lu_CLTP9-eg8_1Ibk8eucty0JN1PZcQikTIetgEs';
 
 </script>
-<script>
-// ─── Rally Portal — shared real-auth gate ───────────────────────────────────
-// Loaded (as a script tag, src="/shared/auth.js") after the
-// @supabase/supabase-js CDN script and shared/config.js, in that order.
-//
-// NOTE: this file must never contain the literal five-character sequence
-// "<" + "/script>" — even inside a comment or string — because some
-// deployments inline this entire file's text directly into another page's
-// <script> block (see the standalone rallydolist repo's build process),
-// and a browser's HTML parser ends a <script> element at the first literal
-// occurrence of that closing-tag text, regardless of JS comment/string
-// context. Keep any illustrative markup in comments split across lines or
-// otherwise broken up so this substring never appears intact.
-//
-// Injects a full-screen email-code sign-in overlay in front of whatever's
-// already on the page (the existing PIN screen / app content, untouched).
-// Once a session is established AND the signed-in email passes the
-// rally_allowed_staff roster check (via the rally_am_i_allowed() RPC —
-// see supabase/migrations/0001_auth_allowlist.sql), the overlay removes
-// itself and the page underneath proceeds exactly as it did before this
-// file existed.
-//
-// Exposes window.RallyAuth = { token(), email(), signOut(), whenReady(cb) }
-// for the rest of each app's existing fetch() calls to grab a live session
-// token — NOT a frozen anon-key constant, since RLS needs to see a real
-// authenticated user, not the anon role.
-(function () {
-  const client = window.supabase.createClient(
-    window.RALLY_SUPABASE_URL,
-    window.RALLY_SUPABASE_ANON_KEY
-  );
-
-  // ── Local dev bypass ──────────────────────────────────────────────────
-  // Gated on the literal hostname so it can NEVER fire on a deployed site,
-  // even if this file were pushed as-is — real users always go through
-  // real OTP sign-in. Exists purely so local UI changes can be eyeballed
-  // without waiting on Supabase's OTP rate limit / inbox round-trip.
-  // Data still goes through the anon key (no real session), so RLS-gated
-  // reads/writes behave exactly as an unauthenticated request would —
-  // this only skips the client-side overlay, not any server-side check.
-  const isLocalDev = ['localhost', '127.0.0.1'].includes(location.hostname);
-
-  let currentSession = null;
-  let currentEmail = null;
-  const readyCallbacks = [];
-  let isReady = false;
-
-  function fireReady() {
-    isReady = true;
-    readyCallbacks.splice(0).forEach(cb => cb());
-  }
-
-  // ── Public API ──────────────────────────────────────────────────────────
-  window.RallyAuth = {
-    // Current session's access token, or the anon key if signed out — so
-    // any fetch() built with this never sends a literal "undefined".
-    token() {
-      return (currentSession && currentSession.access_token) || window.RALLY_SUPABASE_ANON_KEY;
-    },
-    email() {
-      return currentEmail;
-    },
-    async signOut() {
-      await client.auth.signOut();
-      currentSession = null;
-      currentEmail = null;
-      showGate();
-    },
-    // Runs cb immediately if the gate has already resolved once, otherwise
-    // queues it — lets each app's own init code wait for auth without
-    // needing to know whether it's still loading.
-    whenReady(cb) {
-      if (isReady) cb();
-      else readyCallbacks.push(cb);
-    },
-  };
-
-  // ── Overlay markup/styles, injected once ────────────────────────────────
-  const style = document.createElement('style');
-  style.textContent = `
-    #rally-auth-gate { position:fixed; inset:0; z-index:99999; background:#fbf6ed;
-      display:flex; align-items:center; justify-content:center; font-family:'DM Sans',-apple-system,sans-serif; }
-    #rally-auth-gate.hidden { display:none; }
-    .rag-card { width:340px; max-width:90vw; background:#fff; border-radius:14px;
-      border:1px solid rgba(23,72,84,.15); box-shadow:0 20px 60px rgba(23,72,84,.12);
-      padding:32px 28px; text-align:center; }
-    .rag-title { font-family:'Cormorant Garamond',Georgia,serif; font-size:28px;
-      font-weight:500; color:#174854; margin-bottom:6px; }
-    .rag-sub { font-size:13px; color:rgba(23,72,84,.55); margin-bottom:22px; line-height:1.4; }
-    .rag-input { width:100%; box-sizing:border-box; padding:12px 14px; font-size:15px;
-      border:1.5px solid rgba(23,72,84,.2); border-radius:8px; font-family:inherit;
-      color:#174854; background:#fbf6ed; margin-bottom:10px; text-align:center;
-      letter-spacing:.02em; }
-    .rag-input:focus { outline:none; border-color:#174854; }
-    .rag-btn { width:100%; padding:13px; border:none; border-radius:8px;
-      background:#174854; color:#fbf6ed; font-family:inherit; font-size:14px;
-      font-weight:700; cursor:pointer; margin-top:4px; }
-    .rag-btn:disabled { opacity:.5; cursor:default; }
-    .rag-link { background:none; border:none; color:#174854; font-family:inherit;
-      font-size:12px; text-decoration:underline; cursor:pointer; margin-top:14px;
-      opacity:.6; }
-    .rag-err { font-size:12px; color:#e13228; min-height:16px; margin-top:8px; }
-    .rag-denied { font-size:14px; color:#174854; line-height:1.5; margin-top:8px; }
-  `;
-  document.head.appendChild(style);
-
-  const gate = document.createElement('div');
-  gate.id = 'rally-auth-gate';
-  gate.innerHTML = `
-    <div class="rag-card">
-      <div id="rag-step-email">
-        <div class="rag-title">Rally Portal</div>
-        <div class="rag-sub">Enter your email to sign in.</div>
-        <input id="rag-email" class="rag-input" type="email" placeholder="you@example.com" autocomplete="email">
-        <button id="rag-send" class="rag-btn">Send Code</button>
-        <div id="rag-email-err" class="rag-err"></div>
-      </div>
-      <div id="rag-step-code" style="display:none;">
-        <div class="rag-title">Check your email</div>
-        <div class="rag-sub">Enter the code we just sent you.</div>
-        <input id="rag-code" class="rag-input" type="text" inputmode="numeric" maxlength="10" placeholder="000000">
-        <button id="rag-verify" class="rag-btn">Verify &amp; Sign In</button>
-        <button id="rag-resend" class="rag-link">Use a different email</button>
-        <div id="rag-code-err" class="rag-err"></div>
-      </div>
-      <div id="rag-step-denied" style="display:none;">
-        <div class="rag-title">Not approved yet</div>
-        <div class="rag-denied">This email isn't on the approved staff list. Ask a manager to add you in the Team Portal, then try again.</div>
-        <button id="rag-back" class="rag-btn" style="margin-top:18px;">Try a Different Email</button>
-      </div>
-    </div>
-  `;
-  document.addEventListener('DOMContentLoaded', () => document.body.appendChild(gate));
-  // If DOMContentLoaded already fired (script loaded late), append immediately.
-  if (document.readyState !== 'loading') document.body.appendChild(gate);
-
-  function showGate() {
-    gate.classList.remove('hidden');
-    showStep('email');
-  }
-  function hideGate() {
-    gate.classList.add('hidden');
-  }
-  function showStep(step) {
-    ['email', 'code', 'denied'].forEach(s => {
-      document.getElementById(`rag-step-${s}`).style.display = s === step ? 'block' : 'none';
-    });
-  }
-
-  let pendingEmail = '';
-
-  async function sendCode() {
-    const emailInput = document.getElementById('rag-email');
-    const err = document.getElementById('rag-email-err');
-    const email = emailInput.value.trim();
-    err.textContent = '';
-    if (!email || !email.includes('@')) { err.textContent = 'Enter a valid email address.'; return; }
-    document.getElementById('rag-send').disabled = true;
-    document.getElementById('rag-send').textContent = 'Sending…';
-    try {
-      const { error } = await client.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      if (error) throw error;
-      pendingEmail = email;
-      showStep('code');
-      document.getElementById('rag-code').focus();
-    } catch (e) {
-      err.textContent = 'Could not send code — check the email and try again.';
-      console.warn('signInWithOtp failed', e);
-    } finally {
-      document.getElementById('rag-send').disabled = false;
-      document.getElementById('rag-send').textContent = 'Send Code';
-    }
-  }
-
-  async function verifyCode() {
-    const codeInput = document.getElementById('rag-code');
-    const err = document.getElementById('rag-code-err');
-    const token = codeInput.value.trim();
-    err.textContent = '';
-    // Supabase's OTP length is a project-level setting, not something this
-    // client controls — accept any all-digit code rather than assuming 6.
-    if (!/^\d{4,10}$/.test(token)) { err.textContent = 'Enter the code from your email.'; return; }
-    document.getElementById('rag-verify').disabled = true;
-    document.getElementById('rag-verify').textContent = 'Verifying…';
-    try {
-      const { data, error } = await client.auth.verifyOtp({ email: pendingEmail, token, type: 'email' });
-      if (error) throw error;
-      await handleSession(data.session);
-    } catch (e) {
-      err.textContent = 'Incorrect or expired code — try again.';
-      console.warn('verifyOtp failed', e);
-    } finally {
-      document.getElementById('rag-verify').disabled = false;
-      document.getElementById('rag-verify').textContent = 'Verify & Sign In';
-    }
-  }
-
-  // Runs for both a freshly-verified session AND a restored one on page
-  // load — re-checks the roster every time so a deactivated staff member
-  // gets blocked even if their browser still has a lingering session.
-  async function handleSession(session) {
-    if (!session) {
-      if (isLocalDev) { hideGate(); fireReady(); return; }
-      showGate();
-      return;
-    }
-    currentSession = session;
-    currentEmail = session.user && session.user.email;
-    try {
-      const { data, error } = await client.rpc('rally_am_i_allowed');
-      const row = Array.isArray(data) ? data[0] : data;
-      if (error || !row || !row.allowed) {
-        console.warn('rally_am_i_allowed denied this sign-in', { email: currentEmail, error, row });
-        await client.auth.signOut();
-        currentSession = null;
-        currentEmail = null;
-        showStep('denied');
-        gate.classList.remove('hidden');
-        return;
-      }
-      console.log('Signed in as', currentEmail, '— pin_role:', row.pin_role);
-    } catch (e) {
-      // If the RPC itself is unreachable (network blip), fail closed —
-      // keep the gate up rather than silently letting an unverified
-      // session through.
-      console.warn('rally_am_i_allowed check failed', e);
-      showGate();
-      return;
-    }
-    hideGate();
-    fireReady();
-  }
-
-  gate.addEventListener('click', e => {
-    if (e.target.id === 'rag-send') sendCode();
-    if (e.target.id === 'rag-verify') verifyCode();
-    if (e.target.id === 'rag-resend' || e.target.id === 'rag-back') showStep('email');
-  });
-  gate.addEventListener('keydown', e => {
-    if (e.key !== 'Enter') return;
-    if (e.target.id === 'rag-email') sendCode();
-    if (e.target.id === 'rag-code') verifyCode();
-  });
-
-  // ── Boot: restore an existing session if there is one ─────────────────
-  if (!isLocalDev) {
-    showGate(); // shown by default until getSession() resolves, to avoid a
-                // flash of the app underneath for a brand-new device.
-  }
-  client.auth.getSession().then(({ data }) => handleSession(data.session));
-
-  // Keep RallyAuth.token() live across silent background refreshes.
-  client.auth.onAuthStateChange((_event, session) => {
-    currentSession = session;
-    currentEmail = session && session.user && session.user.email;
-  });
-})();
-
-</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Rally Do List</title>
@@ -1478,7 +1219,7 @@ async function flushSave(){
       method:'POST',
       headers:{
         'apikey':SUPA_KEY,
-        'Authorization':`Bearer ${window.RallyAuth.token()}`,
+        'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,
         'Content-Type':'application/json',
         'Prefer':'resolution=merge-duplicates,return=minimal'
       },
@@ -1504,7 +1245,7 @@ function restoreDates(d){
 async function loadTeam(){
   try{
     const res=await fetch(`${SUPA_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}
     });
     const rows=await res.json();
     console.log('rally_team rows:', rows);
@@ -1539,7 +1280,7 @@ async function loadData(){
   try{
     // Load tasks/points from rally_state
     const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{
-      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}
+      headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}
     });
     const rows=await res.json();
     if(rows&&rows[0]&&rows[0].data){
@@ -1565,7 +1306,7 @@ async function loadData(){
 setInterval(async()=>{
   if(isSaving||saveTimer)return;
   try{
-    const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+    const res=await fetch(`${SUPA_URL}/rest/v1/rally_state?id=eq.app&select=data`,{headers:{'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     const rows=await res.json();
     if(rows&&rows[0]){
       const d=restoreDates(rows[0].data);
@@ -1994,7 +1735,7 @@ async function renderScorecard() {
 
   try {
     const res = await fetch(`${SUPA}/rest/v1/rally_manager_scores?select=*&order=shift_date.desc&limit=60`,
-      {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     const rows = await res.json();
 
     if(!Array.isArray(rows) || !rows.length) {
@@ -2114,7 +1855,7 @@ async function renderClPhotosReview() {
 
   try {
     const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_opening&signed_off_at=not.is.null&select=date,manager_name,photo_urls,signed_off_at&order=date.desc&limit=60`,
-      { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}` } });
+      { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}` } });
     const rows = (await res.json()).filter(r => Array.isArray(r.photo_urls) && r.photo_urls.length);
 
     if(!rows.length) {
@@ -2146,7 +1887,7 @@ async function renderClPhotosReview() {
 // migration 0007's header. Each entry is only editable/deletable by the
 // manager who wrote it (matched by name), so the log stays an honest
 // record even though the DB-level check can't tell managers apart.
-const AL_HDRS = () => ({ 'apikey': window.RALLY_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' });
+const AL_HDRS = () => ({ 'apikey': window.RALLY_SUPABASE_ANON_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' });
 let _adminLogEditId = null;
 // Monday (local, 00:00) of the currently-viewed week — null until first
 // render, which defaults to the current week. Local helpers (alXxx), not
@@ -2627,7 +2368,7 @@ const SR_SUPA = window.RALLY_SUPABASE_URL;
 const SR_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 const SR_HDRS = (extra={}) => ({
   'apikey': SR_KEY,
-  'Authorization': `Bearer ${window.RallyAuth.token()}`,
+  'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,
   'Content-Type': 'application/json',
   'Prefer': 'return=minimal',
   ...extra
@@ -2650,7 +2391,7 @@ async function srLoadCompData() {
     const yest = new Date(d); yest.setDate(d.getDate()-1);
     const lw   = new Date(d); lw.setDate(d.getDate()-7);
     const fmt  = dt => dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
-    const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`};
+    const hdrs = {'apikey':SR_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`};
     const [r1,r2] = await Promise.all([
       fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(yest)}&order=id.desc&limit=1`,{headers:hdrs}),
       fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${fmt(lw)}&order=id.desc&limit=1`,{headers:hdrs})
@@ -2747,12 +2488,12 @@ async function srSave(lockAM = false) {
   const managerName = u ? u.name : (srData.am_locked_by || 'Manager');
   srData._manager = managerName; // store inside data jsonb
   const payload = { date: reportDate, data: srData };
-  const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${window.RallyAuth.token()}`, 'Content-Type':'application/json' };
+  const baseHdrs = { 'apikey':SR_KEY, 'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type':'application/json' };
   try {
     // If we don't have an ID, check if a record for this report's date already exists (another manager may have created it)
     if(!srRecordId) {
       const chk = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${reportDate}&select=id&order=id.desc&limit=1`,
-        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+        {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
       const existing = await chk.json();
       if(Array.isArray(existing) && existing[0]) srRecordId = existing[0].id;
     }
@@ -3149,7 +2890,7 @@ async function renderShiftReportForm() {
   try {
     // First try to find today's report
     const res = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${today}&order=id.desc&limit=1`,
-      {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const rows = await res.json();
     console.log('SR load:', rows);
@@ -3174,7 +2915,7 @@ async function renderShiftReportForm() {
       let yRows = [];
       try {
         const yRes = await fetch(`${SR_SUPA}/rest/v1/rally_shift_reports?date=eq.${yStr}&order=id.desc&limit=1`,
-          {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+          {headers:{'apikey':SR_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
         if(yRes.ok) yRows = await yRes.json();
       } catch(e) { console.warn('SR yesterday check failed', e); }
 
@@ -3243,7 +2984,7 @@ let srTeamByPos = {}; // { Host: [{id,name},...], Bartender: [...], ... }
 async function loadSrTeam() {
   try {
     const res = await fetch(`${window.RALLY_SUPABASE_URL}/rest/v1/rally_team?active=eq.true&select=id,name,positions,pin_role`,
-      {headers:{'apikey':window.RALLY_SUPABASE_ANON_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+      {headers:{'apikey':window.RALLY_SUPABASE_ANON_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
     const rows = await res.json();
     console.log('SR team loaded:', rows);
     srTeamByPos = {};
@@ -3860,7 +3601,7 @@ async function srLoadTrailingAvg() {
     const today  = getTodayStr();
     const res = await fetch(
       SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+cutoffStr+'&date=lt.'+today+'&select=date,data&order=date.desc',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} }
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RALLY_SUPABASE_ANON_KEY} }
     );
     const rows = await res.json();
 
@@ -3923,7 +3664,7 @@ async function srPickerDateChanged(date) {
   try {
     const res = await fetch(
       SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&limit=1',
-      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} }
+      { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RALLY_SUPABASE_ANON_KEY} }
     );
     const rows = await res.json();
     if(Array.isArray(rows) && rows[0]) {
@@ -3963,7 +3704,7 @@ async function srLoadReportForDate(date, recordId) {
     const url = recordId
       ? SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+recordId+'&select=id,date,data&limit=1'
       : SR_SUPA+'/rest/v1/rally_shift_reports?date=eq.'+date+'&select=id,date,data&order=id.desc&limit=1';
-    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RallyAuth.token()} });
+    const res = await fetch(url, { headers:{'apikey':SR_KEY,'Authorization':'Bearer '+window.RALLY_SUPABASE_ANON_KEY} });
     const rows = await res.json();
     if(!Array.isArray(rows)||!rows[0]) {
       panel.innerHTML =
@@ -4776,7 +4517,7 @@ let trnViewerCtx = null;
 let trnTestState = null;
 let trnViewDayNum = null;
 
-function trnHdrs(){ return {'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`,'Content-Type':'application/json'}; }
+function trnHdrs(){ return {'apikey':SUPA_KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,'Content-Type':'application/json'}; }
 
 async function trnLog(traineeId, actorRole, actorName, action, detail){
   try{
@@ -5974,7 +5715,7 @@ async function loadClProgressCache() {
     const name = u ? u.name : (currentRole === 'manager' ? 'Manager' : null);
     const SUPA = window.RALLY_SUPABASE_URL;
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-    const hdrs = {'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`};
+    const hdrs = {'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`};
     let todayUrl = `${SUPA}/rest/v1/rally_checklist?date=eq.${getTodayStr()}&select=shift,items,signed_off_at&order=created_at.desc`;
     if(name) todayUrl += `&manager_name=eq.${encodeURIComponent(name)}`;
     const weekStart = alDateToYMD(alMondayOf(new Date()));
@@ -6031,7 +5772,7 @@ async function startChecklist(key) {
     let url = `${SUPA}/rest/v1/rally_checklist?shift=eq.${key}&date=eq.${clRecordDate(key)}&order=id.desc&limit=1`;
     if(name && !clIsWeekly(key)) url += `&manager_name=eq.${encodeURIComponent(name)}`;
 
-    const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}` } });
+    const res = await fetch(url, { headers: { 'apikey': KEY, 'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}` } });
     const rows = await res.json();
 
     if(Array.isArray(rows) && rows[0] && rows[0].items) {
@@ -6139,7 +5880,7 @@ async function uploadPendingClPhotos() {
   if(!clPendingPhotos.length) return [];
   const SUPA = window.RALLY_SUPABASE_URL;
   const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-  const token = (window.RallyAuth && window.RallyAuth.token()) || KEY;
+  const token = (window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || KEY;
   const urls = [];
   let failCount = 0;
   for(const file of clPendingPhotos) {
@@ -6360,7 +6101,7 @@ async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = n
       existingLookupUrl,
       { headers: {
         'apikey': window.RALLY_SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${window.RallyAuth.token()}`
+        'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`
       }}
     );
     const rows = await existing.json();
@@ -6368,7 +6109,7 @@ async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = n
 
     const SUPA = `${window.RALLY_SUPABASE_URL}/rest/v1/rally_checklist`;
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-    const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`,'Content-Type':'application/json','Prefer':'return=minimal' };
+    const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal' };
 
     if(existingId) {
       // Update existing row
@@ -7048,7 +6789,7 @@ async function submitWalkthroughScore(closingManagerName, overallRating, closeNo
   if(!score) return;
   const SUPA = window.RALLY_SUPABASE_URL;
   const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`,'Content-Type':'application/json','Prefer':'return=minimal'};
+  const hdrs = {'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal'};
   const u = users.find(x => x.id === currentUser);
   const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
   const ratingMeta = CLOSE_RATING_SCALE.find(r => r.value === overallRating) || null;
@@ -7236,7 +6977,7 @@ async function signOffChecklist() {
       const SUPA = window.RALLY_SUPABASE_URL;
       const KEY  = window.RALLY_SUPABASE_ANON_KEY;
       const res = await fetch(`${SUPA}/rest/v1/rally_checklist?shift=eq.manager_closing&date=eq.${yStr}&select=manager_name,items&order=signed_off_at.desc&limit=1`,
-        {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RallyAuth.token()}`}});
+        {headers:{'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`}});
       const rows = await res.json();
       const row = Array.isArray(rows) && rows[0];
       if(row) autoCloser = (row.items && row.items.mod_name) || row.manager_name || '';
@@ -7419,7 +7160,7 @@ const CL_SUPA_KEY  = window.RALLY_SUPABASE_ANON_KEY;
 // Function, not a static object — Authorization must be evaluated fresh on
 // each call so it always carries the current signed-in session's token,
 // not whatever RallyAuth.token() returned once at page-load time.
-function CL_HDRS() { return { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${window.RallyAuth.token()}`, 'Content-Type': 'application/json' }; }
+function CL_HDRS() { return { 'apikey': CL_SUPA_KEY, 'Authorization': `Bearer ${window.RALLY_SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }; }
 
 // Label map for display
 const CL_LABELS = {
@@ -7624,7 +7365,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const CAL_SUPA = window.RALLY_SUPABASE_URL;
 const CAL_KEY  = window.RALLY_SUPABASE_ANON_KEY;
-function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
+function CAL_HDRS() { return { 'apikey': CAL_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || CAL_KEY}`, 'Content-Type': 'application/json' }; }
 
 // label = full name (shown in the Add/Edit Type dropdown); tag = short form
 // shown on the pill itself, e.g. "Pickleball Event" -> "Pickle". textColor
@@ -8126,7 +7867,7 @@ async function uploadPendingCalDoc() {
   if(!_calPendingDocFile) return null;
   const SUPA = window.RALLY_SUPABASE_URL;
   const KEY  = window.RALLY_SUPABASE_ANON_KEY;
-  const token = (window.RallyAuth && window.RallyAuth.token()) || KEY;
+  const token = (window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || KEY;
   const file = _calPendingDocFile;
   const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
   const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
@@ -8322,7 +8063,7 @@ function viewBirthday(id, ev) {
 // ── INVENTORY (Ops → Inventory → Bar) ────────────────────────────────────
 const INV_SUPA = window.RALLY_SUPABASE_URL;
 const INV_KEY  = window.RALLY_SUPABASE_ANON_KEY;
-function INV_HDRS() { return { 'apikey': INV_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RallyAuth.token()) || INV_KEY}`, 'Content-Type': 'application/json' }; }
+function INV_HDRS() { return { 'apikey': INV_KEY, 'Authorization': `Bearer ${(window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || INV_KEY}`, 'Content-Type': 'application/json' }; }
 
 let invItems = [];        // rally_inventory_items — active AND archived, filtered client-side
 let invCounts = [];       // rally_inventory_counts — every item's full weekly history
