@@ -49,6 +49,14 @@ img,svg{max-width:100%}
 .card.open .back{display:block}
 .card .back p{margin:10px 0 0;font-size:16px}
 .card .tap{display:block;margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55}
+.ownership{background:var(--mint-bg);border-radius:6px;padding:18px 20px;font-size:15.5px;line-height:1.5}
+.reminders{border:2.5px solid var(--rule);border-top:0;padding:30px 28px}
+.reminders h2{font-family:var(--serif);font-weight:500;font-size:28px;margin:0}
+.reminders .sub{margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.reminder-list{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+@media(max-width:700px){.reminder-list{grid-template-columns:1fr}}
+.reminder-list li{padding-left:16px;border-left:2px solid var(--rule);font-size:14.5px;line-height:1.45}
+.reminder-list b{display:block;font-size:15.5px;margin-bottom:2px}
 footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;color:var(--ink-soft)}
 @media print{
   .card .front{display:none}
@@ -62,37 +70,50 @@ footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;
   <div class="corner" aria-hidden="true"><span>MANAGERS</span><span>RALLY</span></div>
   <header class="hero frame">
     <h1>Non-<em>Negotiables</em></h1>
-    <p>Training guide for Rally Managers. These apply on every shift, whatever is happening in the building. Tap each one.</p>
+    <p>Training guide for Rally Managers. These eight apply on every shift, whatever is happening in the building. Tap each one.</p>
+    <div class="ownership">You own everything that happens on your shift — not just what you do yourself, but what your team does too. If an associate misses a step, that's on you. If the team isn't selling, that's on you. Know every position's steps of service and side work well enough to catch what's slipping before a guest ever notices.</div>
   </header>
   <div class="cards">
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">1</div><h2>Talk to every group.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">1</div><h2>Talk to every group.</h2><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">1</div><h2>Talk to every guest, group and court.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">1</div><h2>Talk to every guest, group and court.</h2><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">2</div><h2>Make sure Captains are roaming, never chatting at the service well.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">2</div><h2>Make sure Captains are roaming, never chatting at the service well.</h2><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">2</div><h2>Do lineups every shift.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">2</div><h2>Do lineups every shift.</h2><p>Every associate gets a one-on-one lineup before they hit the floor — no exceptions, no skipping it when it's slow.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">3</div><h2>Every "hands" call gets acknowledged.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">3</div><h2>Every "hands" call gets acknowledged.</h2><p>If it doesn't, jump on the radio and ask who has hands. Support if you're able. Running food is also your responsibility.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">3</div><h2>Fill out checklists and the shift review every shift.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">3</div><h2>Fill out checklists and the shift review every shift.</h2><p>If it's not documented, it didn't happen.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
       <div class="front"><div class="num">4</div><h2>No admin work during a busy shift.</h2><span class="tap">Tap to reveal</span></div>
       <div class="back"><div class="num">4</div><h2>No admin work during a busy shift.</h2><p>Plan accordingly, and use laptops sparingly during an active floor shift.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">5</div><h2>Actively engage with and manage current tickets and wait times.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">5</div><h2>Actively engage with and manage current tickets and wait times.</h2><p>At all times.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">5</div><h2>Know food ticket times.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">5</div><h2>Know food ticket times.</h2><p>Actively engage with and manage current tickets and wait times, at all times.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">6</div><h2>Know every position's steps of service.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">6</div><h2>Know every position's steps of service.</h2><p>If steps are missed, it's your responsibility.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">6</div><h2>Every guest complaint gets touched by a manager — always.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">6</div><h2>Every guest complaint gets touched by a manager — always.</h2><p>Never left for an associate to handle. Step in, listen, resolve it, and make sure the guest leaves taken care of.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">7</div><h2>Make sure every associate knows today's food and drink specials.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">7</div><h2>Make sure every associate knows today's food and drink specials.</h2><p>Specials change. Cover them at lineup every shift, so no one's guessing with a guest in front of them.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">7</div><h2>Make sure the team knows every announcement.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">7</div><h2>Make sure the team knows every announcement.</h2><p>New food items, 86'd items, anything that changed — cover it at lineup every shift, so no one's guessing with a guest in front of them.</p><span class="tap">Tap to flip back</span></div>
     </div>
+    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+      <div class="front"><div class="num">8</div><h2>Know every position's steps of service and side work.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">8</div><h2>Know every position's steps of service and side work.</h2><p>If steps are missed, it's your responsibility.</p><span class="tap">Tap to flip back</span></div>
+    </div>
+  </div>
+  <div class="reminders frame">
+    <h2>Reminders</h2>
+    <p class="sub">Still part of the job, just not the headline eight.</p>
+    <ul class="reminder-list">
+      <li><b>Every "hands" call gets acknowledged.</b>If it doesn't, jump on the radio and ask who has hands. Support if you're able — running food is also your responsibility.</li>
+      <li><b>Make sure Captains are roaming, never chatting at the service well.</b></li>
+    </ul>
   </div>
   <footer>for an active social life</footer>
 </div>

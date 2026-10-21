@@ -61,6 +61,13 @@ img,svg{max-width:100%}
 .card .dont b,.card .do b{display:block;font-size:12px;margin-bottom:3px}
 .card .dont q{text-decoration:line-through;text-decoration-thickness:2px}
 .card .tap{display:block;margin-top:12px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;opacity:.55}
+.reminders{border:2.5px solid var(--rule);border-top:0;padding:30px 28px}
+.reminders h2{font-family:var(--serif);font-weight:500;font-size:28px;margin:0}
+.reminders .sub{margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.reminder-list{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+@media(max-width:700px){.reminder-list{grid-template-columns:1fr}}
+.reminder-list li{padding-left:16px;border-left:2px solid var(--rule);font-size:14.5px;line-height:1.45}
+.reminder-list b{display:block;font-size:15.5px;margin-bottom:2px}
 footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;color:var(--ink-soft)}
 @media print{
   .card .front{display:none}
@@ -76,57 +83,47 @@ footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;
   <div class="corner" aria-hidden="true"><span>CAPTAINS</span><span>RALLY</span></div>
   <header class="hero frame">
     <h1>Non-<em>Negotiables</em></h1>
-    <p>Training guide for Rally Captains. These apply at all times, in every type of service. Tap each one.</p>
+    <p>Training guide for Rally Captains. These six apply at all times, in every type of service. Tap each one. Reminders below are still part of the job — just not the headline six.</p>
   </header>
   <div class="cards">
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">1</div><h2>Keep the lounges and tables tidy.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">1</div><h2>Keep the lounges and tables tidy.</h2><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">1</div><h2>No more than 2 people at the service well.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">1</div><h2>No more than 2 people at the service well.</h2><p>If you're waiting on a drink, do a lap.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">2</div><h2>Cell phones are never used in guest-facing areas.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">2</div><h2>Cell phones are never used in guest-facing areas.</h2><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">2</div><h2>Walk the guest through the menu.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">2</div><h2>Walk the guest through the menu.</h2><p>Don't just drop menus and walk away. Walk them through what's available so they know their options before they decide.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">3</div><h2>Respond to hands when called, and to the Host's court radio time-calls.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">3</div><h2>Respond to hands when called, and to the Host's court radio time-calls.</h2><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">3</div><h2>Know the specials.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">3</div><h2>Know the specials.</h2><p>Specials change. Confirm them before your shift — don't rely on yesterday's list.</p><div class="example"><p>"We've got a blackened shrimp taco as our food special tonight, and a mezcal paloma on drink specials — want to try either one?"</p></div><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">4</div><h2>Every court-reservation tab needs a card on file.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">4</div><h2>Every court-reservation tab needs a card on file.</h2><p>Must be closed out 5 minutes before the reservation ends.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">4</div><h2>Offer a recommendation.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">4</div><h2>Offer a recommendation.</h2><p>A genuine recommendation builds trust and makes guests feel cared for.</p><div class="example"><p>"Honestly, I've been loving the Dip It Board lately — it's perfect to share between games. Want me to put one in?"</p></div><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">5</div><h2>Never ask "Are you good?"</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">5</div><h2>Never ask "Are you good?"</h2><p>Always offer something specific.</p><div class="dodont"><div class="dont"><b>Don't say</b><q>Are you good?</q></div><div class="do"><b>Say something like</b>"Can I get you a beer, a smoothie, or something else to drink?"</div></div><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">5</div><h2>Onboard every court on RallyTrack.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">5</div><h2>Onboard every court on RallyTrack.</h2><p>Before they start playing, show them the screen and how scoring updates — don't let them find out mid-game.</p><div class="example"><p>"Let me show you RallyTrack real quick — it keeps score automatically, so you don't have to."</p></div><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">6</div><h2>Ask every person in the group individually.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">6</div><h2>Ask every person in the group individually.</h2><p>Don't assume based on one person's answer. Move to the next guest.</p><div class="example"><p>"How about you, sir? Can I bring you a beer?"</p></div><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">6</div><h2>No phones on the floor.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">6</div><h2>No phones on the floor.</h2><p>Never in guest-facing areas, no exceptions.</p><span class="tap">Tap to flip back</span></div>
     </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">7</div><h2>Bringing more than two drinks? A tray is mandatory.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">7</div><h2>Bringing more than two drinks? A tray is mandatory.</h2><span class="tap">Tap to flip back</span></div>
-    </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">8</div><h2>Make sure courts and tables have napkins and utensils.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">8</div><h2>Make sure courts and tables have napkins and utensils.</h2><span class="tap">Tap to flip back</span></div>
-    </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">9</div><h2>No more than 2 people at the service well.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">9</div><h2>No more than 2 people at the service well.</h2><p>If you're waiting on a drink, do a lap.</p><span class="tap">Tap to flip back</span></div>
-    </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">10</div><h2>Acknowledge every guest.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">10</div><h2>Acknowledge every guest.</h2><p>Make eye contact and smile at guests as you pass them.</p><span class="tap">Tap to flip back</span></div>
-    </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">11</div><h2>Walk every guest through the menu, and suggest something you're loving.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">11</div><h2>Walk every guest through the menu, and suggest something you're loving.</h2><p>A genuine recommendation builds trust and makes guests feel cared for.</p><div class="example"><p>"Honestly, I've been loving the Dip It Board lately — it's perfect to share between games. Want me to put one in?"</p></div><span class="tap">Tap to flip back</span></div>
-    </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">12</div><h2>Know today's food and drink specials, and mention them to every guest.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">12</div><h2>Know today's food and drink specials, and mention them to every guest.</h2><p>Specials change. Confirm them before your shift — don't rely on yesterday's list.</p><div class="example"><p>"We've got a blackened shrimp taco as our food special tonight, and a mezcal paloma on drink specials — want to try either one?"</p></div><span class="tap">Tap to flip back</span></div>
-    </div>
+  </div>
+  <div class="reminders frame">
+    <h2>Reminders</h2>
+    <p class="sub">Still part of the job, just not the headline six.</p>
+    <ul class="reminder-list">
+      <li><b>Acknowledge every guest.</b>Make eye contact and smile as you pass them.</li>
+      <li><b>Ask every person in the group individually.</b>Don't assume based on one person's answer.</li>
+      <li><b>Bringing more than two drinks? A tray is mandatory.</b></li>
+      <li><b>Every court-reservation tab needs a card on file.</b>Closed out 5 minutes before the reservation ends.</li>
+      <li><b>Keep the lounges and tables tidy.</b></li>
+      <li><b>Make sure courts and tables have napkins and utensils.</b></li>
+      <li><b>Never ask "Are you good?"</b>Offer something specific instead — "Can I get you a beer, a smoothie, or something else to drink?"</li>
+      <li><b>Respond to hands when called, and to the Host's court radio time-calls.</b></li>
+    </ul>
   </div>
   <footer>for an active social life</footer>
 </div>

@@ -52,6 +52,13 @@ img,svg{max-width:100%}
 .card .example::before{content:"Example · adapt it naturally";display:block;font:600 12px/1 var(--sans);font-style:normal;letter-spacing:.02em;opacity:.7;margin-bottom:6px}
 .card .example p{margin:0}
 .card .tap{display:block;margin-top:14px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55}
+.reminders{border:2.5px solid var(--rule);border-top:0;padding:30px 28px}
+.reminders h2{font-family:var(--serif);font-weight:500;font-size:28px;margin:0}
+.reminders .sub{margin:4px 0 0;color:var(--ink-soft);font-size:14px}
+.reminder-list{list-style:none;margin:20px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+@media(max-width:700px){.reminder-list{grid-template-columns:1fr}}
+.reminder-list li{padding-left:16px;border-left:2px solid var(--rule);font-size:14.5px;line-height:1.45}
+.reminder-list b{display:block;font-size:15.5px;margin-bottom:2px}
 footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;color:var(--ink-soft)}
 @media print{
   .card .front{display:none}
@@ -65,29 +72,37 @@ footer{margin-top:40px;text-align:center;font-family:var(--hand);font-size:20px;
   <div class="corner" aria-hidden="true"><span>HOSTS</span><span>RALLY</span></div>
   <header class="hero frame">
     <h1>Non-<em>Negotiables</em></h1>
-    <p>Training guide for Rally Hosts and Managers. These apply every shift, no exceptions. Tap each one.</p>
+    <p>Training guide for Rally Hosts and Managers. These four apply every shift, no exceptions. Tap each one. Reminders below are still part of the job — just not the headline four.</p>
   </header>
   <div class="cards">
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">1</div><h2>Share key information.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">1</div><h2>Share key information.</h2><p>Cafe, full restaurant, bar and restrooms — guests should never have to ask where something is.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">1</div><h2>Acknowledge and greet every guest within 2 seconds.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">1</div><h2>Acknowledge and greet every guest within 2 seconds.</h2><p>Eye contact, a smile and a greeting the moment they walk in — even if you're mid-task.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">2</div><h2>Seat guests with menus and water, or escort them to their court.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">2</div><h2>Seat guests with menus and water, or escort them to their court.</h2><p>Every single person, every time.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">2</div><h2>Bring the energy and warmth.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">2</div><h2>Bring the energy and warmth.</h2><p>You set the tone for every guest's visit before they even reach their court or table.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">3</div><h2>Be a cruise director.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">3</div><h2>Be a cruise director.</h2><p>Acknowledge every person who walks through the door.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">3</div><h2>Know our products and guide the guest.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">3</div><h2>Know our products and guide the guest.</h2><p>Especially first-timers and rookie players. Never just check someone in — tell them exactly what they need to know, where to go, and what's included. Make them feel confident, not lost.</p><span class="tap">Tap to flip back</span></div>
     </div>
     <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">4</div><h2>Know our products, especially our beginner programs.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">4</div><h2>Know our products, especially our beginner programs.</h2><p>Never just check someone in. Always tell them exactly what they need to know, where to go, and what's included in their drink ticket (when relevant). Make them feel super welcome.</p><span class="tap">Tap to flip back</span></div>
+      <div class="front"><div class="num">4</div><h2>Give the lay of the land.</h2><span class="tap">Tap to reveal</span></div>
+      <div class="back"><div class="num">4</div><h2>Give the lay of the land.</h2><p>Show them the restrooms, cafe and bar as part of the welcome — don't make them wander or ask.</p><span class="tap">Tap to flip back</span></div>
     </div>
-    <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
-      <div class="front"><div class="num">5</div><h2>Know today's food and drink specials, and mention them to every guest.</h2><span class="tap">Tap to reveal</span></div>
-      <div class="back"><div class="num">5</div><h2>Know today's food and drink specials, and mention them to every guest.</h2><p>Specials change. Check with a manager or the lineup before your shift, and mention them at check-in — don't wait for guests to ask.</p><span class="tap">Tap to flip back</span></div>
-    </div>
+  </div>
+  <div class="reminders frame">
+    <h2>Reminders</h2>
+    <p class="sub">Still part of the job, just not the headline four.</p>
+    <ul class="reminder-list">
+      <li><b>No phones in public areas.</b></li>
+      <li><b>Don't leave the host desk without letting a manager know.</b></li>
+      <li><b>Keep the host desk tidy and free from clutter.</b></li>
+      <li><b>Answer the phone within two rings.</b></li>
+      <li><b>Call back all missed calls.</b></li>
+      <li><b>Know today's food and drink specials.</b>Mention them to guests — check with a manager or the lineup before your shift.</li>
+    </ul>
   </div>
   <footer>for an active social life</footer>
 </div>
