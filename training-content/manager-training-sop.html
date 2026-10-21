@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · New Hire Training SOP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,7vw,60px);line-height:.98}
+h2{font-size:clamp(26px,4.5vw,34px);line-height:1}
+h3{font-size:19px;font-weight:600;font-family:"Hanken Grotesk",sans-serif;line-height:1.2;margin-bottom:4px}
+h1 em,h2 em{font-style:italic}
+p{margin:0}
+a{color:var(--navy);font-weight:600;text-decoration-thickness:1.5px;text-underline-offset:3px}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:26px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head p{margin-top:6px;max-width:600px;color:var(--navy);opacity:.75}
+.hero{display:flex;flex-direction:column;gap:10px;padding:30px 28px}
+.hero p{margin-top:12px;font-size:16px;max-width:64ch}
+.standard{background:var(--sage);border-radius:4px;padding:14px 18px;font-size:14.5px;margin-top:16px}
+.standard b{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;opacity:.7}
+.checklist{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.checklist li{display:flex;gap:9px;align-items:flex-start;font-size:15px}
+.checklist li::before{content:"";flex:none;width:16px;height:16px;margin-top:3px;border:2px solid var(--navy);border-radius:4px}
+.duties{list-style:none;margin:16px 0 0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:40px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:24px;line-height:1;color:var(--orange)}
+.duties b{display:block;font-weight:600}
+.duties p.d{font-size:14px;opacity:.75;margin-top:3px}
+.timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}
+.tl-day{border:1.5px solid var(--navy);border-radius:6px;padding:10px 8px;background:var(--paper)}
+.tl-day .n{font-family:"Instrument Serif",serif;font-style:italic;font-size:24px;color:var(--orange);line-height:1}
+.tl-day .t{font-weight:700;font-size:12px;margin-top:3px}
+.tl-day .s{font-size:10.5px;opacity:.7;margin-top:2px;line-height:1.3}
+.tl-day.final{background:var(--sage)}
+@media(max-width:700px){.timeline{grid-template-columns:repeat(2,1fr)}}
+.tw{overflow-x:auto;margin-top:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:8px 10px;border:1px solid var(--navy);background:var(--sage);text-align:left;line-height:1.2}
+.tbl td{border:1px solid var(--navy);padding:9px 10px;background:var(--paper);vertical-align:top}
+.tbl td b{font-weight:600}
+.note{margin-top:16px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:12px 16px;font-size:14.5px}
+.note b{font-weight:600}
+.status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px 22px;margin-top:16px}
+.status-grid div{border-left:3px solid var(--orange);padding-left:11px}
+.status-grid b{display:block;font-size:14px}
+.status-grid span{font-size:13px;opacity:.75}
+@media(max-width:700px){.status-grid{grid-template-columns:1fr}}
+.qa{display:grid;gap:12px;margin-top:16px}
+.qa div{border-top:1.5px solid var(--line);padding-top:10px}
+.qa div:first-child{border-top:0;padding-top:0}
+.qa b{display:block;font-size:14px;margin-bottom:2px}
+.qa p{font-size:13.5px;opacity:.75}
+.byline{font-size:13px;opacity:.6}
+@media print{.sec{break-inside:avoid-page}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Reference</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <h1>New Hire<br><em>Training</em> SOP</h1>
+      <div class="byline">Oct 14, 2026 · rewritten Oct 21, 2026 to match the current Training tab</div>
+      <p>Every new hourly associate finishes training in 5 days, and every manager can see where each one stands in the <b>Training</b> tab. This is for GMs and managers who get a new hire ready, schedule it, and sign it off.</p>
+      <div class="standard"><b>What "done" means</b>All 5 days signed off, the position test passed (12 of 15 or better), the bingo card turned in, the position checklist signed, and a manager check-in completed. Signing off Day 5 marks the last three automatically.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Before you schedule <em>training</em></h2><p>Day 1 can't happen until all three of these are done.</p></div>
+      <ul class="checklist">
+        <li>Added to <b>Toast</b></li>
+        <li>Added to <b>HotSchedules</b></li>
+        <li><b>I-9</b> documentation completed and verified in iSolve</li>
+      </ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Scheduling the <em>training week</em></h2></div>
+      <ol class="duties">
+        <li><div><b>Pick 5 shifts in HotSchedules</b><p class="d">Matched to real shifts for the new hire's own position — they don't need to be consecutive days.</p></div></li>
+        <li><div><b>Schedule each shift as FOH Training</b></div></li>
+        <li><div><b>Write the training day in the shift notes</b><p class="d">"Day 1 training" on the first shift, through "Day 5 training" on the last — so anyone glancing at the schedule knows exactly where that associate is.</p></div></li>
+        <li><div><b>Cover the cross-shadow positions</b><p class="d">Make sure someone in each of the other positions is also working Days 2–4, so the hour of cross-shadowing has someone to shadow.</p></div></li>
+        <li><div><b>Name a trainer for each day in the shift notes</b><p class="d">Their own-position trainer, and whoever's covering the cross-shadow position that hour.</p></div></li>
+        <li><div><b>Try to land an event during the week</b><p class="d">So the bingo card's event squares can be done.</p></div></li>
+      </ol>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>The <em>5-day plan</em></h2><p>Every hourly position works their own position first, every day — that's the main part of every shift. Cross-training happens as a single 1-hour add-on, one different position each day.</p></div>
+      <div class="timeline">
+        <div class="tl-day"><div class="n">1</div><div class="t">Own position</div><div class="s">Full day + venue tour + bingo card</div></div>
+        <div class="tl-day"><div class="n">2</div><div class="t">Own + shadow</div><div class="s">1 hr cross-shadowing another position</div></div>
+        <div class="tl-day"><div class="n">3</div><div class="t">Own + shadow</div><div class="s">1 hr cross-shadowing another position</div></div>
+        <div class="tl-day"><div class="n">4</div><div class="t">Own + shadow</div><div class="s">Last hour of cross-shadowing</div></div>
+        <div class="tl-day final"><div class="n">5</div><div class="t">Test day</div><div class="s">Position test, menu test, sign-off</div></div>
+      </div>
+      <div class="tw">
+        <table class="tbl">
+          <thead><tr><th>Day</th><th>Host, Bartender, Swarmer, Captain</th><th>Barista</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Online learning + own position, full day (plus venue tour and the bingo card)</td><td>Online learning + own positional training in the cafe</td></tr>
+            <tr><td>2</td><td>Own position (most of shift) + 1 hr cross-shadowing another position</td><td>Cafe training + 1 hr shadowing the bar</td></tr>
+            <tr><td>3</td><td>Own position (most of shift) + 1 hr cross-shadowing another position</td><td>Cafe training + 1 hr shadowing a captain</td></tr>
+            <tr><td>4</td><td>Own position (most of shift) + 1 hr cross-shadowing the last position</td><td>Position test + run the cafe with the trainer</td></tr>
+            <tr><td>5</td><td>Position test + full shift in own position + bingo, checklist and check-in</td><td>Full cafe shift + bingo, checklist and check-in</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px;font-size:14.5px;opacity:.8">Online reading follows the same own-position-first rule: no one reads another position's Steps of Service, only their own — non-negotiables on Day 1, steps of service later in the week. Every position takes the Rally Menu Test on test day.</p>
+      <div class="note"><b>Team Lead plan.</b> Floor schedule is unchanged — Day 1 shadow the host desk · Day 2 shadow the barista (AM) and a bartender (PM) · Day 3 shadow a swarmer and a captain · Day 4 shadow a Team Lead or MOD for a full shift · Day 5 Team Lead test, lead a shift with a manager beside them, checklist sign-off and check-in. What's different is the online reading: Team Leads now start with a new chapter, <i>Owning the Shift</i> — what the job actually is, beyond the checklists — then read all 12 manager chapters plus the Manager Non-Negotiables and Steps of Service across Days 1–3, before moving on to every other position's material on Days 4–5.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Day 1: <em>get them started</em></h2></div>
+      <ol class="duties">
+        <li><div><b>Sit down with the associate</b><p class="d">Before or at the start of their shift. Walk them through how the 5 days work — online reading plus floor time every day, a daily sign-off, a test and the bingo card on Day 5, and what "done" means.</p></div></li>
+        <li><div><b>Add them as a trainee</b><p class="d">Training tile → Training PIN → <b>+ Add Trainee</b> → name + position → <b>Create</b>. No manager PIN needed for this step.</p></div></li>
+        <li><div><b>Have them tap their own name</b><p class="d">It opens a welcome screen recapping the 5 days, then drops them into Day 1's reading and floor tasks.</p></div></li>
+        <li><div><b>Hand them the training checklist</b><p class="d">The bingo card is digital now and lives on their own Day 1 — nothing to hand over, though you can still print one from Resources for a physical copy on the floor.</p></div></li>
+        <li><div><b>Sign off Day 1 at the end of the shift</b><p class="d">Same process as every day — see below.</p></div></li>
+      </ol>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Signing off <em>every day</em></h2><p>A manager has to sign off at the end of every training shift — don't let days stack up unsigned.</p></div>
+      <div class="tw">
+        <table class="tbl">
+          <thead><tr><th>Step</th><th>Who</th><th>When</th><th>How</th></tr></thead>
+          <tbody>
+            <tr><td>Days 1–4</td><td>Trainer, with a manager PIN</td><td>End of each shift</td><td>Associate shows the "before you leave" item, trainer taps <b>Day N Signed Off</b>, enters the manager PIN and their name.</td></tr>
+            <tr><td>Position test</td><td>Associate</td><td>Test day (Day 5; baristas Day 4)</td><td>Taps <b>Take the Position Test</b>. 15 questions, 12 to pass, auto-scored. Every attempt saved; best score counts.</td></tr>
+            <tr><td>Rally Menu Test</td><td>Associate</td><td>Test day</td><td>36 scenario questions, free-text answers — go through them together on Day 5.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:12px;font-size:14px;opacity:.75">If a trainee needs to review something from an earlier day, the day pager at the top of their screen jumps back to any day already reached — nothing is locked once it's been read.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Day 5: <em>the test and sign-off</em></h2><p>Day 5 is different: it's the last shift, and signing it off closes out training completely.</p></div>
+      <ol class="duties">
+        <li><div><b>Associate takes both tests</b><p class="d">The position test and the Rally Menu Test, on the tablet.</p></div></li>
+        <li><div><b>Associate comes to you with their results</b><p class="d">Position test score, Rally Menu Test answers, and their completed bingo card — open it on the tablet, it's theirs, tracked automatically as they tap squares through the week.</p></div></li>
+        <li><div><b>Go over any missed test questions together</b></div></li>
+        <li><div><b>Tap "Training Completed"</b><p class="d">Enter the manager PIN and your name. This one action signs off Day 5 and marks the bingo card, training checklist, and manager check-in all done — no need to find and check three more boxes.</p></div></li>
+        <li><div><b>They're done</b><p class="d">Congratulations screen for them, drops off the kiosk trainee picker, shows as Complete on your dashboard.</p></div></li>
+      </ol>
+      <div class="note"><b>Under 12 on the test.</b> Review the missed questions together (shown right on the results screen), then retake from the same button. Every attempt is saved, and the best score counts.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Dashboard and <em>weekly review</em></h2><p>Manager → Training shows everyone currently training: days done, test score, bingo, checklist, check-in and a status.</p></div>
+      <div class="status-grid">
+        <div><b>In progress</b><span>Still working through their 5 days. No automatic "behind" flag — judge pace from start date and days signed off.</span></div>
+        <div><b>Retest needed</b><span>Best score under 12. Book a review and a retake.</span></div>
+        <div><b>Complete</b><span>All five conditions met — happens automatically on Day 5 sign-off. Drops off the kiosk picker too.</span></div>
+        <div><b>Archived</b><span>The person left before finishing.</span></div>
+      </div>
+      <p style="margin-top:18px;font-weight:600;font-size:14.5px">Each week, the GM or training lead:</p>
+      <ul class="checklist">
+        <li>Opens the Training tab and checks every "Retest needed" associate, and eyeballs anyone who seems stalled</li>
+        <li>Confirms next week's new hires have all 5 shifts scheduled as FOH Training, with shift notes marking the training day</li>
+        <li>Archives anyone who left before finishing</li>
+      </ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2>Training tablet <em>&amp; resources</em></h2></div>
+      <p style="font-size:15px">Keep one tablet (or more, for multiple training spots) in kiosk mode, Rally Do List open to the role screen. Training only happens on the tablet — not on anyone's personal phone. The shared <b>Training PIN</b> gets anyone into the trainee picker; creating a trainee and reading/taking tests don't need more than that. <b>Signing off a day, and any destructive action, needs the Manager PIN</b> — that's the real security boundary.</p>
+      <p style="margin-top:12px;font-size:15px">Manager → Training → <b>🖨 Resources</b> has every print-ready page in one place: training checklists, side work sheets, the bar cleaning schedule, R&amp;D policy, and more, grouped by position. Each opens in a new tab — print or save as PDF from your browser.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><h2><em>Troubleshooting</em></h2></div>
+      <div class="qa">
+        <div><b>A day was signed off by mistake</b><p>Manager → Training, expand the trainee's card, tap <b>Undo</b> next to that day.</p></div>
+        <div><b>Added a duplicate or test trainee by accident</b><p>Expand their card and tap <b>🗑 Delete</b>, or tap the 🗑 on their kiosk card directly (asks for the Manager PIN first). Deleting is permanent.</p></div>
+        <div><b>A trainee doesn't show up on the kiosk anymore</b><p>They've likely hit Complete — check Manager → Training; they'll still be there. If archived by mistake, tap <b>📦 Archived (N)</b> at the top, find them, and tap <b>📦↩</b> to restore.</p></div>
+        <div><b>No event happened during the training week</b><p>Initial the event squares once the associate does them on a later shift, then mark the bingo card turned in at Day 5.</p></div>
+        <div><b>An associate left before finishing</b><p>Open their record and tap <b>Archive</b>.</p></div>
+        <div><b>Baristas and the bingo card</b><p>Baristas don't shadow the host or swarmer, so 2 squares can't be completed. Expected — note it and move on, it doesn't block sign-off.</p></div>
+        <div><b>Swarmers and the bingo card</b><p>Swarmers don't ring anything in on Toast, so their card automatically swaps the 4 sales/ring-in squares for squares that match their actual job. Nothing for you to do — it's built in.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
