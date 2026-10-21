@@ -2112,7 +2112,8 @@ async function renderAnnouncementAlert() {
   if(dot) dot.hidden = !isNew;
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
-  if(!active.length) { wrap.innerHTML = ''; return; }
+  if(!active.length) { wrap.innerHTML = ''; wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
   wrap.innerHTML = `<div class="ann-badge" onclick="openAnnouncementViewModal()">📣 ${active.length} New Announcement${active.length!==1?'s':''}</div>`;
 }
 
@@ -4064,7 +4065,7 @@ async function renderMgrTodayCard() {
 
   tiles.innerHTML =
     tile('📋', tasksDueToday, 'Tasks Due Today', tasksDueToday?`calShowDayTasks('${today}')`:'') +
-    tile('📣', unreadAnn, 'Announcements', "showMgrGroup('team');showMgrTab('announcements')") +
+    tile('📣', unreadAnn, 'Announcements', "openAnnouncementViewModal()") +
     tile('✅', incompleteCl, 'Checklists', "showMgrGroup('operations');showMgrTab('checklists')") +
     tile('🎂', birthdayValue, calEsc(birthdayLabel), '');
 }
