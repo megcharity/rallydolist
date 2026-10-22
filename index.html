@@ -74,6 +74,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .role-card-icon{font-size:24px;margin-bottom:10px;}
 .role-card-name{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:var(--teal);margin-bottom:3px;}
 .role-continue{width:100%;max-width:560px;padding:12px;border:none;border-radius:6px;background:var(--teal);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.06em;cursor:pointer;transition:opacity .2s;}
+.rtu-wrap{display:none;flex-direction:column;gap:10px;max-width:560px;width:100%;margin:28px auto 0;}
+.rtu-card{border:1.5px solid var(--border);border-radius:6px;padding:14px 16px;background:var(--cream);text-align:left;cursor:pointer;transition:border-color .2s;}
+.rtu-card:hover,.rtu-card:focus-visible{border-color:var(--teal-mid);outline:none;}
+.rtu-title{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;color:var(--teal);margin-bottom:4px;}
+.rtu-body{font-size:13px;color:rgba(23,72,84,.7);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rtu-more{font-size:11px;font-weight:700;color:var(--teal-mid);margin-top:8px;letter-spacing:.02em;}
 .role-continue:hover{opacity:.88;}
 .role-continue:disabled{opacity:.35;cursor:not-allowed;}
 
@@ -992,6 +998,27 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- TEAM UPDATE FORM MODAL (Manager -> Training -> Team Updates) -->
+<div id="team-update-form-modal" class="modal-ov" style="display:none;" onclick="tuCloseForm(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="tu-form-title">New Team Update</div>
+      <button class="modal-close" onclick="tuCloseForm()">×</button>
+    </div>
+    <div class="fg full"><label>Title</label><input id="tu-title-input" type="text" placeholder="e.g. New beer &amp; cocktail list"/></div>
+    <div class="fg full"><label>Details</label><textarea id="tu-body-input" rows="4" placeholder="What the team needs to know…"></textarea></div>
+    <div class="fg full"><label>Link <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="tu-link-input" type="url" placeholder="https://…"/></div>
+    <div class="fg full"><label>Attachment <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label>
+      <input id="tu-doc-file" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" onchange="tuHandleDocInput(event)" style="display:none;"/>
+      <div id="tu-doc-preview"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn primary" id="tu-save-btn" onclick="tuSave()">Post</button>
+      <button class="modal-btn secondary" onclick="tuCloseForm()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- ANNOUNCEMENT VIEW MODAL (opened from the small Calendar badge) -->
 <div id="announcement-view-modal" class="modal-ov" style="display:none;" onclick="closeAnnouncementViewModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
@@ -1002,6 +1029,20 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="ann-view-body"></div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeAnnouncementViewModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TEAM UPDATE VIEW MODAL (opened by tapping a card on the role screen) -->
+<div id="team-update-view-modal" class="modal-ov" style="display:none;" onclick="closeTeamUpdateModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title" id="tu-view-title">📣 Team Update</div>
+      <button class="modal-close" onclick="closeTeamUpdateModal()">×</button>
+    </div>
+    <div id="tu-view-body"></div>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeTeamUpdateModal()">Close</button>
     </div>
   </div>
 </div>
@@ -1025,6 +1066,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
   </div>
   <button class="role-continue" id="role-continue" style="display:none;" onclick="goToPin()">Continue →</button>
+  <div class="rtu-wrap" id="role-team-updates"></div>
 </div>
 
 <!-- PIN SCREEN -->
@@ -1175,9 +1217,15 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div id="mgr-tab-training" style="flex:1;overflow-y:auto;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
       <button id="trn-view-roster-btn" class="task-view-btn active" onclick="switchTrnMgrView('roster')">Roster</button>
+      <button id="trn-view-updates-btn" class="task-view-btn" onclick="switchTrnMgrView('updates')">📣 Team Updates</button>
       <button id="trn-view-resources-btn" class="task-view-btn" onclick="switchTrnMgrView('resources')">🖨 Resources</button>
     </div>
     <div class="mgr-body" id="trn-mgr-body"></div>
+    <div class="mgr-body" id="trn-mgr-updates-outer" style="display:none;padding:16px 16px 80px;">
+      <button class="trn-btn trn-btn-primary" style="margin-bottom:14px;" onclick="tuOpenForm()">+ New Team Update</button>
+      <div style="font-size:12px;color:rgba(23,72,84,.55);margin-bottom:14px;">Shown to everyone on the role-picker screen before they log in — new menu/beverage drops, things to know, anything the whole team should see. Separate from Announcements: no required readers, no manager confirmation.</div>
+      <div id="trn-mgr-updates-body"></div>
+    </div>
     <div class="mgr-body" id="trn-mgr-resources-body" style="display:none;"></div>
   </div>
   <div id="mgr-tab-announcements" style="flex:1;overflow-y:auto;display:none;">
@@ -2101,6 +2149,172 @@ function annAttachmentsHtml(a) {
   const linkHtml = a.link_url ? `<div style="margin-bottom:4px;"><a href="${calEsc(a.link_url)}" target="_blank" rel="noopener" style="font-size:12.5px;">🔗 ${calEsc(a.link_url)}</a></div>` : '';
   const docHtml = a.doc_url ? `<div style="margin-bottom:4px;"><a href="${a.doc_url}" target="_blank" rel="noopener" style="font-size:12.5px;">📄 ${calEsc(a.doc_name || 'Attachment')}</a></div>` : '';
   return linkHtml + docHtml;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TEAM UPDATES — a separate, lighter-weight feed for hourly associates
+// (new menu/beverage drops, "things to know," etc.), distinct from
+// manager Announcements: no required-reader roster, no confirmation
+// tracking, no manager PIN to read. Shown on the pre-login role screen
+// so anyone at the tablet sees it before picking Manager or Training —
+// there's no associate self-service login to show it behind instead.
+// Posting stays manager-only, from Manager -> Training -> Team Updates.
+// ═══════════════════════════════════════════════════════════════
+let teamUpdates = [];
+async function loadTeamUpdates() {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_team_updates?select=*&order=created_at.desc&limit=5`, { headers: AL_HDRS() });
+    teamUpdates = res.ok ? await res.json() : [];
+  } catch(e) { console.warn('Team updates load failed', e); teamUpdates = []; }
+  renderRoleTeamUpdates();
+}
+function renderRoleTeamUpdates() {
+  const box = document.getElementById('role-team-updates');
+  if(!box) return;
+  if(!teamUpdates.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'flex';
+  box.innerHTML = teamUpdates.map(u => `
+    <div class="rtu-card" tabindex="0" onclick="openTeamUpdateModal(${u.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTeamUpdateModal(${u.id})}">
+      <div class="rtu-title">📣 ${calEsc(u.title)}</div>
+      ${u.body ? `<div class="rtu-body">${calEsc(u.body)}</div>` : ''}
+      <div class="rtu-more">Tap for details →</div>
+    </div>`).join('');
+}
+function openTeamUpdateModal(id) {
+  const u = teamUpdates.find(x => x.id === id);
+  if(!u) return;
+  document.getElementById('tu-view-title').textContent = u.title;
+  document.getElementById('tu-view-body').innerHTML = `
+    ${u.body ? `<div style="white-space:pre-wrap;">${calEsc(u.body)}</div>` : ''}
+    ${u.link_url ? `<div style="margin-top:14px;"><a href="${calEsc(u.link_url)}" target="_blank" rel="noopener" class="modal-btn primary" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">🔗 Open link</a></div>` : ''}
+    ${u.doc_url ? `<div style="margin-top:10px;"><a href="${u.doc_url}" target="_blank" rel="noopener" class="modal-btn secondary" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">📄 ${calEsc(u.doc_name || 'Attachment')}</a></div>` : ''}
+  `;
+  document.getElementById('team-update-view-modal').style.display = 'flex';
+}
+function closeTeamUpdateModal(ev) { if(ev && ev.target.id !== 'team-update-view-modal') return; document.getElementById('team-update-view-modal').style.display = 'none'; }
+let _tuPendingDocFile = null, _tuExistingDoc = null, _tuDocRemoved = false, _tuFormEditId = null;
+function tuHandleDocInput(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  _tuPendingDocFile = file;
+  _tuDocRemoved = false;
+  renderTuDocPreview();
+}
+function tuRemoveDoc() {
+  _tuPendingDocFile = null;
+  _tuExistingDoc = null;
+  _tuDocRemoved = true;
+  document.getElementById('tu-doc-file').value = '';
+  renderTuDocPreview();
+}
+function renderTuDocPreview() {
+  const box = document.getElementById('tu-doc-preview');
+  if(!box) return;
+  if(_tuPendingDocFile) {
+    box.innerHTML = `<div class="cf-doc-chip"><span>📄 ${calEsc(_tuPendingDocFile.name)}</span><button type="button" class="btn-sm" onclick="tuRemoveDoc()">Remove</button></div>`;
+  } else if(_tuExistingDoc) {
+    box.innerHTML = `<div class="cf-doc-chip"><a href="${_tuExistingDoc.url}" target="_blank" rel="noopener">📄 ${calEsc(_tuExistingDoc.name)}</a><button type="button" class="btn-sm" onclick="tuRemoveDoc()">Remove</button></div>`;
+  } else {
+    box.innerHTML = `<button type="button" class="btn-sm" onclick="document.getElementById('tu-doc-file').click()">📎 Choose File</button>`;
+  }
+}
+async function uploadPendingTuDoc() {
+  if(!_tuPendingDocFile) return null;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+  const token = (window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || KEY;
+  const file = _tuPendingDocFile;
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  try {
+    const res = await fetch(`${SUPA}/storage/v1/object/calendar-docs/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    if(!res.ok) { showToast('⚠ Attachment failed to upload'); return null; }
+    return { url: `${SUPA}/storage/v1/object/public/calendar-docs/${path}`, name: file.name };
+  } catch(e) { console.warn('Team update attachment upload failed', e); showToast('⚠ Attachment failed to upload'); return null; }
+}
+function tuOpenForm(id) {
+  _tuFormEditId = id || null;
+  const u = id ? teamUpdates.find(x => x.id === id) : null;
+  document.getElementById('tu-form-title').textContent = u ? 'Edit Team Update' : 'New Team Update';
+  document.getElementById('tu-save-btn').textContent = u ? 'Save Changes' : 'Post';
+  document.getElementById('tu-title-input').value = u ? u.title : '';
+  document.getElementById('tu-body-input').value = u ? (u.body || '') : '';
+  document.getElementById('tu-link-input').value = u ? (u.link_url || '') : '';
+  _tuPendingDocFile = null;
+  _tuDocRemoved = false;
+  _tuExistingDoc = (u && u.doc_url) ? { url: u.doc_url, name: u.doc_name || 'Attachment' } : null;
+  document.getElementById('tu-doc-file').value = '';
+  renderTuDocPreview();
+  document.getElementById('team-update-form-modal').style.display = 'flex';
+}
+function tuCloseForm(ev) { if(ev && ev.target.id !== 'team-update-form-modal') return; document.getElementById('team-update-form-modal').style.display = 'none'; }
+async function tuSave() {
+  const title = document.getElementById('tu-title-input').value.trim();
+  const body = document.getElementById('tu-body-input').value.trim();
+  const linkUrl = document.getElementById('tu-link-input').value.trim() || null;
+  if(!title) { showToast('Enter a title'); return; }
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const me = currentManagerName();
+  let docUrl, docName;
+  if(_tuPendingDocFile) {
+    const uploaded = await uploadPendingTuDoc();
+    if(uploaded) { docUrl = uploaded.url; docName = uploaded.name; }
+  } else if(_tuDocRemoved) {
+    docUrl = null; docName = null;
+  } else if(_tuExistingDoc) {
+    docUrl = _tuExistingDoc.url; docName = _tuExistingDoc.name;
+  } else {
+    docUrl = null; docName = null;
+  }
+  try {
+    if(_tuFormEditId) {
+      await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates?id=eq.${_tuFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName }, ['link_url','doc_url','doc_name']);
+    } else {
+      await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates`, 'POST', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me }, ['link_url','doc_url','doc_name']);
+    }
+    const wasEdit = !!_tuFormEditId;
+    tuCloseForm();
+    await loadTeamUpdates();
+    renderTrnTeamUpdatesMgr();
+    showToast(wasEdit ? 'Team update saved ✓' : 'Team update posted ✓');
+  } catch(e) {
+    console.warn('Team update save failed', e);
+    showToast('⚠ Post failed — check connection');
+  }
+}
+async function tuDelete(id) {
+  if(!confirm('Delete this team update? This cannot be undone.')) return;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    await fetch(`${SUPA}/rest/v1/rally_team_updates?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    await loadTeamUpdates();
+    renderTrnTeamUpdatesMgr();
+    showToast('Team update deleted');
+  } catch(e) { showToast('Could not delete — try again'); }
+}
+function renderTrnTeamUpdatesMgr() {
+  const body = document.getElementById('trn-mgr-updates-body');
+  if(!body) return;
+  if(!teamUpdates.length) { body.innerHTML = `<div style="padding:30px 16px;text-align:center;color:rgba(23,72,84,.45);">No team updates posted yet.</div>`; return; }
+  body.innerHTML = teamUpdates.map(u => `<div class="trn-mgr-card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-weight:700;color:#174854;font-size:14px;">${calEsc(u.title)}</div>
+        ${u.body ? `<div style="font-size:12.5px;color:rgba(23,72,84,.65);margin-top:4px;">${calEsc(u.body)}</div>` : ''}
+        ${annAttachmentsHtml(u)}
+        <div style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;">Posted by ${calEsc(u.created_by || 'a manager')} · ${new Date(u.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex:none;">
+        <button class="btn-sm" onclick="tuOpenForm(${u.id})">✏ Edit</button>
+        <button class="btn-sm" style="color:#c04020;border-color:rgba(220,80,60,.3);" onclick="tuDelete(${u.id})">🗑 Delete</button>
+      </div>
+    </div>
+  </div>`).join('');
 }
 
 async function loadAnnouncements() {
@@ -5026,10 +5240,13 @@ let trnMgrExpandedId = null;
 const TRN_OVERVIEW_BTN = `<button class="trn-btn trn-btn-ghost" style="flex:none;margin-bottom:14px;" onclick="window.open('/training-content/journey-map.html?v='+Date.now(),'_blank')">📋 See the Full Training Overview</button>`;
 function switchTrnMgrView(view){
   document.getElementById('trn-view-roster-btn').classList.toggle('active', view==='roster');
+  document.getElementById('trn-view-updates-btn').classList.toggle('active', view==='updates');
   document.getElementById('trn-view-resources-btn').classList.toggle('active', view==='resources');
   document.getElementById('trn-mgr-body').style.display = view==='roster' ? 'block' : 'none';
+  document.getElementById('trn-mgr-updates-outer').style.display = view==='updates' ? 'block' : 'none';
   document.getElementById('trn-mgr-resources-body').style.display = view==='resources' ? 'block' : 'none';
   if(view==='resources') renderTrnResources();
+  if(view==='updates') { loadTeamUpdates().then(renderTrnTeamUpdatesMgr); renderTrnTeamUpdatesMgr(); }
 }
 const TRN_GROUP_LABEL = { core:'Core (every position)', Host:'Host', Bartender:'Bartender', Captain:'Captain', Barista:'Barista', Swarmer:'Swarmer', 'Team-Lead-Manager':'Team Lead / Manager' };
 function renderTrnResources(){
@@ -9242,6 +9459,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCalendarEvents();
   loadPto();
   loadBirthdays();
+  loadTeamUpdates();
   Promise.all([loadInventoryItems(), loadInventoryCounts(), loadInventoryReviewState()]);
 });
 </script>
