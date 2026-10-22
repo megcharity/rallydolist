@@ -5364,8 +5364,14 @@ function trnMgrDetailHTML(t){
   const quizResults = (t.quiz_results||[]).slice().reverse();
   const quizRows = quizResults.length ? quizResults.map(q=>`<div class="trn-mgr-detail-row"><span>${calEsc(q.title)}</span><span>${(q.score!=null&&q.total!=null)?calEsc(q.score+'/'+q.total):'Completed — reviewed with manager'} · ${calEsc((q.at||'').slice(0,10))}</span></div>`).join('') : '<div style="font-size:12px;color:rgba(23,72,84,.45);padding:6px 0;">No knowledge checks taken yet</div>';
   const checklistFile = TRAINING_CHECKLIST_FILE[t.position];
+  const bio = t.bio||{};
+  const BIO_LABELS = {from:'Where they\'re from', order:'Go-to order', fact:'Fun fact', excited:'Most excited about', funOutside:'Fun outside of work'};
+  const bioEntries = Object.keys(BIO_LABELS).filter(k=>bio[k] && String(bio[k]).trim());
+  const bioRows = bioEntries.length ? bioEntries.map(k=>`<div class="trn-mgr-detail-row"><span>${calEsc(BIO_LABELS[k])}</span><span>${calEsc(bio[k])}</span></div>`).join('') : '<div style="font-size:12px;color:rgba(23,72,84,.45);padding:6px 0;">Not filled out yet — last item on their Day 1 reading list</div>';
   return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(23,72,84,.1);">
-    <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin-bottom:4px;">Days</div>
+    <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin-bottom:4px;">Bio (for GroupMe)</div>
+    ${bioRows}
+    <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Days</div>
     ${dayRows}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Position test attempts</div>
     ${attemptRows}
