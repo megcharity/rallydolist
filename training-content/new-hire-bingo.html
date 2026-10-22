@@ -214,11 +214,20 @@ var POSITION_OVERRIDES={
 })();
 var STAMP='<svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="#174854" stroke-width="5"/><circle cx="60" cy="60" r="44" fill="#174854" fill-opacity=".9"/><path d="M38 61 L53 76 L83 44" fill="none" stroke="#f89a1c" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 var KEYNAME="rally-new-hire-bingo-v1",state={};
-try{state=JSON.parse(localStorage.getItem(KEYNAME)||"{}")||{};}catch(e){state={};}
 var embedded = window.parent !== window;
+// Shared tablet across trainees: never seed from localStorage when embedded,
+// or one trainee's stamps can bleed into the next trainee's blank card (same
+// bug class fixed in new-hire-bio.html). The parent's per-trainee record is
+// the only source of truth here.
+if(!embedded){
+  try{state=JSON.parse(localStorage.getItem(KEYNAME)||"{}")||{};}catch(e){state={};}
+}
 function save(){
-  try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById("saved").textContent="Your card can't be saved in this browser, so stamps will clear if you close the page.";}
-  if(embedded) window.parent.postMessage({rallyBingo:true,state:state},window.location.origin);
+  if(!embedded){
+    try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById("saved").textContent="Your card can't be saved in this browser, so stamps will clear if you close the page.";}
+  } else {
+    window.parent.postMessage({rallyBingo:true,state:state},window.location.origin);
+  }
 }
 function applyState(s){
   state=s||{};
@@ -236,7 +245,7 @@ function applyState(s){
 if(embedded){
   window.addEventListener("message",function(e){
     if(e.origin!==window.location.origin||!e.data) return;
-    if(e.data.rallyBingoInit) applyState(Object.keys(e.data.state||{}).length?e.data.state:state);
+    if(e.data.rallyBingoInit) applyState(e.data.state||{});
   });
   window.parent.postMessage({rallyBingoReady:true},window.location.origin);
 }

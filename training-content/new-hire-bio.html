@@ -67,16 +67,24 @@ input[type=text]:focus{outline:none;border-color:var(--orange);}
 </div>
 <script>
 var KEYNAME="rally-new-hire-bio-v1", state={};
-try{ state = JSON.parse(localStorage.getItem(KEYNAME)||"{}") || {}; }catch(e){ state = {}; }
 var embedded = window.parent !== window;
 var statusEl = document.getElementById('status');
 var saveTimer = null;
+
+// Embedded in the training app: the tablet is shared across trainees, so this
+// page must never fall back to localStorage — that's exactly what caused one
+// trainee's answers to bleed into the next trainee's blank form. The parent's
+// per-trainee record (even when empty, for someone who hasn't answered yet)
+// is always the source of truth here.
+if(!embedded){
+  try{ state = JSON.parse(localStorage.getItem(KEYNAME)||"{}") || {}; }catch(e){ state = {}; }
+}
 
 function applyState(s){
   state = s || {};
   document.querySelectorAll('[data-save]').forEach(function(n){
     var k = n.getAttribute('data-save');
-    if(state[k] != null) n.value = state[k];
+    n.value = state[k] != null ? state[k] : '';
   });
 }
 function showSaved(){
@@ -85,8 +93,11 @@ function showSaved(){
   statusEl._t = setTimeout(function(){ statusEl.classList.remove('show'); }, 1800);
 }
 function save(){
-  try{ localStorage.setItem(KEYNAME, JSON.stringify(state)); }catch(e){}
-  if(embedded) window.parent.postMessage({rallyBio:true, data:state}, window.location.origin);
+  if(!embedded){
+    try{ localStorage.setItem(KEYNAME, JSON.stringify(state)); }catch(e){}
+  } else {
+    window.parent.postMessage({rallyBio:true, data:state}, window.location.origin);
+  }
   showSaved();
 }
 document.querySelectorAll('[data-save]').forEach(function(n){
@@ -103,11 +114,7 @@ document.getElementById('saveBtn').addEventListener('click', function(){
 if(embedded){
   window.addEventListener('message', function(e){
     if(e.origin !== window.location.origin || !e.data) return;
-    if(e.data.rallyBioInit){
-      var incoming = e.data.data;
-      if(incoming && Object.keys(incoming).length) applyState(incoming);
-      else applyState(state);
-    }
+    if(e.data.rallyBioInit) applyState(e.data.data || {});
   });
   window.parent.postMessage({rallyBioReady:true}, window.location.origin);
 } else {
