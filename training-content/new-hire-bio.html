@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tell Us About You</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Hanken+Grotesk:wght@400;500;600;700&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#174854;--olive:#4e622c;--orange:#f89a1c;--cream:#fbf6ed;--coral:#f58664;--sage:#cee4cf;--paper:#fffdf8;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--navy);font:16px/1.6 'Hanken Grotesk',Arial,sans-serif;}
+.page{max-width:620px;margin:0 auto;padding:28px 20px 60px;}
+.eyebrow{font-family:'Gochi Hand',cursive;font-size:20px;color:var(--orange);margin:0 0 4px;}
+h1{font-family:'Instrument Serif',Georgia,serif;font-size:38px;font-weight:400;margin:0 0 6px;line-height:1.05;}
+.intro{font-size:16px;background:var(--sage);border-radius:10px;padding:16px 18px;margin:18px 0 28px;}
+.intro b{display:block;margin-bottom:4px;font-size:17px;}
+label{display:block;font-weight:600;font-size:15px;margin:0 0 6px;}
+.q{margin-bottom:22px;}
+.q .hint{font-size:13px;color:rgba(23,72,84,.6);margin-top:4px;}
+input[type=text]{width:100%;font:inherit;font-size:16px;padding:12px 14px;border:2px solid var(--sage);border-radius:8px;background:var(--paper);color:var(--navy);}
+input[type=text]:focus{outline:none;border-color:var(--orange);}
+.save-btn{display:block;width:100%;font:inherit;font-weight:700;font-size:16px;padding:14px;margin-top:8px;border:none;border-radius:8px;background:var(--olive);color:var(--cream);cursor:pointer;}
+.save-btn:active{opacity:.85;}
+.status{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:14px;color:var(--olive);font-weight:600;min-height:22px;opacity:0;transition:opacity .3s;}
+.status.show{opacity:1;}
+.status svg{width:18px;height:18px;flex:none;}
+.foot{margin-top:30px;font-family:'Gochi Hand',cursive;font-size:19px;color:var(--ink-soft,rgba(23,72,84,.7));text-align:center;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="eyebrow">Day 1 · Last thing today</div>
+  <h1>Tell us about you</h1>
+  <div class="intro"><b>Why we're asking</b>We'll use your answers to introduce you to the whole team on GroupMe — so by your next shift, people already know a little about you. Keep it short and casual, there's no wrong answer.</div>
+
+  <form id="bioForm" autocomplete="off">
+    <div class="q">
+      <label for="from">Where are you from?</label>
+      <input type="text" id="from" data-save="from" placeholder="e.g. Charlotte, NC">
+    </div>
+    <div class="q">
+      <label for="order">What's your go-to order?</label>
+      <input type="text" id="order" data-save="order" placeholder="Food, drink, or both">
+    </div>
+    <div class="q">
+      <label for="fact">One fun fact about you</label>
+      <input type="text" id="fact" data-save="fact" placeholder="Something not everyone would guess">
+    </div>
+    <div class="q">
+      <label for="excited">What are you most excited about at Rally?</label>
+      <input type="text" id="excited" data-save="excited" placeholder="">
+    </div>
+    <div class="q">
+      <label for="funOutside">What do you do for fun outside of work?</label>
+      <input type="text" id="funOutside" data-save="funOutside" placeholder="">
+    </div>
+  </form>
+
+  <button type="button" class="save-btn" id="saveBtn">Save</button>
+  <div class="status" id="status">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="var(--olive)"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    <span>Saved — show your trainer when you're done</span>
+  </div>
+
+  <div class="foot">can't wait to meet you</div>
+</div>
+<script>
+var KEYNAME="rally-new-hire-bio-v1", state={};
+try{ state = JSON.parse(localStorage.getItem(KEYNAME)||"{}") || {}; }catch(e){ state = {}; }
+var embedded = window.parent !== window;
+var statusEl = document.getElementById('status');
+var saveTimer = null;
+
+function applyState(s){
+  state = s || {};
+  document.querySelectorAll('[data-save]').forEach(function(n){
+    var k = n.getAttribute('data-save');
+    if(state[k] != null) n.value = state[k];
+  });
+}
+function showSaved(){
+  statusEl.classList.add('show');
+  clearTimeout(statusEl._t);
+  statusEl._t = setTimeout(function(){ statusEl.classList.remove('show'); }, 1800);
+}
+function save(){
+  try{ localStorage.setItem(KEYNAME, JSON.stringify(state)); }catch(e){}
+  if(embedded) window.parent.postMessage({rallyBio:true, data:state}, window.location.origin);
+  showSaved();
+}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  n.addEventListener('input', function(){
+    state[n.getAttribute('data-save')] = n.value;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 500);
+  });
+});
+document.getElementById('saveBtn').addEventListener('click', function(){
+  clearTimeout(saveTimer);
+  save();
+});
+if(embedded){
+  window.addEventListener('message', function(e){
+    if(e.origin !== window.location.origin || !e.data) return;
+    if(e.data.rallyBioInit){
+      var incoming = e.data.data;
+      if(incoming && Object.keys(incoming).length) applyState(incoming);
+      else applyState(state);
+    }
+  });
+  window.parent.postMessage({rallyBioReady:true}, window.location.origin);
+} else {
+  applyState(state);
+}
+</script>
+</body>
+</html>
