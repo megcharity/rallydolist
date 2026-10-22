@@ -975,6 +975,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="fg full"><label>Title</label><input id="ann-title-input" type="text" placeholder="e.g. New menu item starting Monday"/></div>
     <div class="fg full"><label>Details</label><textarea id="ann-body-input" rows="4" placeholder="What managers need to know…"></textarea></div>
+    <div class="fg full"><label>Link <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="ann-link-input" type="url" placeholder="https://…"/></div>
+    <div class="fg full"><label>Attachment <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label>
+      <input id="ann-doc-file" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" onchange="annHandleDocInput(event)" style="display:none;"/>
+      <div id="ann-doc-preview"></div>
+    </div>
     <div class="fg full"><label>Go Live Date <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — leave blank to post immediately)</span></label><input id="ann-golive-input" type="date"/></div>
     <div class="fg full"><label>Clears On <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — auto-clears on this date even if not everyone's confirmed)</span></label><input id="ann-expires-input" type="date"/></div>
     <div class="fg full"><label>Who needs to confirm this? <span style="font-weight:400;color:rgba(23,72,84,.4);">(all managers checked by default)</span></label>
@@ -2046,6 +2051,57 @@ let announcements = [];
 let announcementReads = [];
 let _annWeekStart = null; // reuses alMondayOf/alDateToYMD/alWeekLabel from Admin Log's week-nav helpers
 let _annFormEditId = null; // id being edited in announcement-form-modal, or null for a brand-new post
+let _annPendingDocFile = null, _annExistingDoc = null, _annDocRemoved = false;
+function annHandleDocInput(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  _annPendingDocFile = file;
+  _annDocRemoved = false;
+  renderAnnDocPreview();
+}
+function annRemoveDoc() {
+  _annPendingDocFile = null;
+  _annExistingDoc = null;
+  _annDocRemoved = true;
+  document.getElementById('ann-doc-file').value = '';
+  renderAnnDocPreview();
+}
+function renderAnnDocPreview() {
+  const box = document.getElementById('ann-doc-preview');
+  if(!box) return;
+  if(_annPendingDocFile) {
+    box.innerHTML = `<div class="cf-doc-chip"><span>📄 ${calEsc(_annPendingDocFile.name)}</span><button type="button" class="btn-sm" onclick="annRemoveDoc()">Remove</button></div>`;
+  } else if(_annExistingDoc) {
+    box.innerHTML = `<div class="cf-doc-chip"><a href="${_annExistingDoc.url}" target="_blank" rel="noopener">📄 ${calEsc(_annExistingDoc.name)}</a><button type="button" class="btn-sm" onclick="annRemoveDoc()">Remove</button></div>`;
+  } else {
+    box.innerHTML = `<button type="button" class="btn-sm" onclick="document.getElementById('ann-doc-file').click()">📎 Choose File</button>`;
+  }
+}
+async function uploadPendingAnnDoc() {
+  if(!_annPendingDocFile) return null;
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+  const token = (window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || KEY;
+  const file = _annPendingDocFile;
+  const ext = (file.name.split('.').pop() || 'bin').toLowerCase().replace(/[^a-z0-9]/g,'') || 'bin';
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
+  try {
+    const res = await fetch(`${SUPA}/storage/v1/object/calendar-docs/${path}`, {
+      method: 'POST',
+      headers: { 'apikey': KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    if(!res.ok) { showToast('⚠ Attachment failed to upload'); return null; }
+    return { url: `${SUPA}/storage/v1/object/public/calendar-docs/${path}`, name: file.name };
+  } catch(e) { console.warn('Announcement attachment upload failed', e); showToast('⚠ Attachment failed to upload'); return null; }
+}
+// Shared by the active-list modal and the weekly archive — a link and/or
+// an uploaded file, each only shown when present.
+function annAttachmentsHtml(a) {
+  const linkHtml = a.link_url ? `<div style="margin-bottom:4px;"><a href="${calEsc(a.link_url)}" target="_blank" rel="noopener" style="font-size:12.5px;">🔗 ${calEsc(a.link_url)}</a></div>` : '';
+  const docHtml = a.doc_url ? `<div style="margin-bottom:4px;"><a href="${a.doc_url}" target="_blank" rel="noopener" style="font-size:12.5px;">📄 ${calEsc(a.doc_name || 'Attachment')}</a></div>` : '';
+  return linkHtml + docHtml;
+}
 
 async function loadAnnouncements() {
   const SUPA = window.RALLY_SUPABASE_URL;
@@ -2149,6 +2205,7 @@ function renderAnnouncementViewBody() {
       ${goLiveHtml}
       ${expiresHtml}
       ${a.body ? `<div class="ann-body">${calEsc(a.body)}</div>` : ''}
+      ${annAttachmentsHtml(a)}
       <div class="ann-roster">${roster}</div>
       ${actionHtml}
       ${mgrActionsHtml}
@@ -2171,6 +2228,12 @@ function openAnnouncementForm(id) {
   document.getElementById('ann-save-btn').textContent = a ? 'Save Changes' : 'Post';
   document.getElementById('ann-title-input').value = a ? a.title : '';
   document.getElementById('ann-body-input').value = a ? (a.body || '') : '';
+  document.getElementById('ann-link-input').value = a ? (a.link_url || '') : '';
+  _annPendingDocFile = null;
+  _annDocRemoved = false;
+  _annExistingDoc = (a && a.doc_url) ? { url: a.doc_url, name: a.doc_name || 'Attachment' } : null;
+  document.getElementById('ann-doc-file').value = '';
+  renderAnnDocPreview();
   document.getElementById('ann-golive-input').value = a ? (a.go_live_date || '') : '';
   document.getElementById('ann-expires-input').value = a ? (a.expires_on || '') : '';
   // All current managers checked by default on a new post — a deliberate
@@ -2191,6 +2254,7 @@ function closeAnnouncementForm(ev) { if(ev && ev.target.id !== 'announcement-for
 async function saveAnnouncement() {
   const title = document.getElementById('ann-title-input').value.trim();
   const body = document.getElementById('ann-body-input').value.trim();
+  const linkUrl = document.getElementById('ann-link-input').value.trim() || null;
   const goLive = document.getElementById('ann-golive-input').value || null;
   const expiresOn = document.getElementById('ann-expires-input').value || null;
   const requiredManagers = Array.from(document.querySelectorAll('.ann-req-cb:checked')).map(cb => cb.value);
@@ -2198,11 +2262,22 @@ async function saveAnnouncement() {
   if(!requiredManagers.length) { showToast('Select at least one manager to confirm this'); return; }
   const SUPA = window.RALLY_SUPABASE_URL;
   const me = currentManagerName();
+  let docUrl, docName;
+  if(_annPendingDocFile) {
+    const uploaded = await uploadPendingAnnDoc();
+    if(uploaded) { docUrl = uploaded.url; docName = uploaded.name; }
+  } else if(_annDocRemoved) {
+    docUrl = null; docName = null;
+  } else if(_annExistingDoc) {
+    docUrl = _annExistingDoc.url; docName = _annExistingDoc.name;
+  } else {
+    docUrl = null; docName = null;
+  }
   try {
     if(_annFormEditId) {
-      await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ title, body, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
+      await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
     } else {
-      const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, created_by: me, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
+      const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
       const rows = await res.json();
       const newId = Array.isArray(rows) && rows[0] && rows[0].id;
       // The author obviously "read" their own post — mark it immediately so
@@ -2316,6 +2391,7 @@ async function renderAnnouncementsArchiveTab() {
       </div>
       ${goLiveHtml}
       ${a.body ? `<div class="ann-body" style="margin-bottom:4px;">${calEsc(a.body)}</div>` : ''}
+      ${annAttachmentsHtml(a)}
       ${statusHtml}
       ${mgrActionsHtml}
     </div>`;
