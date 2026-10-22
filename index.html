@@ -4143,7 +4143,9 @@ async function renderMgrTodayCard() {
   await loadAnnouncements();
   // Matches the "X New Announcements" badge this card replaced (all still-open
   // announcements, not just ones this manager personally hasn't read).
-  const unreadAnn = announcements.filter(a => !annIsResolved(a)).length;
+  const activeAnnForTile = announcements.filter(a => !annIsResolved(a));
+  const unreadAnn = activeAnnForTile.length;
+  const hasNewAnn = activeAnnForTile.some(a => annIsNew(a));
 
   await loadClProgressCache();
   const savedPos = currentPosition, savedRole = currentRole;
@@ -4156,8 +4158,9 @@ async function renderMgrTodayCard() {
   const birthdayValue = todaysBirthdays.length ? '🎉' : '—';
   const birthdayLabel = todaysBirthdays.length ? todaysBirthdays.map(b=>b.name).join(', ') : 'No birthdays today';
 
-  const tile = (icon, value, label, onclick) => `
-    <div style="${onclick?'cursor:pointer;':''}min-width:76px;" ${onclick?`onclick="${onclick}"`:''}>
+  const tile = (icon, value, label, onclick, badge) => `
+    <div style="${onclick?'cursor:pointer;':''}min-width:76px;position:relative;" ${onclick?`onclick="${onclick}"`:''}>
+      ${badge?`<span style="position:absolute;top:-6px;right:-8px;background:#f58664;color:#fff;font-size:9px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:9px;">${badge}</span>`:''}
       <div style="font-size:16px;color:rgba(23,72,84,.45);">${icon}</div>
       <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#174854;line-height:1;margin:2px 0;">${value}</div>
       <div style="font-size:11px;color:rgba(23,72,84,.55);">${label}</div>
@@ -4165,7 +4168,7 @@ async function renderMgrTodayCard() {
 
   tiles.innerHTML =
     tile('📋', tasksDueToday, 'Tasks Due Today', tasksDueToday?`calShowDayTasks('${today}')`:'') +
-    tile('📣', unreadAnn, 'Announcements', "openAnnouncementViewModal()") +
+    tile('📣', unreadAnn, 'Announcements', "openAnnouncementViewModal()", hasNewAnn ? 'NEW' : '') +
     tile('✅', incompleteCl, 'Checklists', "showMgrGroup('operations');showMgrTab('checklists')") +
     tile('🎂', birthdayValue, calEsc(birthdayLabel), '');
 }
@@ -5060,7 +5063,7 @@ async function renderMgrTraining(){
   const archivedCount = trnTrainees.filter(t=>t.archived).length;
   const list = trnTrainees.filter(t=>trnMgrShowArchived ? t.archived : !t.archived);
   const toggleBtn = `<button class="trn-btn trn-btn-ghost" style="flex:none;margin-left:8px;" onclick="trnMgrToggleArchivedView()">${trnMgrShowArchived?'← Back to active':'📦 Archived ('+archivedCount+')'}</button>`;
-  const header = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">${TRN_OVERVIEW_BTN}${archivedCount?toggleBtn:''}</div>`;
+  const header = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">${TRN_OVERVIEW_BTN}${(archivedCount||trnMgrShowArchived)?toggleBtn:''}</div>`;
   if(!list.length){
     body.innerHTML = header + `<div style="padding:30px 16px;text-align:center;color:rgba(23,72,84,.45);">${trnMgrShowArchived ? 'No archived trainees.' : 'No trainees yet. Add one from the Training kiosk screen (role picker → Training).'}</div>`;
     return;
@@ -5174,17 +5177,24 @@ async function trnMgrUnarchive(id){
   if(ok){ trnLog(id,'manager',by,'unarchived',{}); showToast('Trainee restored'); }
   renderMgrTraining();
 }
-async function trnMgrDelete(id){
+function trnMgrDelete(id){
   const t=trnTrainees.find(x=>x.id===id);
   if(!t) return;
-  if(!confirm('Permanently delete '+t.name+'? This removes their record entirely and cannot be undone.')) return;
-  try{
-    const res = await fetch(`${SUPA_URL}/rest/v1/rally_training_trainees?id=eq.${id}`, { method:'DELETE', headers: trnHdrs() });
-    if(!res.ok) throw new Error('delete failed');
-    trnTrainees = trnTrainees.filter(x=>x.id!==id);
-    showToast('Trainee deleted');
+  // Matches the kiosk delete's PIN gate — permanent deletion deserves the
+  // same confirmation as a day sign-off, not just a browser confirm().
+  trnRequestManagerPin(async ()=>{
+    if(confirm('Permanently delete '+t.name+'? This removes their record entirely and cannot be undone.')){
+      try{
+        const res = await fetch(`${SUPA_URL}/rest/v1/rally_training_trainees?id=eq.${id}`, { method:'DELETE', headers: trnHdrs() });
+        if(!res.ok) throw new Error('delete failed');
+        trnTrainees = trnTrainees.filter(x=>x.id!==id);
+        trnLog(id, 'manager', currentManagerName(), 'trainee_deleted', {name:t.name, position:t.position});
+        showToast('Trainee deleted');
+      }catch(e){ showToast('Could not delete — try again'); }
+    }
+    showScreen('s-mgr');
     renderMgrTraining();
-  }catch(e){ showToast('Could not delete — try again'); }
+  }, 's-mgr');
 }
 const ALL_CHECKLISTS = {
 
