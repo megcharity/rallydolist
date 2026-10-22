@@ -2251,6 +2251,26 @@ function openAnnouncementForm(id) {
 }
 function closeAnnouncementForm(ev) { if(ev && ev.target.id !== 'announcement-form-modal') return; document.getElementById('announcement-form-modal').style.display = 'none'; }
 
+// Posts/patches rally_announcements, and if the DB is missing the
+// link/attachment columns (schema migration not run yet — see
+// annAttachmentsHtml), retries once without those keys so the core
+// announcement still saves instead of failing outright. PostgREST rejects
+// the whole request for any unknown JSON key, even one set to null, so
+// this can't be fixed by just omitting null values.
+async function annSaveWithSchemaFallback(url, method, bodyObj, optionalKeys) {
+  const prefer = method === 'POST' ? 'return=representation' : 'return=minimal';
+  let res = await fetch(url, { method, headers: {...AL_HDRS(), 'Prefer': prefer}, body: JSON.stringify(bodyObj) });
+  if(!res.ok) {
+    const errText = await res.clone().text().catch(()=>'');
+    if(errText.includes('schema cache') || errText.includes('PGRST204') || errText.includes('does not exist')) {
+      const trimmed = {...bodyObj};
+      optionalKeys.forEach(k => delete trimmed[k]);
+      res = await fetch(url, { method, headers: {...AL_HDRS(), 'Prefer': prefer}, body: JSON.stringify(trimmed) });
+      return { res, skipped: true };
+    }
+  }
+  return { res, skipped: false };
+}
 async function saveAnnouncement() {
   const title = document.getElementById('ann-title-input').value.trim();
   const body = document.getElementById('ann-body-input').value.trim();
@@ -2273,11 +2293,14 @@ async function saveAnnouncement() {
   } else {
     docUrl = null; docName = null;
   }
+  let attachmentsSkipped = false;
   try {
     if(_annFormEditId) {
-      await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
+      const { skipped } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }, ['link_url','doc_url','doc_name']);
+      attachmentsSkipped = skipped;
     } else {
-      const res = await fetch(`${SUPA}/rest/v1/rally_announcements`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=representation'}, body: JSON.stringify({ title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }) });
+      const { res, skipped } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_announcements`, 'POST', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }, ['link_url','doc_url','doc_name']);
+      attachmentsSkipped = skipped;
       const rows = await res.json();
       const newId = Array.isArray(rows) && rows[0] && rows[0].id;
       // The author obviously "read" their own post — mark it immediately so
@@ -2292,7 +2315,8 @@ async function saveAnnouncement() {
     renderAnnouncementAlert();
     if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
     renderAnnouncementsArchiveTab();
-    showToast(wasEdit ? 'Announcement updated ✓' : (goLive && goLive > getTodayStr() ? `Announcement scheduled for ${goLive} ✓` : 'Announcement posted ✓'));
+    const baseMsg = wasEdit ? 'Announcement updated ✓' : (goLive && goLive > getTodayStr() ? `Announcement scheduled for ${goLive} ✓` : 'Announcement posted ✓');
+    showToast(attachmentsSkipped ? baseMsg + ' (link/attachment not saved — ask Meg to run the database update)' : baseMsg);
   } catch(e) {
     console.warn('Announcement save failed', e);
     showToast('⚠ Post failed — check connection');
