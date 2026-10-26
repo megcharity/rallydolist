@@ -137,9 +137,10 @@ details p b{color:var(--ink)}
   .cards{grid-template-columns:1fr}
   .qs{grid-template-columns:1fr}
   .close{grid-template-columns:1fr}
+  .card{grid-template-columns:1fr}
+  .card .ph{aspect-ratio:16/9;min-height:0;border-right:0;border-bottom:2px solid var(--ink)}
 }
 @media (max-width:480px){
-  .card{grid-template-columns:104px minmax(0,1fr)}
   .card .body{padding:14px}
   .hero-l,.hero-r,.sort,.quiz,.close{padding:18px}
   .sort li{grid-template-columns:84px 1fr}
