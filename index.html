@@ -66,7 +66,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .role-divider-line{flex:1;height:1px;background:rgba(23,72,84,.18);}
 .role-divider-dot{width:4px;height:4px;border-radius:50%;background:var(--amber);}
 .role-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;max-width:560px;width:100%;margin:0 auto 24px;}
-.role-card{border:1.5px solid var(--border);border-radius:6px;padding:24px 16px;cursor:pointer;transition:all .2s;text-align:left;background:var(--cream);}
+.role-card{position:relative;border:1.5px solid var(--border);border-radius:6px;padding:24px 16px;cursor:pointer;transition:all .2s;text-align:left;background:var(--cream);}
 .role-card:hover{border-color:var(--teal);transform:translateY(-3px);box-shadow:0 12px 32px var(--shadow);}
 .role-card.sel{border-color:var(--teal);background:rgba(23,72,84,.04);}
 .role-card-icon{font-size:24px;margin-bottom:10px;}
@@ -1010,6 +1010,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <input id="tu-doc-file" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.heic" onchange="tuHandleDocInput(event)" style="display:none;"/>
       <div id="tu-doc-preview"></div>
     </div>
+    <div class="fg full" style="display:flex;align-items:flex-start;gap:8px;">
+      <input type="checkbox" id="tu-requires-name" style="margin-top:3px;"/>
+      <label for="tu-requires-name" style="font-weight:400;">This is a training, not just a heads-up — ask each person to type their name when they've gone through it, so you can see who's taken it.</label>
+    </div>
     <div class="modal-actions">
       <button class="modal-btn primary" id="tu-save-btn" onclick="tuSave()">Post</button>
       <button class="modal-btn secondary" onclick="tuCloseForm()">Cancel</button>
@@ -1062,9 +1066,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="role-card-icon">🎓</div>
       <div class="role-card-name">Training</div>
     </div>
+    <div class="role-card" data-role="updates" onclick="openTeamUpdatesScreen()">
+      <span class="nav-dot" id="role-updates-dot" hidden></span>
+      <div class="role-card-icon">📣</div>
+      <div class="role-card-name">Announcements &amp; Micro Trainings</div>
+    </div>
   </div>
   <button class="role-continue" id="role-continue" style="display:none;" onclick="goToPin()">Continue →</button>
-  <div class="rtu-wrap" id="role-team-updates"></div>
+</div>
+
+<div class="screen" id="s-team-updates">
+  <div class="trn-viewer-bar">
+    <button class="trn-btn trn-btn-ghost" onclick="showScreen('s-role')">← Back</button>
+    <div class="trn-viewer-title">📣 Announcements &amp; Micro Trainings</div>
+  </div>
+  <div style="padding:20px;max-width:640px;margin:0 auto;width:100%;">
+    <div class="rtu-wrap" id="role-team-updates"></div>
+  </div>
 </div>
 
 <!-- PIN SCREEN -->
@@ -2159,19 +2177,35 @@ function annAttachmentsHtml(a) {
 // Posting stays manager-only, from Manager -> Training -> Team Updates.
 // ═══════════════════════════════════════════════════════════════
 let teamUpdates = [];
+let teamUpdateReads = [];
 async function loadTeamUpdates() {
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_team_updates?select=*&order=created_at.desc&limit=5`, { headers: AL_HDRS() });
-    teamUpdates = res.ok ? await res.json() : [];
-  } catch(e) { console.warn('Team updates load failed', e); teamUpdates = []; }
+    const [uRes, rRes] = await Promise.all([
+      fetch(`${SUPA}/rest/v1/rally_team_updates?select=*&order=created_at.desc&limit=30`, { headers: AL_HDRS() }),
+      fetch(`${SUPA}/rest/v1/rally_team_update_reads?select=*`, { headers: AL_HDRS() })
+    ]);
+    teamUpdates = uRes.ok ? await uRes.json() : [];
+    teamUpdateReads = rRes.ok ? await rRes.json() : [];
+  } catch(e) { console.warn('Team updates load failed', e); teamUpdates = []; teamUpdateReads = []; }
+  const hasNew = teamUpdates.some(u => (new Date() - new Date(u.created_at)) < 24*60*60*1000);
+  const dot = document.getElementById('role-updates-dot');
+  if(dot) dot.hidden = !hasNew;
   renderRoleTeamUpdates();
+}
+function tuReadersOf(id) { return teamUpdateReads.filter(r => r.team_update_id === id).map(r => r.name); }
+function openTeamUpdatesScreen() {
+  showScreen('s-team-updates');
+  loadTeamUpdates();
 }
 function renderRoleTeamUpdates() {
   const box = document.getElementById('role-team-updates');
   if(!box) return;
-  if(!teamUpdates.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
   box.style.display = 'flex';
+  if(!teamUpdates.length) {
+    box.innerHTML = '<div style="text-align:center;color:rgba(23,72,84,.45);font-size:13px;padding:30px 0;">Nothing posted yet — check back soon.</div>';
+    return;
+  }
   box.innerHTML = teamUpdates.map(u => `
     <div class="rtu-card" tabindex="0" onclick="openTeamUpdateModal(${u.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTeamUpdateModal(${u.id})}">
       <div class="rtu-title">📣 ${calEsc(u.title)}</div>
@@ -2183,12 +2217,40 @@ function openTeamUpdateModal(id) {
   const u = teamUpdates.find(x => x.id === id);
   if(!u) return;
   document.getElementById('tu-view-title').textContent = u.title;
+  const nameHtml = u.requires_name ? `
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(23,72,84,.1);">
+      <div style="font-size:12.5px;font-weight:700;color:#174854;margin-bottom:6px;">Took this training? Type your name:</div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="tu-complete-name" placeholder="Your name" style="flex:1;font-size:14px;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;"/>
+        <button class="modal-btn primary" style="width:auto;padding:8px 16px;flex:none;" onclick="tuMarkComplete(${u.id})">✓ Done</button>
+      </div>
+      <div id="tu-complete-status" style="font-size:12px;color:var(--olive);font-weight:600;margin-top:8px;"></div>
+    </div>` : '';
   document.getElementById('tu-view-body').innerHTML = `
     ${u.body ? `<div style="white-space:pre-wrap;">${calEsc(u.body)}</div>` : ''}
     ${u.link_url ? `<div style="margin-top:14px;"><a href="${calEsc(u.link_url)}" target="_blank" rel="noopener" class="modal-btn primary" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">🔗 Open link</a></div>` : ''}
     ${u.doc_url ? `<div style="margin-top:10px;"><a href="${u.doc_url}" target="_blank" rel="noopener" class="modal-btn secondary" style="display:inline-block;width:auto;padding:8px 16px;text-decoration:none;">📄 ${calEsc(u.doc_name || 'Attachment')}</a></div>` : ''}
+    ${nameHtml}
   `;
   document.getElementById('team-update-view-modal').style.display = 'flex';
+}
+async function tuMarkComplete(id) {
+  const input = document.getElementById('tu-complete-name');
+  const name = input.value.trim();
+  const status = document.getElementById('tu-complete-status');
+  if(!name) { showToast('Type your name first'); return; }
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rally_team_update_reads`, {
+      method: 'POST',
+      headers: {...AL_HDRS(), 'Prefer': 'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify({ team_update_id: id, name })
+    });
+    if(!res.ok) { status.textContent = ''; showToast('⚠ Could not save — check connection'); return; }
+    status.textContent = `✓ Thanks, ${name} — marked complete`;
+    input.value = '';
+    loadTeamUpdates();
+  } catch(e) { showToast('⚠ Could not save — check connection'); }
 }
 function closeTeamUpdateModal(ev) { if(ev && ev.target.id !== 'team-update-view-modal') return; document.getElementById('team-update-view-modal').style.display = 'none'; }
 let _tuPendingDocFile = null, _tuExistingDoc = null, _tuDocRemoved = false, _tuFormEditId = null;
@@ -2243,6 +2305,7 @@ function tuOpenForm(id) {
   document.getElementById('tu-title-input').value = u ? u.title : '';
   document.getElementById('tu-body-input').value = u ? (u.body || '') : '';
   document.getElementById('tu-link-input').value = u ? (u.link_url || '') : '';
+  document.getElementById('tu-requires-name').checked = !!(u && u.requires_name);
   _tuPendingDocFile = null;
   _tuDocRemoved = false;
   _tuExistingDoc = (u && u.doc_url) ? { url: u.doc_url, name: u.doc_name || 'Attachment' } : null;
@@ -2255,6 +2318,7 @@ async function tuSave() {
   const title = document.getElementById('tu-title-input').value.trim();
   const body = document.getElementById('tu-body-input').value.trim();
   const linkUrl = document.getElementById('tu-link-input').value.trim() || null;
+  const requiresName = document.getElementById('tu-requires-name').checked;
   if(!title) { showToast('Enter a title'); return; }
   const SUPA = window.RALLY_SUPABASE_URL;
   const me = currentManagerName();
@@ -2272,9 +2336,9 @@ async function tuSave() {
   try {
     let res;
     if(_tuFormEditId) {
-      ({ res } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates?id=eq.${_tuFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName }, ['link_url','doc_url','doc_name']));
+      ({ res } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates?id=eq.${_tuFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, requires_name: requiresName }, ['link_url','doc_url','doc_name','requires_name']));
     } else {
-      ({ res } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates`, 'POST', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me }, ['link_url','doc_url','doc_name']));
+      ({ res } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_team_updates`, 'POST', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, requires_name: requiresName, created_by: me }, ['link_url','doc_url','doc_name','requires_name']));
     }
     if(!res.ok) {
       const errText = await res.clone().text().catch(()=>'');
@@ -2306,20 +2370,28 @@ function renderTrnTeamUpdatesMgr() {
   const body = document.getElementById('trn-mgr-updates-body');
   if(!body) return;
   if(!teamUpdates.length) { body.innerHTML = `<div style="padding:30px 16px;text-align:center;color:rgba(23,72,84,.45);">No team updates posted yet.</div>`; return; }
-  body.innerHTML = teamUpdates.map(u => `<div class="trn-mgr-card">
+  body.innerHTML = teamUpdates.map(u => {
+    const readers = tuReadersOf(u.id);
+    const completionHtml = u.requires_name ? `
+      <div style="font-size:11.5px;color:var(--olive);font-weight:600;margin-top:6px;">
+        ✓ ${readers.length} completed${readers.length ? ': ' + readers.map(calEsc).join(', ') : ''}
+      </div>` : '';
+    return `<div class="trn-mgr-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
       <div style="flex:1;">
-        <div style="font-weight:700;color:#174854;font-size:14px;">${calEsc(u.title)}</div>
+        <div style="font-weight:700;color:#174854;font-size:14px;">${calEsc(u.title)}${u.requires_name?' <span style="font-size:10px;font-weight:700;color:#fff;background:var(--teal-mid);padding:2px 7px;border-radius:9px;vertical-align:middle;">TRAINING</span>':''}</div>
         ${u.body ? `<div style="font-size:12.5px;color:rgba(23,72,84,.65);margin-top:4px;">${calEsc(u.body)}</div>` : ''}
         ${annAttachmentsHtml(u)}
         <div style="font-size:11px;color:rgba(23,72,84,.4);margin-top:6px;">Posted by ${calEsc(u.created_by || 'a manager')} · ${new Date(u.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
+        ${completionHtml}
       </div>
       <div style="display:flex;gap:6px;flex:none;">
         <button class="btn-sm" onclick="tuOpenForm(${u.id})">✏ Edit</button>
         <button class="btn-sm" style="color:#c04020;border-color:rgba(220,80,60,.3);" onclick="tuDelete(${u.id})">🗑 Delete</button>
       </div>
     </div>
-  </div>`).join('');
+  </div>`;
+  }).join('');
 }
 
 async function loadAnnouncements() {
