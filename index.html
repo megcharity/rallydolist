@@ -996,6 +996,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   </div>
 </div>
 
+<!-- GROUPME INTRO MODAL (Manager -> Training -> trainee card -> Copy GroupMe Intro) -->
+<div id="groupme-intro-modal" class="modal-ov" style="display:none;" onclick="closeGroupMeIntroModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
+    <div class="modal-hdr">
+      <div class="modal-title">📋 GroupMe Intro</div>
+      <button class="modal-close" onclick="closeGroupMeIntroModal()">×</button>
+    </div>
+    <div style="font-size:12px;color:rgba(23,72,84,.55);margin-bottom:8px;">Tap Copy, or just select and copy the text yourself.</div>
+    <textarea id="groupme-intro-text" rows="7" readonly onclick="this.focus();this.select()" style="width:100%;font-size:14px;line-height:1.4;padding:10px;border:1.5px solid var(--border);border-radius:6px;resize:vertical;font-family:inherit;"></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn primary" onclick="copyGroupMeIntroText()">Copy</button>
+      <button class="modal-btn secondary" onclick="closeGroupMeIntroModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- TEAM UPDATE FORM MODAL (Manager -> Training -> Team Updates) -->
 <div id="team-update-form-modal" class="modal-ov" style="display:none;" onclick="tuCloseForm(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
@@ -5483,10 +5499,23 @@ function trnMgrCopyBioIntro(id){
   if(b.funOutside) parts.push(`Outside of work, you'll find them doing ${b.funOutside}.`);
   parts.push('Give them a warm welcome when you see them on the floor!');
   const msg = parts.join(' ');
+  const ta = document.getElementById('groupme-intro-text');
+  ta.value = msg;
+  document.getElementById('groupme-intro-modal').style.display = 'flex';
+  setTimeout(()=>{ ta.focus(); ta.select(); }, 50);
+}
+function closeGroupMeIntroModal(ev) { if(ev && ev.target.id !== 'groupme-intro-modal') return; document.getElementById('groupme-intro-modal').style.display = 'none'; }
+function copyGroupMeIntroText(){
+  const ta = document.getElementById('groupme-intro-text');
+  ta.focus(); ta.select(); ta.setSelectionRange(0, 999999);
+  let copied = false;
+  try { copied = document.execCommand('copy'); } catch(e){}
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(msg).then(()=>showToast('Copied — paste into GroupMe')).catch(()=>showToast(msg));
+    navigator.clipboard.writeText(ta.value)
+      .then(()=>showToast('Copied ✓'))
+      .catch(()=>showToast(copied ? 'Copied ✓' : 'Could not auto-copy — text is selected, use your keyboard\'s copy'));
   } else {
-    showToast(msg);
+    showToast(copied ? 'Copied ✓' : 'Text is selected — use your keyboard\'s copy');
   }
 }
 async function trnMgrToggleFlag(id, field, checked){
