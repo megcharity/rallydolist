@@ -22,6 +22,9 @@ input[type=text]{width:100%;font:inherit;font-size:16px;padding:12px 14px;border
 input[type=text]:focus{outline:none;border-color:var(--orange);}
 .save-btn{display:block;width:100%;font:inherit;font-weight:700;font-size:16px;padding:14px;margin-top:8px;border:none;border-radius:8px;background:var(--olive);color:var(--cream);cursor:pointer;}
 .save-btn:active{opacity:.85;}
+.photo-btn{background:var(--navy);}
+.photo-preview{max-width:160px;border-radius:10px;display:block;margin-bottom:10px;border:2px solid var(--sage);}
+.photo-status{font-size:13px;color:var(--olive);font-weight:600;margin-top:8px;min-height:18px;}
 .status{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:14px;color:var(--olive);font-weight:600;min-height:22px;opacity:0;transition:opacity .3s;}
 .status.show{opacity:1;}
 .status svg{width:18px;height:18px;flex:none;}
@@ -54,6 +57,14 @@ input[type=text]:focus{outline:none;border-color:var(--orange);}
     <div class="q">
       <label for="funOutside">What do you do for fun outside of work?</label>
       <input type="text" id="funOutside" data-save="funOutside" placeholder="">
+    </div>
+    <div class="q">
+      <label>Add a photo</label>
+      <div class="hint" style="margin-bottom:8px;">So your manager can post it with your GroupMe welcome — totally optional.</div>
+      <div id="photoPreviewWrap" style="display:none;"><img id="photoPreview" class="photo-preview"/></div>
+      <input type="file" id="photoInput" accept="image/*" capture="user" style="display:none;">
+      <button type="button" class="save-btn photo-btn" id="photoBtn">📷 Add Photo</button>
+      <div class="photo-status" id="photoStatus"></div>
     </div>
   </form>
 
@@ -111,10 +122,69 @@ document.getElementById('saveBtn').addEventListener('click', function(){
   clearTimeout(saveTimer);
   save();
 });
+
+var photoStatusEl = document.getElementById('photoStatus');
+var photoPreviewEl = document.getElementById('photoPreview');
+var photoPreviewWrap = document.getElementById('photoPreviewWrap');
+function showPhotoPreview(url){
+  photoPreviewEl.src = url;
+  photoPreviewWrap.style.display = 'block';
+}
+function resizeImage(file, maxDim, quality){
+  return new Promise(function(resolve){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w > h){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob){ resolve(blob || file); }, 'image/jpeg', quality);
+      };
+      img.onerror = function(){ resolve(file); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ resolve(file); };
+    reader.readAsDataURL(file);
+  });
+}
+document.getElementById('photoBtn').addEventListener('click', function(){
+  document.getElementById('photoInput').click();
+});
+document.getElementById('photoInput').addEventListener('change', function(ev){
+  var file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+  resizeImage(file, 1280, 0.82).then(function(blob){
+    showPhotoPreview(URL.createObjectURL(blob));
+    if(embedded){
+      photoStatusEl.textContent = 'Uploading…';
+      window.parent.postMessage({rallyBioPhoto:true, file: blob}, window.location.origin);
+    } else {
+      photoStatusEl.textContent = 'Photo selected (only saves inside the training app)';
+    }
+  });
+});
+
 if(embedded){
   window.addEventListener('message', function(e){
     if(e.origin !== window.location.origin || !e.data) return;
-    if(e.data.rallyBioInit) applyState(e.data.data || {});
+    if(e.data.rallyBioInit){
+      var incoming = e.data.data || {};
+      applyState(incoming);
+      if(incoming.photo_url) showPhotoPreview(incoming.photo_url);
+    }
+    if(e.data.rallyBioPhotoUploaded){
+      photoStatusEl.textContent = 'Saved ✓';
+      setTimeout(function(){ photoStatusEl.textContent=''; }, 2000);
+    }
+    if(e.data.rallyBioPhotoError){
+      photoStatusEl.textContent = 'Could not upload — check connection and try again';
+    }
   });
   window.parent.postMessage({rallyBioReady:true}, window.location.origin);
 } else {

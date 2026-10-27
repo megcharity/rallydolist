@@ -1003,6 +1003,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="modal-title">📋 GroupMe Intro</div>
       <button class="modal-close" onclick="closeGroupMeIntroModal()">×</button>
     </div>
+    <div id="groupme-intro-photo-wrap" style="display:none;margin-bottom:10px;">
+      <img id="groupme-intro-photo" style="max-width:160px;border-radius:10px;display:block;"/>
+      <div style="font-size:11.5px;color:rgba(23,72,84,.5);margin-top:4px;">Press and hold the photo to save or copy it, then post it in GroupMe along with the text below.</div>
+    </div>
     <div style="font-size:12px;color:rgba(23,72,84,.55);margin-bottom:8px;">Tap Copy, or just select and copy the text yourself.</div>
     <textarea id="groupme-intro-text" rows="7" readonly onclick="this.focus();this.select()" style="width:100%;font-size:14px;line-height:1.4;padding:10px;border:1.5px solid var(--border);border-radius:6px;resize:vertical;font-family:inherit;"></textarea>
     <div class="modal-actions">
@@ -5157,7 +5161,33 @@ window.addEventListener('message', function(e){
     trnPatchTraineeSoft({bio:e.data.data});
     return;
   }
+  if(e.data.rallyBioPhoto){
+    if(!currentTrainee) return;
+    const src = e.source, origin = e.origin;
+    uploadBioPhoto(e.data.file).then(url=>{
+      if(!url){ if(src) src.postMessage({rallyBioPhotoError:true}, origin); return; }
+      trnPatchTraineeSoft({bio:{...(currentTrainee.bio||{}), photo_url:url}}).then(ok=>{
+        if(src) src.postMessage(ok ? {rallyBioPhotoUploaded:true, url} : {rallyBioPhotoError:true}, origin);
+      });
+    });
+    return;
+  }
 });
+async function uploadBioPhoto(file){
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const KEY  = window.RALLY_SUPABASE_ANON_KEY;
+  const token = (window.RallyAuth && window.RALLY_SUPABASE_ANON_KEY) || KEY;
+  const path = `bio-${Date.now()}-${Math.random().toString(36).slice(2,8)}.jpg`;
+  try{
+    const res = await fetch(`${SUPA}/storage/v1/object/calendar-docs/${path}`, {
+      method:'POST',
+      headers:{ 'apikey':KEY, 'Authorization':`Bearer ${token}`, 'Content-Type': file.type || 'image/jpeg' },
+      body: file
+    });
+    if(!res.ok){ console.warn('Bio photo upload failed', await res.text()); return null; }
+    return `${SUPA}/storage/v1/object/public/calendar-docs/${path}`;
+  }catch(e){ console.warn('Bio photo upload failed', e); return null; }
+}
 async function trnPatchTraineeSoft(fields){
   try{
     const res = await fetch(`${SUPA_URL}/rest/v1/rally_training_trainees?id=eq.${currentTrainee.id}`, {
@@ -5458,6 +5488,7 @@ function trnMgrDetailHTML(t){
   const bioRows = bioEntries.length ? bioEntries.map(k=>`<div class="trn-mgr-detail-row"><span>${calEsc(BIO_LABELS[k])}</span><span>${calEsc(bio[k])}</span></div>`).join('') : '<div style="font-size:12px;color:rgba(23,72,84,.45);padding:6px 0;">Not filled out yet — last item on their Day 1 reading list</div>';
   return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(23,72,84,.1);">
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin-bottom:4px;">Bio (for GroupMe)</div>
+    ${bio.photo_url?`<img src="${calEsc(bio.photo_url)}" style="max-width:90px;border-radius:8px;display:block;margin-bottom:8px;"/>`:''}
     ${bioRows}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Days</div>
     ${dayRows}
@@ -5501,6 +5532,13 @@ function trnMgrCopyBioIntro(id){
   const msg = parts.join(' ');
   const ta = document.getElementById('groupme-intro-text');
   ta.value = msg;
+  const photoWrap = document.getElementById('groupme-intro-photo-wrap');
+  if(b.photo_url){
+    document.getElementById('groupme-intro-photo').src = b.photo_url;
+    photoWrap.style.display = 'block';
+  } else {
+    photoWrap.style.display = 'none';
+  }
   document.getElementById('groupme-intro-modal').style.display = 'flex';
   setTimeout(()=>{ ta.focus(); ta.select(); }, 50);
 }
