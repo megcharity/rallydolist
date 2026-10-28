@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · HotSchedules for Managers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,7vw,60px);line-height:.98}
+h2{font-size:clamp(28px,4.5vw,36px);line-height:1}
+h3{font-size:22px;line-height:1.1;margin-bottom:8px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:620px}
+.hero{padding:30px 28px}
+.hero p{margin-top:16px;font-size:17px;text-wrap:pretty;max-width:640px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:22px;line-height:1.2;margin-top:4px}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:40px 1fr;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:24px;line-height:1}
+.duties b{display:block;font-weight:600}
+.duties p.d{font-size:14px;opacity:.8;margin-top:3px}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.note b{font-weight:600}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+.compare{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--navy);border-radius:4px;background:var(--paper)}
+.compare>div{padding:16px 20px}
+.compare>div+div{border-left:1.5px solid var(--navy)}
+.compare .label{display:block;margin-bottom:10px}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+@media (max-width:720px){
+  .sec{padding:22px 18px}
+  .compare{grid-template-columns:1fr}
+  .compare>div+div{border-left:0;border-top:1.5px solid var(--navy)}
+  .checks{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hand">Manager Chapter · HotSchedules</div>
+      <h1 style="margin-top:12px">HotSchedules <em>for Managers</em></h1>
+      <p>Every associate learns the same line over and over in their own HotSchedules training: "nothing is official until a manager approves it." This chapter is the other half — what you're actually checking for, and how to build and run the schedule itself.</p>
+    </div>
+
+    <div class="sec">
+      <div class="standard"><span class="label">The standard</span><p>Every request sits in a queue until you act on it. Letting it sit isn't neutral — it leaves someone's week unresolved.</p></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Building &amp; <em>publishing</em></h2><p>The schedule starts with you, not a request queue.</p></div></div>
+      <ol class="duties">
+        <li><div><b>Build against labour targets first</b><p class="d">Check your labour goals before you start placing shifts, not after. It's much easier to build it right than to fix it after it's posted.</p></div></li>
+        <li><div><b>Publish at least one week ahead</b><p class="d">Gives the team time to request changes before the week starts, instead of scrambling once it's live.</p></div></li>
+        <li><div><b>Check availability on file before you place anyone</b><p class="d">Don't schedule around an outdated availability — if it looks wrong, confirm with them before you build around it.</p></div></li>
+      </ol>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Approving <em>availability</em> changes</h2><p>A standing weekly pattern — this changes what you can schedule them for going forward, not just one shift.</p></div></div>
+      <ul><li>Check it against the shifts they're already scheduled for after the change takes effect — approving it doesn't undo what's already posted</li><li>Make sure it still leaves you enough coverage for their role, especially on weekends or peak shifts</li><li>If it creates a real coverage gap, talk to them before you deny it outright — there's often a version of it that works for both sides</li><li>Don't sit on it. An undecided availability request makes it hard for them to plan their life, and for you to plan the next schedule</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Approving <em>time-off</em> requests</h2><p>A one-time date, not a standing pattern.</p></div></div>
+      <ul><li>Approve early requests early — the earlier it's decided, the easier it is to schedule around</li><li>Weigh it against who else is already off that day and what the event calendar looks like</li><li>If you have to deny it, tell them directly and explain why, don't just leave it pending or let it expire</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Drops, <em>swaps</em> &amp; pickups</h2><p>The associate side is already a two-step handoff — a coworker has to accept first. You're the final check.</p></div></div>
+      <div class="compare">
+        <div><span class="label">What to check before you approve</span><ul><li>Does it create overtime, for either person?</li><li>Is the person picking it up actually trained for that role?</li><li>Does it leave the shift appropriately covered — not just filled?</li></ul></div>
+        <div><span class="label">What you're approving</span><ul><li><b>Drop:</b> they're giving the shift away — it's released to the team or one coworker</li><li><b>Swap:</b> a straight trade, already accepted by the other person</li><li><b>Pickup:</b> someone claiming a dropped shift, or a house shift you posted</li></ul></div>
+      </div>
+      <div class="note"><b>A dropped shift is still theirs until someone picks it up and you approve it.</b> That's exactly what the associate guide tells them — if it's sitting unpicked close to the shift, follow up with the original person rather than assuming it's covered.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Posting a <em>house shift</em></h2><p>An open shift with no one assigned — yours to post when you need extra coverage.</p></div></div>
+      <ul><li>Post it as soon as you know you need it — more notice means more people can grab it</li><li>It shows up in Available Pickup right alongside dropped shifts, so anyone can request it</li><li>You still approve the pickup, same as any other request</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-sage">Before you call it handled</span></div></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+  </div>
+</div>
+<script>
+var OUTCOMES=["Nothing sits in the approval queue longer than it needs to.", "I checked coverage and overtime before approving a swap or pickup, not just whether it was a fair trade.", "A denied request came with a real reason, not silence.", "The schedule is published at least a week out, built against labour targets.", "A dropped shift that's still unpicked close to the date gets followed up on, not assumed covered."];
+var KEYNAME="rally-mgr-hotschedules-v1";
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  n.checked=!!state[k];
+  n.addEventListener('change',function(){state[k]=n.checked;save();});
+});
+</script>
+</body>
+</html>
