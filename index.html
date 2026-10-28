@@ -300,18 +300,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .mgr-body > *{display:block;width:100%;}
 .mgr-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px;}
 .mgr-card-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--teal);margin-bottom:14px;}
-.clean-section-label{font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px;}
-.clean-row{display:flex;align-items:flex-start;gap:10px;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;cursor:pointer;}
-.clean-row input[type=checkbox]{width:20px;height:20px;flex:none;margin-top:1px;accent-color:var(--olive);}
-.clean-row.done{opacity:.65;}
-.clean-row.overdue{border-color:#c04020;}
-.clean-row-text{font-size:14px;font-weight:600;color:var(--teal);}
-.clean-row-area{font-size:11.5px;color:rgba(23,72,84,.5);margin-top:2px;}
-.clean-row-done{font-size:11.5px;color:var(--olive);font-weight:600;margin-top:4px;}
-.clean-row-overdue{font-size:11.5px;color:#c04020;font-weight:600;margin-top:4px;}
-.clean-empty{font-size:13px;color:rgba(23,72,84,.4);padding:12px 0;}
-.clean-upcoming-row{display:flex;gap:10px;font-size:13px;color:rgba(23,72,84,.65);padding:7px 0;border-bottom:1px dashed var(--border);}
-.clean-upcoming-row span:first-child{font-weight:700;color:var(--teal);width:44px;flex:none;}
 .mgr-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
 .mgr-stat{background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center;}
 .mgr-stat-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--teal);}
@@ -1009,57 +997,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 </div>
 
 <!-- GROUPME INTRO MODAL (Manager -> Training -> trainee card -> Copy GroupMe Intro) -->
-<!-- CLEANING CHECKLIST ADMIN MODAL (Manager -> Operations -> Cleaning -> Admin) -->
-<div id="clean-admin-modal" class="modal-ov" style="display:none;" onclick="cleanCloseAdmin(event)">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:520px;width:94vw;max-height:84vh;overflow-y:auto;">
-    <div class="modal-hdr">
-      <div class="modal-title">⚙ Cleaning Checklist Admin</div>
-      <button class="modal-close" onclick="cleanCloseAdmin()">×</button>
-    </div>
-    <div style="display:flex;gap:0;margin-bottom:14px;">
-      <button id="clean-admin-tasks-btn" class="task-view-btn active" onclick="cleanAdminSwitch('tasks')">Tasks</button>
-      <button id="clean-admin-history-btn" class="task-view-btn" onclick="cleanAdminSwitch('history')">History</button>
-    </div>
-    <div id="clean-admin-tasks-pane"></div>
-    <div id="clean-admin-history-pane" style="display:none;"></div>
-  </div>
-</div>
-
-<div id="clean-task-form-modal" class="modal-ov" style="display:none;" onclick="cleanCloseTaskForm(event)">
-  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:420px;width:92vw;">
-    <div class="modal-hdr">
-      <div class="modal-title" id="clean-task-form-title">New Cleaning Task</div>
-      <button class="modal-close" onclick="cleanCloseTaskForm()">×</button>
-    </div>
-    <div class="fg full"><label>Task description</label><input id="clean-task-text" type="text" placeholder="e.g. Wipe down the host desk"/></div>
-    <div class="fg full"><label>Area <span style="font-weight:400;color:rgba(23,72,84,.4);text-transform:none;letter-spacing:0;">(optional)</span></label><input id="clean-task-area" type="text" placeholder="e.g. Host Desk"/></div>
-    <div class="fg full"><label>Recurrence</label>
-      <select id="clean-task-recurrence" onchange="cleanTaskFormRecurrenceChanged()">
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-        <option value="monthly">Monthly</option>
-      </select>
-    </div>
-    <div class="fg full" id="clean-task-dow-wrap" style="display:none;">
-      <label>Day of week</label>
-      <select id="clean-task-dow">
-        <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
-        <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
-      </select>
-    </div>
-    <div class="fg full" id="clean-task-wom-wrap" style="display:none;">
-      <label>Which week of the month</label>
-      <select id="clean-task-wom">
-        <option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option>
-      </select>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-btn primary" onclick="cleanSaveTask()">Save</button>
-      <button class="modal-btn secondary" onclick="cleanCloseTaskForm()">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <div id="groupme-intro-modal" class="modal-ov" style="display:none;" onclick="closeGroupMeIntroModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()" style="max-width:460px;width:92vw;">
     <div class="modal-hdr">
@@ -1302,9 +1239,6 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div id="cl-tab-scorecard" style="display:none;"><div class="mgr-body" id="scorecard-body"></div></div>
     <div id="cl-tab-photos" style="display:none;"><div class="mgr-body" id="cl-photos-body"></div></div>
     <div id="cl-tab-editor" style="display:none;padding:16px 16px 80px;"><div id="cl-editor-body"></div></div>
-  </div>
-  <div id="mgr-tab-cleaning" style="flex:1;overflow-y:auto;display:none;">
-    <div class="mgr-body" id="cleaning-body"></div>
   </div>
   <div id="mgr-tab-shiftreport" style="flex:1;overflow-y:auto;display:none;padding-bottom:80px;"></div>
   <div id="mgr-tab-calendar" style="flex:1;overflow-y:auto;display:none;">
@@ -1770,8 +1704,6 @@ function showMgrTab(tab, el) {
   const completedEl = document.getElementById('mgr-tab-completed');
   if(completedEl) completedEl.style.display = 'none';
   document.getElementById('mgr-tab-checklists').style.display  = tab === 'checklists'  ? 'block' : 'none';
-  document.getElementById('mgr-tab-cleaning').style.display    = tab === 'cleaning'    ? 'block' : 'none';
-  if(tab === 'cleaning') renderMgrCleaningTab();
   const scorecardTab = document.getElementById('mgr-tab-scorecard');
   if(scorecardTab) scorecardTab.style.display = 'none';
   // Land on Manager Tasks by default — it's now the first thing a manager
@@ -2078,254 +2010,6 @@ function alShiftWeek(delta) {
 function alJumpToThisWeek() {
   _adminLogWeekStart = alMondayOf(new Date());
   renderAdminLogTab();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// MANAGER CLEANING CHECKLIST — daily tasks every day, weekly tasks tied
-// to a specific weekday, monthly tasks tied to a specific Nth-weekday
-// (e.g. "3rd Monday"). Each is completion-tracked per calendar date with
-// the manager's name, so a task recurs independently every cycle instead
-// of staying checked off forever. Weekly/monthly tasks that go unchecked
-// past their due date keep showing as overdue until someone completes
-// them; daily tasks simply reset the next day.
-// ═══════════════════════════════════════════════════════════════
-const CLEAN_DOW_LABEL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-let cleaningTasks = [];
-let cleaningCompletions = [];
-async function loadCleaningTasks() {
-  const SUPA = window.RALLY_SUPABASE_URL;
-  try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_cleaning_tasks?select=*&active=eq.true&order=recurrence.asc,day_of_week.asc,week_of_month.asc,sort_order.asc`, { headers: AL_HDRS() });
-    cleaningTasks = res.ok ? await res.json() : [];
-  } catch(e) { console.warn('Cleaning tasks load failed', e); cleaningTasks = []; }
-}
-async function loadCleaningCompletions() {
-  const SUPA = window.RALLY_SUPABASE_URL;
-  const since = new Date(); since.setDate(since.getDate() - 60);
-  try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_cleaning_completions?select=*&due_date=gte.${alDateToYMD(since)}&order=due_date.desc`, { headers: AL_HDRS() });
-    cleaningCompletions = res.ok ? await res.json() : [];
-  } catch(e) { console.warn('Cleaning completions load failed', e); cleaningCompletions = []; }
-}
-function cleanNthWeekday(date) { return Math.floor((date.getDate()-1)/7) + 1; }
-function cleanIsDueOn(task, date) {
-  if(task.recurrence === 'daily') return true;
-  if(task.recurrence === 'weekly') return date.getDay() === task.day_of_week;
-  if(task.recurrence === 'monthly') return date.getDay() === task.day_of_week && cleanNthWeekday(date) === task.week_of_month;
-  return false;
-}
-function cleanDueDateFor(task, today) {
-  if(task.recurrence === 'daily') return alDateToYMD(today);
-  const d = new Date(today);
-  for(let i=0;i<60;i++){
-    if(cleanIsDueOn(task, d)) return alDateToYMD(d);
-    d.setDate(d.getDate()-1);
-  }
-  return alDateToYMD(today);
-}
-function cleanCompletionFor(taskId, dueDate) {
-  return cleaningCompletions.find(c => c.task_id === taskId && c.due_date === dueDate) || null;
-}
-function cleanRecurrenceLabel(t) {
-  if(t.recurrence === 'daily') return 'Daily';
-  if(t.recurrence === 'weekly') return 'Weekly · ' + CLEAN_DOW_LABEL[t.day_of_week];
-  if(t.recurrence === 'monthly') return ['','1st','2nd','3rd','4th'][t.week_of_month] + ' ' + CLEAN_DOW_LABEL[t.day_of_week] + ' of the month';
-  return t.recurrence;
-}
-async function renderMgrCleaningTab() {
-  const body = document.getElementById('cleaning-body');
-  if(!body) return;
-  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading…</div>';
-  await Promise.all([loadCleaningTasks(), loadCleaningCompletions()]);
-  const today = new Date();
-  const todayStr = alDateToYMD(today);
-
-  const dueToday = [], overdue = [];
-  cleaningTasks.forEach(t => {
-    const dueDate = cleanDueDateFor(t, today);
-    const completion = cleanCompletionFor(t.id, dueDate);
-    if(dueDate === todayStr) dueToday.push({task:t, dueDate, completion});
-    else if(!completion) overdue.push({task:t, dueDate, completion});
-  });
-  dueToday.sort((a,b)=> (a.task.area||'').localeCompare(b.task.area||''));
-
-  const upcoming = [];
-  for(let i=1;i<=6;i++){
-    const d = new Date(today); d.setDate(d.getDate()+i);
-    cleaningTasks.forEach(t => { if(t.recurrence !== 'daily' && cleanIsDueOn(t, d)) upcoming.push({task:t, date:d}); });
-  }
-
-  const rowHtml = (item, isOverdueRow) => {
-    const t = item.task, done = !!item.completion;
-    return `<label class="clean-row ${done?'done':''} ${isOverdueRow&&!done?'overdue':''}">
-      <input type="checkbox" ${done?'checked':''} ${done?'disabled':''} onchange="cleanToggleComplete(${t.id},'${item.dueDate}')">
-      <div style="flex:1;">
-        <div class="clean-row-text">${calEsc(t.text)}</div>
-        ${t.area?`<div class="clean-row-area">${calEsc(t.area)}</div>`:''}
-        ${done
-          ? `<div class="clean-row-done">✓ ${calEsc(item.completion.manager_name)} · ${new Date(item.completion.completed_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})} <a href="#" onclick="event.preventDefault();cleanUndoComplete(${t.id},'${item.dueDate}')" style="margin-left:6px;color:#b91c1c;">Undo</a></div>`
-          : isOverdueRow ? `<div class="clean-row-overdue">⚠ Overdue since ${fmtCalDate(item.dueDate)}</div>` : ''}
-      </div>
-    </label>`;
-  };
-
-  let html = `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:4px;">
-    <h2 style="font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--teal);margin:0;">🧹 Manager Cleaning Checklist</h2>
-    ${isGM()?`<button class="btn-sm" onclick="cleanOpenAdmin()">⚙ Admin</button>`:''}
-  </div>
-  <div style="font-size:13px;color:rgba(23,72,84,.5);margin-bottom:16px;">${today.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>`;
-
-  if(overdue.length) html += `<div class="clean-section-label" style="color:#c04020;">⚠ Overdue</div>` + overdue.map(i=>rowHtml(i,true)).join('');
-
-  html += `<div class="clean-section-label">Today</div>`;
-  html += dueToday.length ? dueToday.map(i=>rowHtml(i,false)).join('') : '<div class="clean-empty">Nothing due today.</div>';
-
-  if(upcoming.length) {
-    html += `<div class="clean-section-label">Upcoming this week</div>` +
-      upcoming.map(i=>`<div class="clean-upcoming-row"><span>${i.date.toLocaleDateString('en-US',{weekday:'short'})}</span><span>${calEsc(i.task.text)}</span></div>`).join('');
-  }
-
-  body.innerHTML = html;
-}
-async function cleanToggleComplete(taskId, dueDate) {
-  const SUPA = window.RALLY_SUPABASE_URL;
-  const me = currentManagerName();
-  try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_cleaning_completions`, {
-      method:'POST', headers:{...AL_HDRS(),'Prefer':'resolution=merge-duplicates,return=minimal'},
-      body: JSON.stringify({ task_id: taskId, due_date: dueDate, manager_name: me })
-    });
-    if(!res.ok){ showToast('⚠ Could not save — check connection'); renderMgrCleaningTab(); return; }
-    showToast('✓ Marked complete');
-  } catch(e) { showToast('⚠ Could not save — check connection'); }
-  renderMgrCleaningTab();
-}
-async function cleanUndoComplete(taskId, dueDate) {
-  const SUPA = window.RALLY_SUPABASE_URL;
-  try {
-    await fetch(`${SUPA}/rest/v1/rally_cleaning_completions?task_id=eq.${taskId}&due_date=eq.${dueDate}`, { method:'DELETE', headers: AL_HDRS() });
-    showToast('Undone');
-  } catch(e) { showToast('Could not undo — try again'); }
-  renderMgrCleaningTab();
-}
-
-// ── Admin: manage tasks + review history ────────────────────────
-function cleanOpenAdmin(){ document.getElementById('clean-admin-modal').style.display = 'flex'; cleanAdminSwitch('tasks'); }
-function cleanCloseAdmin(ev){ if(ev && ev.target.id !== 'clean-admin-modal') return; document.getElementById('clean-admin-modal').style.display = 'none'; }
-function cleanAdminSwitch(view){
-  document.getElementById('clean-admin-tasks-btn').classList.toggle('active', view==='tasks');
-  document.getElementById('clean-admin-history-btn').classList.toggle('active', view==='history');
-  document.getElementById('clean-admin-tasks-pane').style.display = view==='tasks' ? 'block' : 'none';
-  document.getElementById('clean-admin-history-pane').style.display = view==='history' ? 'block' : 'none';
-  if(view==='tasks') renderCleanAdminTasks(); else renderCleanAdminHistory();
-}
-function renderCleanAdminTasks(){
-  const pane = document.getElementById('clean-admin-tasks-pane');
-  if(!pane) return;
-  const groups = {daily:[], weekly:[], monthly:[]};
-  cleaningTasks.forEach(t => { (groups[t.recurrence]||groups.daily).push(t); });
-  const section = (label, arr) => !arr.length ? '' : `<div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:14px 0 6px;">${label}</div>` +
-    arr.map(t=>`<div class="mgr-card" style="margin-bottom:8px;padding:10px 12px;">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-        <div>
-          <div style="font-size:13px;font-weight:600;color:var(--teal);">${calEsc(t.text)}</div>
-          <div style="font-size:11px;color:rgba(23,72,84,.5);margin-top:2px;">${cleanRecurrenceLabel(t)}${t.area?' · '+calEsc(t.area):''}</div>
-        </div>
-        <div style="display:flex;gap:6px;flex:none;">
-          <button class="btn-sm" onclick="cleanOpenTaskForm(${t.id})">✏</button>
-          <button class="btn-sm danger" onclick="cleanDeleteTask(${t.id})">🗑</button>
-        </div>
-      </div>
-    </div>`).join('');
-  pane.innerHTML = `<button class="add-task-btn" style="margin-bottom:12px;" onclick="cleanOpenTaskForm()">+ Add Cleaning Task</button>`
-    + section('Daily', groups.daily) + section('Weekly', groups.weekly) + section('Monthly', groups.monthly);
-}
-let _cleanTaskFormEditId = null;
-function cleanOpenTaskForm(id){
-  _cleanTaskFormEditId = id || null;
-  const t = id ? cleaningTasks.find(x=>x.id===id) : null;
-  document.getElementById('clean-task-form-title').textContent = t ? 'Edit Cleaning Task' : 'New Cleaning Task';
-  document.getElementById('clean-task-text').value = t ? t.text : '';
-  document.getElementById('clean-task-area').value = t ? (t.area||'') : '';
-  document.getElementById('clean-task-recurrence').value = t ? t.recurrence : 'daily';
-  document.getElementById('clean-task-dow').value = t && t.day_of_week!=null ? String(t.day_of_week) : '1';
-  document.getElementById('clean-task-wom').value = t && t.week_of_month!=null ? String(t.week_of_month) : '1';
-  cleanTaskFormRecurrenceChanged();
-  document.getElementById('clean-task-form-modal').style.display = 'flex';
-}
-function cleanCloseTaskForm(ev){ if(ev && ev.target.id !== 'clean-task-form-modal') return; document.getElementById('clean-task-form-modal').style.display = 'none'; }
-function cleanTaskFormRecurrenceChanged(){
-  const r = document.getElementById('clean-task-recurrence').value;
-  document.getElementById('clean-task-dow-wrap').style.display = (r==='weekly'||r==='monthly') ? 'block' : 'none';
-  document.getElementById('clean-task-wom-wrap').style.display = r==='monthly' ? 'block' : 'none';
-}
-async function cleanSaveTask(){
-  const text = document.getElementById('clean-task-text').value.trim();
-  if(!text){ showToast('Enter a task description'); return; }
-  const area = document.getElementById('clean-task-area').value.trim() || null;
-  const recurrence = document.getElementById('clean-task-recurrence').value;
-  const day_of_week = (recurrence==='weekly'||recurrence==='monthly') ? Number(document.getElementById('clean-task-dow').value) : null;
-  const week_of_month = recurrence==='monthly' ? Number(document.getElementById('clean-task-wom').value) : null;
-  const SUPA = window.RALLY_SUPABASE_URL;
-  const payload = { text, area, recurrence, day_of_week, week_of_month };
-  try {
-    const res = _cleanTaskFormEditId
-      ? await fetch(`${SUPA}/rest/v1/rally_cleaning_tasks?id=eq.${_cleanTaskFormEditId}`, { method:'PATCH', headers:{...AL_HDRS(),'Prefer':'return=minimal'}, body: JSON.stringify(payload) })
-      : await fetch(`${SUPA}/rest/v1/rally_cleaning_tasks`, { method:'POST', headers:{...AL_HDRS(),'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
-    if(!res.ok){ showToast('⚠ Could not save task'); return; }
-    cleanCloseTaskForm();
-    await loadCleaningTasks();
-    renderCleanAdminTasks();
-    renderMgrCleaningTab();
-    showToast('Saved ✓');
-  } catch(e) { showToast('⚠ Could not save task'); }
-}
-async function cleanDeleteTask(id){
-  if(!confirm('Delete this cleaning task? It stops appearing on the checklist, but past completion history is kept.')) return;
-  const SUPA = window.RALLY_SUPABASE_URL;
-  try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_cleaning_tasks?id=eq.${id}`, { method:'PATCH', headers:{...AL_HDRS(),'Prefer':'return=minimal'}, body: JSON.stringify({active:false}) });
-    if(!res.ok){ showToast('⚠ Could not delete'); return; }
-    await loadCleaningTasks();
-    renderCleanAdminTasks();
-    renderMgrCleaningTab();
-    showToast('Deleted');
-  } catch(e) { showToast('Could not delete — try again'); }
-}
-let _cleanHistDate = null;
-function renderCleanAdminHistory(){
-  const pane = document.getElementById('clean-admin-history-pane');
-  if(!pane) return;
-  if(!_cleanHistDate) _cleanHistDate = alDateToYMD(new Date());
-  pane.innerHTML = `
-    <div style="margin-bottom:14px;">
-      <input type="date" id="clean-hist-date" value="${_cleanHistDate}" onchange="cleanHistDateChanged(this.value)" style="font-size:13px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-family:inherit;color:var(--teal);"/>
-    </div>
-    <div id="clean-hist-list"></div>`;
-  renderCleanHistList();
-}
-function cleanHistDateChanged(v){ _cleanHistDate = v; renderCleanHistList(); }
-async function renderCleanHistList(){
-  const list = document.getElementById('clean-hist-list');
-  if(!list) return;
-  list.innerHTML = '<div class="clean-empty">Loading…</div>';
-  const SUPA = window.RALLY_SUPABASE_URL;
-  let dayCompletions = [];
-  try {
-    const res = await fetch(`${SUPA}/rest/v1/rally_cleaning_completions?select=*&due_date=eq.${_cleanHistDate}`, { headers: AL_HDRS() });
-    dayCompletions = res.ok ? await res.json() : [];
-  } catch(e) {}
-  const d = new Date(_cleanHistDate+'T12:00:00');
-  const due = cleaningTasks.filter(t => cleanIsDueOn(t, d));
-  if(!due.length){ list.innerHTML = '<div class="clean-empty">No tasks scheduled for this date.</div>'; return; }
-  list.innerHTML = due.map(t=>{
-    const c = dayCompletions.find(x=>x.task_id===t.id);
-    return `<div class="mgr-card" style="margin-bottom:8px;padding:10px 12px;">
-      <div style="font-size:13px;font-weight:600;color:var(--teal);">${calEsc(t.text)}</div>
-      ${c ? `<div style="font-size:12px;color:var(--olive);font-weight:600;margin-top:4px;">✓ ${calEsc(c.manager_name)} · ${new Date(c.completed_at).toLocaleString('en-US',{hour:'numeric',minute:'2-digit'})}</div>`
-          : `<div style="font-size:12px;color:#c04020;font-weight:600;margin-top:4px;">✗ Missed</div>`}
-    </div>`;
-  }).join('');
 }
 
 async function renderAdminLogTab() {
@@ -4726,7 +4410,6 @@ const MGR_GROUPS = {
   calendar:   { label: 'Calendar',   subs: [] }, // the manager calendar is one merged view (events + PTO together) — no real sub-destinations to switch between
   operations: { label: 'Operations', subs: [
     {key:'checklists', label:'Checklists ✓'},
-    {key:'cleaning', label:'🧹 Cleaning'},
     {key:'shiftreport', label:'Shift Report'},
     {key:'tasks', label:'Tasks'},
     {key:'adminlog', label:'Admin Log'},
@@ -4737,7 +4420,7 @@ const MGR_GROUPS = {
     {key:'announcements', label:'Announcements'},
   ]},
 };
-const MGR_TAB_GROUP = { checklists:'operations', cleaning:'operations', shiftreport:'operations', tasks:'operations', adminlog:'operations', inventory:'operations', training:'team', announcements:'team', calendar:'calendar' };
+const MGR_TAB_GROUP = { checklists:'operations', shiftreport:'operations', tasks:'operations', adminlog:'operations', inventory:'operations', training:'team', announcements:'team', calendar:'calendar' };
 let mgrGroup = 'calendar';
 function syncMgrGroupNav(tab) {
   mgrGroup = MGR_TAB_GROUP[tab] || mgrGroup;
@@ -6693,7 +6376,18 @@ function renderChecklist(signedOff = false) {
       <span>${sec} <span class="cl-section-badge">${secItems.length}</span></span>
     </div>`;
     secItems.forEach(item => { html += renderClItem(item); });
+    html += `<div style="display:flex;gap:8px;padding:8px 0 16px;">
+      <input type="text" id="cl-inline-add-${secId}" data-section="${calEsc(sec)}" placeholder="Add an item to ${calEsc(sec)}…" onkeydown="if(event.key==='Enter')clInlineAddItem(this)" style="flex:1;padding:8px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:var(--teal);">
+      <button onclick="clInlineAddItem(document.getElementById('cl-inline-add-${secId}'))" style="flex-shrink:0;padding:8px 14px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Add</button>
+    </div>`;
   });
+
+  html += `<div class="cl-section-header"><span>Add a new section</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0 16px;">
+      <input type="text" id="cl-inline-new-section" placeholder="e.g. Saturday" style="flex:1;min-width:120px;padding:8px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:var(--teal);">
+      <input type="text" id="cl-inline-new-text" placeholder="New item text…" onkeydown="if(event.key==='Enter')clInlineAddNewSection()" style="flex:2;min-width:160px;padding:8px 10px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:var(--teal);">
+      <button onclick="clInlineAddNewSection()" style="flex-shrink:0;padding:8px 14px;border:none;border-radius:8px;background:var(--teal);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Add</button>
+    </div>`;
 
   document.getElementById('cl-items-body').innerHTML = html;
   // Show signed-off banner if applicable
@@ -6786,6 +6480,7 @@ function renderClItem(item) {
         <button onclick="toggleClNA('${item.id}')" style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid ${isNA?'#8a7b5c':'rgba(23,72,84,.2)'};background:${isNA?'rgba(138,123,92,.15)':'#fff'};cursor:pointer;font-size:11px;font-weight:700;color:${isNA?'#8a7b5c':'rgba(23,72,84,.45)'};white-space:nowrap;font-family:inherit;">
           ${isNA?'N/A ✓':'N/A'}
         </button>
+        <button onclick="clInlineDeleteItem('${item.id}')" title="Remove this item from the checklist" style="flex-shrink:0;width:26px;height:26px;border-radius:8px;border:1.5px solid rgba(220,80,60,.3);background:#fff;cursor:pointer;font-size:14px;color:var(--coral);font-family:inherit;">×</button>
       </div>
       ${isWeekly ? `<button onclick="createTaskFromChecklist('${item.id}')" style="margin-top:6px;margin-left:36px;padding:5px 12px;border-radius:6px;border:1.5px solid rgba(23,72,84,.2);background:#fff;font-size:12px;font-weight:600;color:rgba(23,72,84,.5);cursor:pointer;font-family:inherit;">+ Create Task</button>` : ''}
       <div class="cl-detail ${isNA?'open':''}" id="cldetail-${item.id}">
@@ -6810,6 +6505,7 @@ function renderClItem(item) {
         style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid ${needsActive?'#c87a00':'rgba(23,72,84,.2)'};background:${needsActive?'rgba(248,154,28,.15)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${needsActive?'#c87a00':'rgba(23,72,84,.45)'};transition:all .15s;white-space:nowrap;">
         ${needsActive?'⚠️ Flagged':'⚠️'}
       </button>
+      <button onclick="clInlineDeleteItem('${item.id}')" title="Remove this item from the checklist" style="flex-shrink:0;width:26px;height:26px;border-radius:8px;border:1.5px solid rgba(220,80,60,.3);background:#fff;cursor:pointer;font-size:14px;color:var(--coral);font-family:inherit;">×</button>
     </div>
     <div class="cl-detail ${needsActive?'open':''}" id="cldetail-${item.id}">
       <label>What is the issue?</label>
@@ -8184,6 +7880,48 @@ function clEditorRenderSection(key) {
   `;
 }
 
+// ── Inline add/delete right on the checklist screen itself (not the
+// separate ✏ Edit tab) — so a manager can add or remove a to-do for a
+// given day without leaving the checklist they're actually working from.
+function clInlineAddItem(inputEl) {
+  const key = currentChecklistKey;
+  const text = inputEl.value.trim();
+  if(!text) { inputEl.focus(); return; }
+  const section = inputEl.dataset.section;
+  const id = `${key}_${Date.now()}`;
+  if(!ALL_CHECKLISTS[key]) ALL_CHECKLISTS[key] = [];
+  ALL_CHECKLISTS[key].push({ id, section, text, type:'check' });
+  saveChecklistConfig();
+  inputEl.value = '';
+  renderChecklist();
+  showToast('Item added ✓');
+}
+function clInlineAddNewSection() {
+  const key = currentChecklistKey;
+  const secEl = document.getElementById('cl-inline-new-section');
+  const textEl = document.getElementById('cl-inline-new-text');
+  const section = secEl.value.trim();
+  const text = textEl.value.trim();
+  if(!section) { secEl.focus(); return; }
+  if(!text) { textEl.focus(); return; }
+  const id = `${key}_${Date.now()}`;
+  if(!ALL_CHECKLISTS[key]) ALL_CHECKLISTS[key] = [];
+  ALL_CHECKLISTS[key].push({ id, section, text, type:'check' });
+  saveChecklistConfig();
+  secEl.value = ''; textEl.value = '';
+  renderChecklist();
+  showToast('Item added ✓');
+}
+function clInlineDeleteItem(itemId) {
+  const key = currentChecklistKey;
+  if(!ALL_CHECKLISTS[key]) return;
+  if(!confirm('Remove this item from the checklist?')) return;
+  ALL_CHECKLISTS[key] = ALL_CHECKLISTS[key].filter(i => i.id !== itemId);
+  delete clState[itemId];
+  saveChecklistConfig();
+  renderChecklist();
+  showToast('Item removed');
+}
 function clEditorAddItem(key) {
   const textEl = document.getElementById(`cl-add-text-${key}`);
   const secEl  = document.getElementById(`cl-add-sec-${key}`);
