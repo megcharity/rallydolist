@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rally · Guest Recovery (Manager)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(44px,7.5vw,68px);line-height:.95}
+h2{font-size:clamp(30px,5vw,40px);line-height:1}
+h3{font-size:24px;line-height:1.05;margin-bottom:10px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+.frame{border:2px solid var(--navy)}
+.sec{padding:28px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px}
+.sec-head p{margin-top:8px;max-width:600px}
+.hero{padding:30px 28px}
+.hero p{margin-top:16px;font-size:17px;text-wrap:pretty;max-width:640px}
+.standard{background:var(--sage);border-radius:4px;padding:16px 20px}
+.standard p{font-family:"Instrument Serif",serif;font-style:italic;font-size:22px;line-height:1.2;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.card{border:1.5px solid var(--navy);border-radius:4px;padding:18px 16px;cursor:pointer;min-height:140px}
+.card .num{font-family:"Instrument Serif",serif;font-style:italic;font-size:40px;line-height:1;color:var(--orange)}
+.card h3{margin:6px 0 0;font-size:19px}
+.card .back{display:none}
+.card.open{background:var(--sage)}
+.card.open .front{display:none}
+.card.open .back{display:block}
+.card .back p{margin-top:6px;font-size:14.5px}
+.card .tap{display:block;margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;opacity:.55}
+.note{margin-top:20px;background:rgba(248,154,28,.16);border:1.5px solid var(--orange);border-radius:6px;padding:14px 18px}
+.note b{font-weight:600}
+.alert{margin-top:20px;padding:12px 16px;background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px}
+.alert b{font-weight:600}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 24px}
+.checks label{display:flex;gap:12px;align-items:flex-start;cursor:pointer;min-height:32px}
+.checks input{margin-top:1px}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:22px;height:22px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:0;flex:none;vertical-align:middle}
+input[type=checkbox]::after{content:"";width:11px;height:6px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.duties{list-style:none;margin:0;padding:0;counter-reset:d}
+.duties li{counter-increment:d;display:grid;grid-template-columns:36px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.duties li:first-child{border-top:0;padding-top:0}
+.duties li::before{content:counter(d,decimal-leading-zero);font-family:"Instrument Serif",serif;font-size:22px;line-height:1}
+.duties b{display:block;font-weight:600}
+@media (max-width:720px){
+  .sec{padding:22px 18px}
+  .cards{grid-template-columns:1fr 1fr}
+}
+@media print{.card .front{display:none}.card .back{display:block}.card .tap{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Manager Training</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hand">Manager Chapter · Guest Recovery</div>
+      <h1 style="margin-top:12px">Guest <em>Recovery</em></h1>
+      <p>Things will go wrong. A dish takes too long, a drink misses the mark, a guest is simply disappointed. It's not about what we give them — it's about how they feel when they leave. As a manager, that feeling is on you.</p>
+    </div>
+
+    <div class="sec">
+      <div class="standard"><span class="label">Own it</span><p>It's your responsibility as a manager to own every guest's satisfaction and experience.</p></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>It's your <em>job</em></h2><p>Any guest concern, big or small, should be brought to your attention by the team immediately — that's the standard you set. The team's job is to flag it fast. Connecting with that guest, personally, is yours. Don't delegate it and don't wait for it to be escalated twice.</p></div></div>
+      <ul><li>The team tells you right away — that's the whole job on their end</li><li>You go to the guest yourself, not a message passed back through someone else</li><li>If you're mid-task, finish what you must and go — this comes first</li><li>A guest should never have to ask twice, or ask someone higher up, to get your attention</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Listen before <em>you fix</em></h2><p>Most guests just want to know you heard them and that you care.</p></div></div>
+      <ul><li>Give the guest your full attention</li><li>Listen for the problem <i>and</i> the feeling behind it</li><li>Don't explain or make excuses — own it</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>The Four <em>A's</em></h2><p>How you handle every concern, in this order. Tap each one.</p></div></div>
+      <div class="cards">
+        <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+          <div class="front"><div class="num">A</div><h3>Apologize</h3><span class="tap">Tap to reveal</span></div>
+          <div class="back"><div class="num">A</div><h3>Apologize</h3><p>Say sorry for how it affected them, even if it wasn't our fault. No excuses, no blame.</p><span class="tap">Tap to flip back</span></div>
+        </div>
+        <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+          <div class="front"><div class="num">A</div><h3>Acknowledge</h3><span class="tap">Tap to reveal</span></div>
+          <div class="back"><div class="num">A</div><h3>Acknowledge</h3><p>Show you understand. If the guest feels there's a problem, there is one.</p><span class="tap">Tap to flip back</span></div>
+        </div>
+        <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+          <div class="front"><div class="num">A</div><h3>Act</h3><span class="tap">Tap to reveal</span></div>
+          <div class="back"><div class="num">A</div><h3>Act</h3><p>Fix it quickly, yourself, and loop in anyone on the team who needs to know.</p><span class="tap">Tap to flip back</span></div>
+        </div>
+        <div class="card" tabindex="0" onclick="this.classList.toggle('open')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('open')}">
+          <div class="front"><div class="num">A</div><h3>Assess</h3><span class="tap">Tap to reveal</span></div>
+          <div class="back"><div class="num">A</div><h3>Assess</h3><p>Go back to the guest. Do they feel taken care of now?</p><span class="tap">Tap to flip back</span></div>
+        </div>
+      </div>
+      <div class="note"><b>Exception — food poisoning or illness claims.</b> Don't apologize for the cause. Say only "I'm sorry to hear you aren't feeling well," and connect them with the General Manager. Never say anything that sounds like Rally accepts fault.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Keep the <em>team</em> in the loop</h2><p>Recovery is still a team effort — you're leading it, not handling it alone.</p></div></div>
+      <ul><li>Tell the bartender, host, kitchen or captain if it affects them, and what to do differently</li><li>Don't make the guest repeat their story to multiple people</li><li>Thank whoever flagged it — that's the behavior you want every time</li></ul>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><h2>Magic <em>moments</em></h2><p>Guest recovery isn't only fixing problems. It's noticing.</p></div></div>
+      <p style="max-width:640px">A small, personal surprise because someone was paying attention to what the guest shared. A guest loves sweets but can't eat another bite — send a cookie home for later. A pregnant guest says a glass of bubbly sounds amazing — surprise them with a non-alcoholic pour.</p>
+      <div class="alert"><b>As the manager, this is your call.</b> You don't need to check with anyone else to comp or add a small gesture. The value isn't the cost — it's that someone noticed and cared. Document it in the shift report.</div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head"><div><span class="tag t-sage">Before you call it done</span></div></div>
+      <div class="checks" id="outcomes"></div>
+    </div>
+  </div>
+  <div style="margin-top:28px;text-align:center;font-family:'Gochi Hand',cursive;font-size:19px;color:rgba(23,72,84,.7);">not sure if something's worth mentioning? it is.</div>
+</div>
+<script>
+var OUTCOMES=["The guest feels heard.", "You've personally checked in with the guest — not delegated it.", "We did something about it, not just apologized.", "You went back to make sure it worked.", "The team knows what happened and what to do differently.", "It's documented in the shift report if anything was comped."];
+var KEYNAME="rally-mgr-guest-recovery-v1";
+function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+var oc=document.getElementById('outcomes');
+OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
+var state={};
+try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){}}
+document.querySelectorAll('[data-save]').forEach(function(n){
+  var k=n.getAttribute('data-save');
+  n.checked=!!state[k];
+  n.addEventListener('change',function(){state[k]=n.checked;save();});
+});
+</script>
+</body>
+</html>
