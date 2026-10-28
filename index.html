@@ -929,7 +929,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="0" step="1" value="1"/></div>
     </div>
     <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
-    <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional)</span></label><input id="if-item-code" type="text"/></div>
+    <div class="fg full"><label>Case Size <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — e.g. 24 for a case of 24 cans/bottles)</span></label><input id="if-case-size" type="number" min="1" step="1" placeholder="e.g. 24" oninput="invCaseSizeChanged()"/></div>
+    <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — only if this item doesn't have a Case Size above)</span></label><input id="if-item-code" type="text"/></div>
     <div class="fg full"><label>Vendor <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — who you order this from)</span></label><input id="if-vendor" type="text" list="if-vendor-list" placeholder="e.g. ABC"/><datalist id="if-vendor-list"></datalist></div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveInvItem()">Save</button>
@@ -9290,21 +9291,30 @@ function openInvItemForm(id) {
   document.getElementById('if-category').value = item ? (item.category || '') : '';
   document.getElementById('if-criticality').value = item ? item.criticality : 'Medium';
   document.getElementById('if-par').value = item ? item.par : 1;
-  document.getElementById('if-par-label').textContent = item && invIsCaseTracked(item) ? 'Case Par' : (item ? 'Par' : 'Starting Par');
   document.getElementById('if-batched').checked = !!(item && item.batched);
-  document.getElementById('if-item-code').value = item ? (item.item_code || '') : '';
+  const codeMatch = item && item.item_code && item.item_code.trim().match(/^x(\d+)$/);
+  document.getElementById('if-case-size').value = codeMatch ? codeMatch[1] : '';
+  document.getElementById('if-item-code').value = item ? (codeMatch ? '' : (item.item_code || '')) : '';
   document.getElementById('if-vendor').value = item ? (item.vendor || '') : '';
   document.getElementById('if-subtab').value = item ? item.sub_tab
     : (invSectionsOn.bar && !invSectionsOn.beerwine) ? 'bar'
     : (!invSectionsOn.bar && invSectionsOn.beerwine) ? 'beerwine'
     : 'bar';
+  invCaseSizeChanged();
   document.getElementById('inv-item-form-modal').style.display = 'flex';
+}
+function invCaseSizeChanged() {
+  const hasCaseSize = !!document.getElementById('if-case-size').value.trim();
+  const isNew = !_invItemFormEditId;
+  document.getElementById('if-par-label').textContent = hasCaseSize ? (isNew?'Starting Case Par':'Case Par') : (isNew?'Starting Par':'Par');
 }
 function closeInvItemForm(ev) { if(ev && ev.target.id !== 'inv-item-form-modal') return; document.getElementById('inv-item-form-modal').style.display = 'none'; }
 async function saveInvItem() {
   if(!isGM()) { showToast('View only — ask a manager to make changes'); return; }
   const name = document.getElementById('if-name').value.trim();
   if(!name) { showToast('Enter a name'); return; }
+  const caseSize = document.getElementById('if-case-size').value.trim();
+  const itemCode = document.getElementById('if-item-code').value.trim();
   const payload = {
     name,
     sub_tab: document.getElementById('if-subtab').value,
@@ -9312,7 +9322,7 @@ async function saveInvItem() {
     criticality: document.getElementById('if-criticality').value,
     par: parseFloat(document.getElementById('if-par').value) || 0,
     batched: document.getElementById('if-batched').checked,
-    item_code: document.getElementById('if-item-code').value.trim() || null,
+    item_code: caseSize ? `x${parseInt(caseSize,10)}` : (itemCode || null),
     vendor: document.getElementById('if-vendor').value.trim() || null,
   };
   try {
