@@ -141,13 +141,37 @@ function el(tag,attrs,html){var e=document.createElement(tag);for(var k in attrs
 var oc=document.getElementById('outcomes');
 OUTCOMES.forEach(function(s,i){var l=el('label');l.appendChild(el('input',{type:'checkbox','data-save':'oc'+i}));l.appendChild(el('span',{},s));oc.appendChild(l);});
 var state={};
-try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
-function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){}}
+var embedded = window.parent !== window;
+if(!embedded){
+  try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+}
+function applyChapterState(s){
+  state=s||{};
+  document.querySelectorAll('[data-save]').forEach(function(n){
+    var k=n.getAttribute('data-save');
+    if(n.type==='checkbox') n.checked=!!state[k];
+    else n.value=state[k]||'';
+  });
+}
+function save(){
+  if(!embedded){
+    try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){}
+  } else {
+    window.parent.postMessage({rallyChapterSave:true, chapterKey:'m14', data:state}, window.location.origin);
+  }
+}
 document.querySelectorAll('[data-save]').forEach(function(n){
   var k=n.getAttribute('data-save');
   n.checked=!!state[k];
   n.addEventListener('change',function(){state[k]=n.checked;save();});
 });
+if(embedded){
+  window.addEventListener('message', function(e){
+    if(e.origin !== window.location.origin || !e.data) return;
+    if(e.data.rallyChapterInit) applyChapterState(e.data.data || {});
+  });
+  window.parent.postMessage({rallyChapterReady:true, chapterKey:'m14'}, window.location.origin);
+}
 </script>
 </body>
 </html>

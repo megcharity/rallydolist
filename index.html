@@ -5173,6 +5173,22 @@ window.addEventListener('message', function(e){
     });
     return;
   }
+  // Manager chapter pages (m01-m15 + owningShift): same per-trainee
+  // handshake, keyed by chapterKey so one trainee's answers never bleed
+  // into another's, and a trainer can reopen a chapter later (from the
+  // Manager dashboard, not just mid-training) to read what was written.
+  if(e.data.rallyChapterReady){
+    if(!currentTrainee || !e.source) return;
+    const rec = (currentTrainee.chapter_answers && currentTrainee.chapter_answers[e.data.chapterKey]) || {};
+    e.source.postMessage({rallyChapterInit:true, data:rec}, e.origin);
+    return;
+  }
+  if(e.data.rallyChapterSave){
+    if(!currentTrainee) return;
+    const merged = {...(currentTrainee.chapter_answers||{}), [e.data.chapterKey]: e.data.data};
+    trnPatchTraineeSoft({chapter_answers: merged});
+    return;
+  }
 });
 async function uploadBioPhoto(file){
   const SUPA = window.RALLY_SUPABASE_URL;
@@ -5233,6 +5249,7 @@ async function trnCloseViewer(){
   if(trnViewerCtx) await trnMarkRead();
   showScreen(trnViewerReturn);
   if(trnViewerReturn==='s-trn-roster') renderTrnRoster();
+  else if(trnViewerReturn==='s-mgr') renderMgrTraining();
   else renderTrnDay();
 }
 
@@ -5388,6 +5405,23 @@ function renderTrnDay(){
   `;
 }
 const TRAINING_CHECKLIST_FILE = { host:'host-training-checklist.html', barista:'barista-training-checklist.html', captain:'captain-training-checklist.html', swarmer:'swarmer-training-checklist.html', teamlead:'rally-manager-training-checklist.html' };
+const MGR_CHAPTERS = [
+  {key:'owningShift', title:'Owning the Shift', path:'/training-content/rally-manager-13-owning-the-shift.html'},
+  {key:'m01', title:'Ch. 1 · Coaching the Hospitality Playbook', path:'/training-content/rally-manager-01-hospitality-playbook.html'},
+  {key:'m02', title:'Ch. 2 · Opportunity Hospitality', path:'/training-content/rally-manager-02-opportunity-hospitality.html'},
+  {key:'m03', title:'Ch. 3 · Presentation', path:'/training-content/rally-manager-03-presentation.html'},
+  {key:'m04', title:'Ch. 4 · Pulse', path:'/training-content/rally-manager-04-pulse.html'},
+  {key:'m05', title:'Ch. 5 · Manager Responsibilities', path:'/training-content/rally-manager-05-manager-responsibilities.html'},
+  {key:'m06', title:'Ch. 6 · Shift Report', path:'/training-content/rally-manager-06-shift-report.html'},
+  {key:'m07', title:'Ch. 7 · Private Events', path:'/training-content/rally-manager-07-private-events.html'},
+  {key:'m08', title:'Ch. 8 · Coaching', path:'/training-content/rally-manager-08-coaching.html'},
+  {key:'m09', title:'Ch. 9 · Operational Guidelines', path:'/training-content/rally-manager-09-operational-guidelines.html'},
+  {key:'m10', title:'Ch. 10 · Onboarding & Offboarding', path:'/training-content/rally-manager-10-onboarding-offboarding.html'},
+  {key:'m11', title:'Ch. 11 · Toast', path:'/training-content/rally-manager-11-toast.html'},
+  {key:'m12', title:'Ch. 12 · PlayByPoint', path:'/training-content/rally-manager-12-playbypoint.html'},
+  {key:'m14', title:'Ch. 14 · Guest Recovery', path:'/training-content/rally-manager-14-guest-recovery.html'},
+  {key:'m15', title:'Ch. 15 · HotSchedules', path:'/training-content/rally-manager-15-hotschedules.html'},
+];
 let trnMgrExpandedId = null;
 const TRN_OVERVIEW_BTN = `<button class="trn-btn trn-btn-ghost" style="flex:none;margin-bottom:14px;" onclick="window.open('/training-content/journey-map.html?v='+Date.now(),'_blank')">📋 See the Full Training Overview</button>`;
 function switchTrnMgrView(view){
@@ -5487,10 +5521,24 @@ function trnMgrDetailHTML(t){
   const BIO_LABELS = {from:'Where they\'re from', order:'Go-to order', fact:'Fun fact', excited:'Most excited about', funOutside:'Fun outside of work'};
   const bioEntries = Object.keys(BIO_LABELS).filter(k=>bio[k] && String(bio[k]).trim());
   const bioRows = bioEntries.length ? bioEntries.map(k=>`<div class="trn-mgr-detail-row"><span>${calEsc(BIO_LABELS[k])}</span><span>${calEsc(bio[k])}</span></div>`).join('') : '<div style="font-size:12px;color:rgba(23,72,84,.45);padding:6px 0;">Not filled out yet — last item on their Day 1 reading list</div>';
+  const chapterAnswers = t.chapter_answers||{};
+  const answeredChapters = MGR_CHAPTERS.filter(c => {
+    const rec = chapterAnswers[c.key];
+    return rec && Object.values(rec).some(v => typeof v === 'string' ? v.trim() : v);
+  });
+  const chapterReviewHtml = t.position === 'teamlead' ? `
+    <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Manager chapter answers ${answeredChapters.length?'('+answeredChapters.length+' with saved work)':''}</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <select id="chapter-review-select-${t.id}" style="font-size:12px;padding:6px 8px;border:1.5px solid rgba(23,72,84,.2);border-radius:6px;font-family:inherit;color:var(--teal);flex:1;min-width:160px;">
+        ${MGR_CHAPTERS.map(c=>`<option value="${c.key}">${answeredChapters.includes(c)?'✓ ':''}${calEsc(c.title)}</option>`).join('')}
+      </select>
+      <button class="btn-sm" onclick="trnMgrReviewChapter(${t.id})">Open</button>
+    </div>` : '';
   return `<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(23,72,84,.1);">
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin-bottom:4px;">Bio (for GroupMe)</div>
     ${bio.photo_url?`<img src="${calEsc(bio.photo_url)}" style="max-width:90px;border-radius:8px;display:block;margin-bottom:8px;"/>`:''}
     ${bioRows}
+    ${chapterReviewHtml}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Days</div>
     ${dayRows}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Position test attempts</div>
@@ -5513,6 +5561,15 @@ function trnMgrDetailHTML(t){
       ${!t.archived?`<button class="trn-btn trn-btn-ghost" style="flex:none;" onclick="trnMgrArchive(${t.id})">Archive</button>`:''}
     </div>
   </div>`;
+}
+function trnMgrReviewChapter(id){
+  const t = trnTrainees.find(x=>x.id===id);
+  const select = document.getElementById(`chapter-review-select-${id}`);
+  if(!t || !select) return;
+  const chapter = MGR_CHAPTERS.find(c=>c.key===select.value);
+  if(!chapter) return;
+  currentTrainee = t;
+  trnOpenContent(chapter.path, `${chapter.title} — ${t.name}`, null, null, 's-mgr');
 }
 function trnMgrCopyBioIntro(id){
   const t = trnTrainees.find(x=>x.id===id);
