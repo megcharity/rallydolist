@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host Steps of Service Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,7vw,60px);line-height:.98}
+h2{font-size:clamp(26px,4.5vw,34px);line-height:1.05}
+h3{font-size:20px;line-height:1.1;margin-bottom:2px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:26px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+
+.hero{padding:30px 28px}
+.hero p{margin-top:14px;font-size:17px;max-width:62ch}
+.link-back{display:inline-block;margin-top:16px;font-size:14px;font-weight:600;color:var(--navy)}
+
+.event-num{display:inline-grid;place-content:center;width:30px;height:30px;border-radius:50%;background:var(--orange);font-family:"Instrument Serif",serif;font-size:19px;margin-right:10px;flex:none;vertical-align:-7px}
+
+.phase{margin-top:20px}
+.phase:first-of-type{margin-top:16px}
+.phase-label{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.05em;color:var(--olive);margin-bottom:6px}
+
+ul.cl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+ul.cl label{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:2px 0 0;flex:none}
+input[type=checkbox]::after{content:"";width:10px;height:5.5px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+.sticker{display:inline-block;font-family:"Gochi Hand",cursive;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(245,134,100,.25);border:2px solid var(--coral);border-radius:999px;padding:2px 10px 1px;margin-left:4px;transform:rotate(-2deg);white-space:nowrap;vertical-align:1px;}
+
+.note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin:14px 0}
+.note b{font-weight:600;display:block;margin-bottom:2px}
+
+.script{background:var(--navy);color:var(--cream);padding:14px 18px;border-radius:4px;margin:10px 0;font-family:"Instrument Serif",serif;font-style:italic;font-size:17px;line-height:1.45}
+.script-label{font-family:"Hanken Grotesk",sans-serif;font-style:normal;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;opacity:.8;display:block;margin-bottom:6px}
+
+footer{padding:20px 4px 0;font-size:13px;color:#4c6c73}
+
+@media (max-width:720px){
+  .sec{padding:22px 18px}
+  .hero{padding:26px 20px}
+}
+@media print{
+  .link-back{display:none}
+  .sec{break-inside:avoid-page}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Host Steps of Service</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hand">Quick reference</div>
+      <h1 style="margin-top:10px">Steps of Service<br><em>Checklist</em></h1>
+      <p>The condensed version of the full Host Steps of Service guide — for training, shift execution and manager observations. Use the checklist for whichever path the guest takes.</p>
+      <a class="link-back" href="/training-content/host-steps-of-service.html">&larr; Full training guide (reasoning, examples &amp; scripts)</a>
+    </div>
+
+    <div class="sec">
+      <div class="standard" style="background:var(--sage);border-radius:4px;padding:14px 20px">
+        <span class="label">The goal</span>
+        <p style="font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin-top:4px">You're the first and last person every guest sees. Acknowledge them right away, find out why they're here, and take care of them from there.</p>
+      </div>
+    </div>
+
+    <!-- 1. GREET THE GUEST -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">1</span>Greet the <em>Guest</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">As they walk in</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Give a verbal acknowledgement the moment they walk in, with a smile. Use the required welcome script.</span></label></li>
+          <li><label><input type="checkbox"><span>Address the guest by name whenever possible.</span></label></li>
+          <li><label><input type="checkbox"><span>Confirm the reason for their visit.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Route them</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Cafe, breakfast or lunch → Dining guests.</span></label></li>
+          <li><label><input type="checkbox"><span>Dinner or the bar → Dining guests.</span></label></li>
+          <li><label><input type="checkbox"><span>A court reservation or a program → Court &amp; program check-in.</span></label></li>
+          <li><label><input type="checkbox"><span>An activation → check them in and get them to the activation's space.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Always</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Keep the floor chart and programming pamphlet at the host desk.</span></label></li>
+          <li><label><input type="checkbox"><span>Escort the guest to their table, court, the bar or the cafe whenever possible — don't just point.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 2. DINING GUESTS -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">2</span>Dining <em>Guests</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Cafe, breakfast &amp; lunch</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Ask if they're grabbing something to go or sitting down.</span></label></li>
+          <li><label><input type="checkbox"><span>To go: walk them halfway to the cafe, point out the barista, and tell them what's offered.</span></label></li>
+          <li><label><input type="checkbox"><span>To go, returning guest who knows the way: radio the barista that someone's headed their way.</span></label></li>
+          <li><label><input type="checkbox"><span>Sit down: seat the guest, bring menus and water, radio the barista or Captain.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Dinner &amp; bar</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Ask if they'd like the bar or a table.</span></label></li>
+          <li><label><input type="checkbox"><span>Bar: walk them over and introduce them to the bartender by name.</span></label></li>
+          <li><label><input type="checkbox"><span>Table: seat them, bring water and menus, radio the assigned Captain (check the floor chart).</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 3. COURT & PROGRAM CHECK-IN -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">3</span>Court &amp; Program <em>Check-in</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Recognize them?</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Regular: welcome them back by name, skip to "Do they have a reservation?"</span></label></li>
+          <li><label><input type="checkbox"><span>Not recognized: greet with the welcome script, then confirm if they've played at Rally before.</span></label></li>
+          <li><label><input type="checkbox"><span>New guest: have them scan the QR code to create an account and sign the waiver, then create their account in the system.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Reservation?</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Booked: check them in, add guests on the reservation, confirm waivers signed, confirm payment, provide a ticket if relevant.</span></label></li>
+          <li><label><input type="checkbox"><span>Walk-in: create the reservation or add to the program, confirm payment (charge if applicable), make sure guests and waivers are added, provide a ticket if relevant.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Program or league player</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Know our offerings: which class or league, and what it's for.</span></label></li>
+          <li><label><input type="checkbox"><span>Tell them exactly where to go and when it starts.</span></label></li>
+          <li><label><input type="checkbox"><span>Check if their ticket includes a drink and tell them what it covers.</span></label></li>
+          <li><label><input type="checkbox"><span>Set expectations: how long it runs, what to bring, what happens when it ends.</span></label></li>
+          <li><label><input type="checkbox"><span>Never just check them in — walk them through all of it.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Share key info &amp; our offering</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Lay of the land (restrooms, cafe, bar/restaurant) — skip for regulars.</span></label></li>
+          <li><label><input type="checkbox"><span>Mention our offering: Captain brings food and drinks to the court, call out something specific. Do this for regulars too.</span></label></li>
+          <li><label><input type="checkbox"><span>Mention any current specials.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4. ARRIVAL TIMING -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">4</span>Arrival <em>Timing</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Early, court open, everyone here</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Let them know you can get them on early, and take them right away.</span></label></li>
+          <li><label><input type="checkbox"><span>Adjust RallyTrack so the tablet is ready; move reservations if needed.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Early, still waiting on guests</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Let them know you'll take them once everyone arrives.</span></label></li>
+          <li><label><input type="checkbox"><span>Recommend the bar or cafe while they wait.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Early, court still occupied</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Ask them to check back 2 minutes before their start time.</span></label></li>
+          <li><label><input type="checkbox"><span>Recommend the cafe or bar while they wait.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">On time</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Let them know you're ready and take them to the court now.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Walking to the court</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Collect paddles and balls — remove one paddle for groups of only 2–3 players.</span></label></li>
+          <li><label><input type="checkbox"><span>On the walk, mention the cafe or the restaurant/bar, depending on time of day.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio that you're seating the court, then give the handoff using the required script.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. RADIO CALLS & FAREWELL -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">5</span>Radio Calls &amp; <em>Farewell</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Every reservation</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Radio: seating the court/table.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio: 30 minutes left.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio: 15 minutes left.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio: 5 minutes left — tabs close.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio: 1 minute left.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Watch for</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Peak time, no one booked right after a reservation: radio the Captain so they can offer an extension.</span></label></li>
+          <li><label><input type="checkbox"><span>Food in the "red" on the KDS: notify a manager.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Every farewell</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Say the required farewell script to everyone who walks out the door.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- REQUIRED SCRIPTS -->
+    <div class="sec">
+      <div class="sec-head"><h2>Required <em>Scripts</em></h2></div>
+
+      <div class="script"><span class="script-label">Greeting</span>"Welcome to Rally. I can check you in here."</div>
+      <div class="script"><span class="script-label">Court handoff</span>"Your Captain will be with you in 2 minutes to show you our court technology and walk you through our menu. You have to try the [item] on the menu — it's my favorite."</div>
+      <div class="script"><span class="script-label">Farewell</span>"Thank you so much for coming. Have a nice day!"</div>
+
+      <div class="note"><b>Dining &amp; check-in examples</b>Use the full training guide for the to-go, sit-down, bar and table example wording — only the three above are required, word for word.</div>
+    </div>
+  </div>
+  <footer>Rally · Host Steps of Service Checklist — quick reference companion to the full training guide.</footer>
+</div>
+</body>
+</html>
