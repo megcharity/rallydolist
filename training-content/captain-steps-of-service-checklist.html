@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Captain Steps of Service Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,7vw,60px);line-height:.98}
+h2{font-size:clamp(26px,4.5vw,34px);line-height:1.05}
+h3{font-size:20px;line-height:1.1;margin-bottom:2px}
+h1 em,h2 em,h3 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:26px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+
+.hero{padding:30px 28px}
+.hero p{margin-top:14px;font-size:17px;max-width:62ch}
+.link-back{display:inline-block;margin-top:16px;font-size:14px;font-weight:600;color:var(--navy)}
+
+.event-num{display:inline-grid;place-content:center;width:30px;height:30px;border-radius:50%;background:var(--orange);font-family:"Instrument Serif",serif;font-size:19px;margin-right:10px;flex:none;vertical-align:-7px}
+
+.phase{margin-top:20px}
+.phase:first-of-type{margin-top:16px}
+.phase-label{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.05em;color:var(--olive);margin-bottom:6px}
+
+ul.cl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+ul.cl label{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:2px 0 0;flex:none}
+input[type=checkbox]::after{content:"";width:10px;height:5.5px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+.note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin:14px 0}
+.note b{font-weight:600;display:block;margin-bottom:2px}
+
+.script{background:var(--navy);color:var(--cream);padding:14px 18px;border-radius:4px;margin:10px 0;font-family:"Instrument Serif",serif;font-style:italic;font-size:17px;line-height:1.45}
+.script-label{font-family:"Hanken Grotesk",sans-serif;font-style:normal;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em;opacity:.8;display:block;margin-bottom:6px}
+
+footer{padding:20px 4px 0;font-size:13px;color:#4c6c73}
+
+@media (max-width:720px){
+  .sec{padding:22px 18px}
+  .hero{padding:26px 20px}
+}
+@media print{
+  .link-back{display:none}
+  .sec{break-inside:avoid-page}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Captain Steps of Service</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hand">Quick reference</div>
+      <h1 style="margin-top:10px">Steps of Service<br><em>Checklist</em></h1>
+      <p>The condensed version of the full Captain Steps of Service guide — for training, shift execution and manager observations. Use the checklist for whichever guest type you're taking care of right now.</p>
+      <a class="link-back" href="/training-content/captain-steps-of-service.html">&larr; Full training guide (reasoning, examples &amp; scripts)</a>
+    </div>
+
+    <div class="sec">
+      <div class="standard" style="background:var(--sage);border-radius:4px;padding:14px 20px">
+        <span class="label">The goal</span>
+        <p style="font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;margin-top:4px">Deliver exceptional hospitality, and proactively suggest food, drinks and ways to return.</p>
+      </div>
+    </div>
+
+    <!-- 1. COURT RESERVATIONS -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">1</span>Court <em>Reservations</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Arrival · within 2 minutes</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Acknowledge Host radio call.</span></label></li>
+          <li><label><input type="checkbox"><span>Meet guests at the court within 2 minutes of drop-off.</span></label></li>
+          <li><label><input type="checkbox"><span>Introduce yourself and welcome the group.</span></label></li>
+          <li><label><input type="checkbox"><span>New guests: explain restrooms, cubbies and menu.</span></label></li>
+          <li><label><input type="checkbox"><span>New guests: demonstrate RallyTrack, select avatars and reset for warm-up.</span></label></li>
+          <li><label><input type="checkbox"><span>Returning guests: welcome back, highlight menu items and check RallyTrack familiarity.</span></label></li>
+          <li><label><input type="checkbox"><span>Offer drinks and attempt to take the first order.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Throughout</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Check in continuously, approaching between points or games.</span></label></li>
+          <li><label><input type="checkbox"><span>Clear empty drinks, plates and trash; tidy lounge furniture.</span></label></li>
+          <li><label><input type="checkbox"><span>Suggest food and drink refills without being pushy.</span></label></li>
+          <li><label><input type="checkbox"><span>If guests decline ordering, explain the call button.</span></label></li>
+          <li><label><input type="checkbox"><span>Optional: get MOD approval before offering complimentary chips.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">10 minutes before end</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Offer a table after play.</span></label></li>
+          <li><label><input type="checkbox"><span>Confirm current retention perk with MOD and share it using the required script.</span></label></li>
+          <li><label><input type="checkbox"><span>Offer league information and direct interested guests to the Host Desk.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">5 minutes before end</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Decide whether an extension is appropriate: peak time, offer if the court is free; off-peak, allow extra play on the house.</span></label></li>
+          <li><label><input type="checkbox"><span>Offer a transfer to a table or Garden Pod.</span></label></li>
+          <li><label><input type="checkbox"><span>If staying: transfer the tab immediately, move food, offer to escort guests.</span></label></li>
+          <li><label><input type="checkbox"><span>If leaving: close the tab, thank guests and invite them back.</span></label></li>
+          <li><label><input type="checkbox"><span>Share the current retention perk using the required script.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 2. WALK-IN DINERS -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">2</span>Walk-in <em>Diners</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Arrival &amp; ordering</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Explain menu sections and highlight popular food and drinks.</span></label></li>
+          <li><label><input type="checkbox"><span>Offer complimentary still or sparkling water.</span></label></li>
+          <li><label><input type="checkbox"><span>Bring and pour the water.</span></label></li>
+          <li><label><input type="checkbox"><span>Take the food and beverage order.</span></label></li>
+          <li><label><input type="checkbox"><span>Make sure they have plates and utensils.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Throughout</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Clear and maintain the table.</span></label></li>
+          <li><label><input type="checkbox"><span>Check in and suggest specific drinks or food — never "Are you good?"</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Closeout</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Close the tab.</span></label></li>
+          <li><label><input type="checkbox"><span>Introduce courts, open play and reservations; offer to help book a future visit.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 3. LEAGUES & PROGRAMMING -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">3</span>Leagues &amp; <em>Programming</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Arrival</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Make sure towels are available and water is filled.</span></label></li>
+          <li><label><input type="checkbox"><span>Be visible and offer drinks as players arrive.</span></label></li>
+          <li><label><input type="checkbox"><span>Approach players off court, not during play.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Every 7 minutes · league lap</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Walk all four courts and lounges.</span></label></li>
+          <li><label><input type="checkbox"><span>Collect empties, trash and abandoned glassware.</span></label></li>
+          <li><label><input type="checkbox"><span>Reset furniture and tidy lounges.</span></label></li>
+          <li><label><input type="checkbox"><span>Offer refills when glasses are empty.</span></label></li>
+          <li><label><input type="checkbox"><span>Check on players after games, and groups gathering in lounges.</span></label></li>
+          <li><label><input type="checkbox"><span>Engage anyone looking at a menu.</span></label></li>
+          <li><label><input type="checkbox"><span>When food arrives, offer food to others.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Mid-league</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Complete a full sweep of all four courts and lounges.</span></label></li>
+          <li><label><input type="checkbox"><span>Suggest specific second drinks (light beer, canned cocktails, spritzes, NA beer).</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 4. PRIVATE EVENTS -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">4</span>Private <em>Events</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Before</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Collect the staff BEO from the events office and review it.</span></label></li>
+          <li><label><input type="checkbox"><span>Confirm guest count, food timing, replenishments and equipment with the MOD.</span></label></li>
+          <li><label><input type="checkbox"><span>Review the battle plan for larger events.</span></label></li>
+          <li><label><input type="checkbox"><span>Remove standard plates, silverware rolls, menus and QR codes.</span></label></li>
+          <li><label><input type="checkbox"><span>Wipe surfaces and set catering materials and food stations per the BEO.</span></label></li>
+          <li><label><input type="checkbox"><span>If needed, fill chafers with ½ inch of water; light Sternos about 5 minutes before food arrives.</span></label></li>
+          <li><label><input type="checkbox"><span>Review the beverage package and clarify questions with the MOD.</span></label></li>
+          <li><label><input type="checkbox"><span>Introduce yourself to the POC, show the space and ask service preferences.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">During</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Capture a card for purchases outside included beverages.</span></label></li>
+          <li><label><input type="checkbox"><span>Rotate to take and deliver drinks.</span></label></li>
+          <li><label><input type="checkbox"><span>Ring replenishments on time; radio the kitchen for every ring-in.</span></label></li>
+          <li><label><input type="checkbox"><span>Ring additional sales using the event code.</span></label></li>
+          <li><label><input type="checkbox"><span>Follow on-consumption, package and drink-ticket rules.</span></label></li>
+          <li><label><input type="checkbox"><span>Pre-bus and keep the space clean.</span></label></li>
+          <li><label><input type="checkbox"><span>Track the F&amp;B minimum; alert the POC when close and update the MOD.</span></label></li>
+          <li><label><input type="checkbox"><span>5–10 minutes before end: last call for package drinks.</span></label></li>
+          <li><label><input type="checkbox"><span>Radio the MOD to prepare the final bill if the BEO check remains open.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">After</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Talk to a manager before closing the event.</span></label></li>
+          <li><label><input type="checkbox"><span>Close applicable checks with the POC and guests.</span></label></li>
+          <li><label><input type="checkbox"><span>Buss and clean the event space and catering equipment.</span></label></li>
+          <li><label><input type="checkbox"><span>Reset plates, silverware rolls, menus and QR codes.</span></label></li>
+          <li><label><input type="checkbox"><span>Print receipts and complete the event sheet.</span></label></li>
+          <li><label><input type="checkbox"><span>Return the BEO and event sheet to the event folder in the events office.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 5. ACTIVATIONS -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">5</span><em>Activations</em></h2></div>
+
+      <div class="phase">
+        <div class="phase-label">Arrival</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Introduce yourself to the group.</span></label></li>
+          <li><label><input type="checkbox"><span>Bring still or sparkling water and menus.</span></label></li>
+          <li><label><input type="checkbox"><span>Suggest food suited to the activity — easy to eat without interrupting.</span></label></li>
+        </ul>
+      </div>
+
+      <div class="phase">
+        <div class="phase-label">Throughout</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Check in often while respecting the activity.</span></label></li>
+          <li><label><input type="checkbox"><span>Stay available for food, drink and guest needs.</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- REQUIRED SCRIPTS -->
+    <div class="sec">
+      <div class="sec-head"><h2>Required <em>Scripts</em></h2></div>
+      <p class="label" style="margin-top:2px">Court reservations</p>
+
+      <div class="script"><span class="script-label">10 minutes before end</span>"Hi everyone, just checking on you to make sure you have everything, and to let you know we're running a promotion on [current retention perk — ask your MOD]. I can also answer any questions on our leagues if you're interested."</div>
+      <div class="script"><span class="script-label">If they sign up day of</span>"You can meet me at the host desk to learn more after you play."</div>
+      <div class="script"><span class="script-label">At closeout</span>"Wanted to let you know we're running a promotion on [current retention perk — ask your MOD]. If you're interested, I can get you signed up at the Host Desk."</div>
+
+      <div class="note"><b>Walk-in diners</b>Use the full training guide for the exact required menu-overview script.</div>
+    </div>
+  </div>
+  <footer>Rally · Captain Steps of Service Checklist — quick reference companion to the full training guide.</footer>
+</div>
+</body>
+</html>
