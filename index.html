@@ -5769,7 +5769,7 @@ function renderTrnResources(){
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
       ${groups[g].map(i=>`<div class="trn-mgr-card" style="margin-bottom:0;display:flex;justify-content:space-between;align-items:center;gap:8px;">
         <span style="font-size:13px;color:#174854;font-weight:600;">${calEsc(i.title)}</span>
-        <button class="trn-btn trn-btn-ghost" style="flex:none;" onclick="window.open('${i.contentPath}?v='+Date.now(),'_blank')">🖨 Print</button>
+        <button class="trn-btn trn-btn-ghost" style="flex:none;" onclick="window.open('${i.contentPath}?print=1&v='+Date.now(),'_blank')">🖨 Print</button>
       </div>`).join('')}
     </div>`).join('');
 }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if(new URLSearchParams(location.search).get('print')==='1')document.documentElement.classList.add('print-mode');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rally Captains · Steps of Service</title>
@@ -193,8 +194,12 @@ li::marker{color:var(--ink-soft)}
 .q-why[hidden]{display:none}
 .score{font-family:var(--serif);font-size:26px;margin:24px 0 0}
 
-/* Recitation review, replaces the digital knowledge-check quiz */
-#quiz{display:none}
+/* Recitation review — shown instead of the knowledge-check quiz, but only
+   when opened from Manager -> Training -> Resources (?print=1). The normal
+   online-training view keeps the interactive quiz. */
+.print-review{display:none}
+html.print-mode #quiz{display:none}
+html.print-mode .print-review{display:block}
 .print-review ol{list-style:none;padding:0;margin:0;counter-reset:pr}
 .print-review li{border-top:2.5px solid var(--rule);padding:22px 0;counter-increment:pr}
 .print-review li:last-child{border-bottom:2.5px solid var(--rule)}
@@ -280,7 +285,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
       <a class="tab" href="#leagues"><small>Event 3</small>Leagues &amp; programming</a>
       <a class="tab" href="#events"><small>Event 4</small>Events</a>
       <a class="tab" href="#activations"><small>Event 5</small>Activations</a>
-      <a class="tab" href="#printReview"><small>Finish</small>Recite the steps</a>
+      <a class="tab" href="#quiz"><small>Finish</small>Check yourself</a>
     </div>
   </nav>
 
