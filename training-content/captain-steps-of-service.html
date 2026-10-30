@@ -193,8 +193,8 @@ li::marker{color:var(--ink-soft)}
 .q-why[hidden]{display:none}
 .score{font-family:var(--serif);font-size:26px;margin:24px 0 0}
 
-/* Print-only recitation review (replaces the digital quiz when printed) */
-.print-review{display:none}
+/* Recitation review, replaces the digital knowledge-check quiz */
+#quiz{display:none}
 .print-review ol{list-style:none;padding:0;margin:0;counter-reset:pr}
 .print-review li{border-top:2.5px solid var(--rule);padding:22px 0;counter-increment:pr}
 .print-review li:last-child{border-bottom:2.5px solid var(--rule)}
@@ -235,8 +235,6 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
   .step .front{display:none}
   .step .back{display:block}
   .step .tap{display:none}
-  #quiz{display:none}
-  .print-review{display:block}
 }
 </style>
 </head>
@@ -282,7 +280,7 @@ footer .hand{font-family:var(--hand);font-size:22px;color:var(--ink)}
       <a class="tab" href="#leagues"><small>Event 3</small>Leagues &amp; programming</a>
       <a class="tab" href="#events"><small>Event 4</small>Events</a>
       <a class="tab" href="#activations"><small>Event 5</small>Activations</a>
-      <a class="tab" href="#quiz"><small>Finish</small>Check yourself</a>
+      <a class="tab" href="#printReview"><small>Finish</small>Recite the steps</a>
     </div>
   </nav>
 
