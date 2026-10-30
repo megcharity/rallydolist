@@ -49,6 +49,8 @@ input[type=checkbox]:checked{background:var(--navy)}
 input[type=checkbox]:checked::after{opacity:1}
 input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 
+.sticker{display:inline-block;font-family:"Gochi Hand",cursive;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(245,134,100,.25);border:2px solid var(--coral);border-radius:999px;padding:2px 10px 1px;margin-left:4px;transform:rotate(-2deg);white-space:nowrap;vertical-align:1px;}
+
 .note{background:rgba(245,134,100,.18);border:1.5px solid var(--coral);border-radius:4px;padding:12px 16px;margin:14px 0}
 .note b{font-weight:600;display:block;margin-bottom:2px}
 
@@ -95,8 +97,9 @@ footer{padding:20px 4px 0;font-size:13px;color:#4c6c73}
           <li><label><input type="checkbox"><span>Acknowledge Host radio call.</span></label></li>
           <li><label><input type="checkbox"><span>Meet guests at the court within 2 minutes of drop-off.</span></label></li>
           <li><label><input type="checkbox"><span>Introduce yourself and welcome the group.</span></label></li>
-          <li><label><input type="checkbox"><span>New guests: explain restrooms, cubbies and menu.</span></label></li>
-          <li><label><input type="checkbox"><span>New guests: demonstrate RallyTrack, select avatars and reset for warm-up.</span></label></li>
+          <li><label><input type="checkbox"><span>New guests: explain restrooms and cubbies.</span></label></li>
+          <li><label><input type="checkbox"><span>New guests: walk through the menu. <span class="sticker">Non-negotiable</span></span></label></li>
+          <li><label><input type="checkbox"><span>New guests: demonstrate RallyTrack, select avatars and reset for warm-up. <span class="sticker">Non-negotiable</span></span></label></li>
           <li><label><input type="checkbox"><span>Returning guests: welcome back, highlight menu items and check RallyTrack familiarity.</span></label></li>
           <li><label><input type="checkbox"><span>Offer drinks and attempt to take the first order.</span></label></li>
         </ul>
