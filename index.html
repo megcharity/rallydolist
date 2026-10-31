@@ -157,6 +157,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .trn-signoff-btn:disabled{opacity:.4;cursor:not-allowed;}
 .trn-test-btn{width:100%;padding:14px;border:none;border-radius:8px;background:var(--orange,#f89a1c);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;}
 .trn-status-banner{text-align:center;padding:24px;}
+/* Without a hard height cap, a very long embedded training page (e.g. The
+   Rally Way) can grow the whole outer screen taller than one viewport —
+   the page itself becomes scrollable and the "← Back" bar scrolls away
+   with it. Lock this screen to the viewport so only the iframe's own
+   document scrolls internally; the bar and footer stay pinned. */
+#s-trn-viewer.active{height:100vh;height:100dvh;overflow:hidden;}
 .trn-viewer-bar{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--teal);color:#fff;flex-shrink:0;}
 .trn-viewer-title{font-size:13px;font-weight:600;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .trn-viewer-frame{flex:1;width:100%;border:none;}
