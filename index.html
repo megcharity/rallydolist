@@ -5853,6 +5853,14 @@ function trnMgrDetailHTML(t){
     const rec = chapterAnswers[c.key];
     return rec && Object.values(rec).some(v => typeof v === 'string' ? v.trim() : v);
   });
+  const menuTestState = chapterAnswers.menuTest;
+  const menuTestAnswered = menuTestState && Array.isArray(menuTestState.answers) && menuTestState.answers.some(a => a && String(a).trim());
+  const menuTestHtml = menuTestAnswered ? `
+    <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Rally Menu Test answers</div>
+    <div class="trn-mgr-detail-row" style="align-items:center;">
+      <span>${menuTestState.finished?'✓ Finished':'In progress'}${menuTestState.who?' · '+calEsc(menuTestState.who):''}</span>
+      <button class="btn-sm" onclick="trnMgrReviewMenuTest(${t.id})">Open</button>
+    </div>` : '';
   const chapterReviewHtml = t.position === 'teamlead' ? `
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Manager chapter answers ${answeredChapters.length?'('+answeredChapters.length+' with saved work)':''}</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -5872,6 +5880,7 @@ function trnMgrDetailHTML(t){
     ${attemptRows}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Knowledge checks (content-page quizzes &amp; Rally Menu Test)</div>
     ${quizRows}
+    ${menuTestHtml}
     <div style="font-size:11px;font-weight:700;color:#174854;text-transform:uppercase;margin:10px 0 4px;">Day 5 sign-off</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
       <label style="font-size:12px;display:flex;gap:6px;align-items:center;"><input type="checkbox" ${t.bingo&&t.bingo.done?'checked':''} onchange="trnMgrToggleFlag(${t.id},'bingo',this.checked)"> Bingo card turned in</label>
@@ -5888,6 +5897,12 @@ function trnMgrDetailHTML(t){
       ${!t.archived?`<button class="trn-btn trn-btn-ghost" style="flex:none;" onclick="trnMgrArchive(${t.id})">Archive</button>`:''}
     </div>
   </div>`;
+}
+function trnMgrReviewMenuTest(id){
+  const t = trnTrainees.find(x=>x.id===id);
+  if(!t) return;
+  currentTrainee = t;
+  trnOpenContent('/training-content/menu-test.html', `Rally Menu Test — ${t.name}`, null, null, 's-mgr');
 }
 function trnMgrReviewChapter(id){
   const t = trnTrainees.find(x=>x.id===id);

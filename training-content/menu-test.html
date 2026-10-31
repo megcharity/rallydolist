@@ -280,6 +280,16 @@ var SEC={food:'Food',bar:'Beer, wine & more',cocktails:'Cocktails',dietary:'Alle
 
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
+// Embedded (viewed through the Rally training app) saves every answer to
+// this trainee's own cloud record as they type — not just a "completed"
+// flag — so a manager can review the actual written answers later, not
+// only live in the room the moment the trainee finishes. Previously only
+// {completed:true} was sent, which is why answers never showed up for
+// review afterward.
+var embedded = window.parent !== window;
+var state = {who:'', answers:[], finished:false};
+var restoring = false;
+
 var fill=document.getElementById('fill'),ball=document.getElementById('ball'),where=document.getElementById('where');
 function render(){
   document.querySelectorAll('[data-sec]').forEach(function(m){m.innerHTML=''});
@@ -295,8 +305,10 @@ function render(){
       if(document.body.classList.contains('done'))return;
       ta.closest('.q').classList.remove('missing');
       progress();
+      saveState();
     });
   });
+  document.getElementById('who').addEventListener('input', saveState);
   progress();
 }
 function progress(){
@@ -306,20 +318,18 @@ function progress(){
   fill.style.width=(p*100)+'%';ball.style.left=(p*100)+'%';
   where.textContent=n+' of '+Q.length+' answered';
 }
+function saveState(){
+  if(restoring) return;
+  state.who = document.getElementById('who').value.trim();
+  state.answers = [].slice.call(document.querySelectorAll('.answer')).map(function(ta){return ta.value});
+  if(embedded){
+    window.parent.postMessage({rallyChapterSave:true, chapterKey:'menuTest', data:state}, window.location.origin);
+  }
+}
 
 var result=document.getElementById('result'),alertEl=document.getElementById('alert'),
     scoreBtn=document.getElementById('scoreBtn'),resetBtn=document.getElementById('resetBtn'),finishMsg=document.getElementById('finishMsg');
-scoreBtn.addEventListener('click',function(){
-  var fss=[].slice.call(document.querySelectorAll('.q')),
-      missing=fss.filter(function(f){return !f.querySelector('.answer').value.trim()});
-  if(missing.length){
-    missing.forEach(function(f){f.classList.add('missing')});
-    alertEl.textContent=missing.length+(missing.length>1?' questions are':' question is')+' still unanswered. They’re marked in coral.';
-    alertEl.classList.add('show');
-    missing[0].scrollIntoView({block:'center'});
-    return;
-  }
-  alertEl.classList.remove('show');
+function showResults(){
   document.querySelectorAll('.answer').forEach(function(ta){ta.disabled=true});
   document.body.classList.add('done');
   var who=document.getElementById('who').value.trim(),
@@ -338,6 +348,21 @@ scoreBtn.addEventListener('click',function(){
   result.classList.add('show');
   finishMsg.textContent='Show this to your manager and go through it together.';
   scoreBtn.hidden=true;resetBtn.hidden=false;
+}
+scoreBtn.addEventListener('click',function(){
+  var fss=[].slice.call(document.querySelectorAll('.q')),
+      missing=fss.filter(function(f){return !f.querySelector('.answer').value.trim()});
+  if(missing.length){
+    missing.forEach(function(f){f.classList.add('missing')});
+    alertEl.textContent=missing.length+(missing.length>1?' questions are':' question is')+' still unanswered. They’re marked in coral.';
+    alertEl.classList.add('show');
+    missing[0].scrollIntoView({block:'center'});
+    return;
+  }
+  alertEl.classList.remove('show');
+  showResults();
+  state.finished = true;
+  saveState();
   if(window.parent!==window) window.parent.postMessage({rallyQuiz:true,title:'Rally Menu Test',completed:true},window.location.origin);
   result.scrollIntoView({block:'start'});
 });
@@ -345,8 +370,31 @@ resetBtn.addEventListener('click',function(){
   document.body.classList.remove('done');result.className='result';result.innerHTML='';
   scoreBtn.hidden=false;resetBtn.hidden=true;finishMsg.textContent='Answered everything? Finish to go through your answers with your manager.';
   render();document.getElementById('food').scrollIntoView();
+  document.querySelectorAll('.answer').forEach(function(ta){ta.value=''});
+  document.getElementById('who').value='';
+  state = {who:'', answers:[], finished:false};
+  saveState();
 });
 render();
+function applyChapterState(s){
+  restoring = true;
+  state = s && s.answers ? s : {who:'', answers:[], finished:false};
+  document.getElementById('who').value = state.who || '';
+  (state.answers||[]).forEach(function(val, i){
+    var ta = document.querySelector('.answer[data-idx="'+i+'"]');
+    if(ta) ta.value = val || '';
+  });
+  progress();
+  restoring = false;
+  if(state.finished) showResults();
+}
+if(embedded){
+  window.addEventListener('message', function(e){
+    if(e.origin !== window.location.origin || !e.data) return;
+    if(e.data.rallyChapterInit) applyChapterState(e.data.data || {});
+  });
+  window.parent.postMessage({rallyChapterReady:true, chapterKey:'menuTest'}, window.location.origin);
+}
 </script>
 </body>
 </html>
