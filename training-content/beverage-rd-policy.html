@@ -366,8 +366,17 @@ KEY.forEach(function(k,i){
 });
 
 var KEYNAME='rally-rd-policy-v1',state={};
-try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
-function save(){try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}}
+var embedded = window.parent !== window;
+if(!embedded){
+  try{state=JSON.parse(localStorage.getItem(KEYNAME)||'{}')||{};}catch(e){state={};}
+}
+function save(){
+  if(!embedded){
+    try{localStorage.setItem(KEYNAME,JSON.stringify(state));}catch(e){document.getElementById('saved').textContent='Answers can’t be saved in this browser — they’ll clear if you close the page.';}
+  } else {
+    window.parent.postMessage({rallyChapterSave:true, chapterKey:'bevRdPolicy', data:state}, window.location.origin);
+  }
+}
 document.querySelectorAll('[data-save]').forEach(function(n){
   var k=n.getAttribute('data-save');
   if(n.type==='checkbox'){n.checked=!!state[k];n.addEventListener('change',function(){state[k]=n.checked;save();});}
@@ -378,6 +387,21 @@ document.getElementById('clear').addEventListener('click',function(){
   state={};save();
   document.querySelectorAll('[data-save]').forEach(function(n){if(n.type==='checkbox')n.checked=false;else n.value='';});
 });
+function applyChapterState(s){
+  state=s||{};
+  document.querySelectorAll('[data-save]').forEach(function(n){
+    var k=n.getAttribute('data-save');
+    if(n.type==='checkbox') n.checked=!!state[k];
+    else n.value=state[k]||'';
+  });
+}
+if(embedded){
+  window.addEventListener('message', function(e){
+    if(e.origin !== window.location.origin || !e.data) return;
+    if(e.data.rallyChapterInit) applyChapterState(e.data.data || {});
+  });
+  window.parent.postMessage({rallyChapterReady:true, chapterKey:'bevRdPolicy'}, window.location.origin);
+}
 </script>
 </body>
 </html>

@@ -2191,8 +2191,16 @@ const MODULES = [
   const fmtDate = iso => iso ? new Date(iso).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}) : "";
   const passedCount = p => MODULES.filter(m => p.modules?.[m.id]?.passed).length;
 
-  try { const s = JSON.parse(localStorage.getItem(LKEY) || "null"); if (s && s.modules) state.progress = s; } catch(e) {}
-  const saveLocal = () => { try { localStorage.setItem(LKEY, JSON.stringify(state.progress)); } catch(e) {} };
+  // Embedded (viewed through the Rally training app, inside an iframe) never
+  // reads or writes localStorage: this page is opened fresh per trainee on a
+  // shared kiosk tablet, and localStorage would leak one trainee's module
+  // progress into the next trainee's session on the same device/browser.
+  // Only a standalone/direct browser visit (not embedded) uses localStorage.
+  const embedded = window.parent !== window;
+  if (!embedded) {
+    try { const s = JSON.parse(localStorage.getItem(LKEY) || "null"); if (s && s.modules) state.progress = s; } catch(e) {}
+  }
+  const saveLocal = () => { if (embedded) return; try { localStorage.setItem(LKEY, JSON.stringify(state.progress)); } catch(e) {} };
 
   const guide = document.getElementById("guide");
   function setView(v){ state.view = v; quiz = null;

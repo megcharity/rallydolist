@@ -708,13 +708,18 @@ function paintIll(root){
 }
 
 /* state (per viewer, resets each day) */
+// Embedded (viewed through the Rally training app, inside an iframe) never
+// reads or writes localStorage. This page runs on a shared kiosk tablet, and
+// a date-scoped key still leaks one person's checkmarks AND initials into
+// the next person's session the same day on the same device/browser.
+const embedded = window.parent !== window;
 const today=new Date().toISOString().slice(0,10);
 const KEY="rally-sidework-"+today;
 let state={};
-try{state=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){state={}}
+if(!embedded){ try{state=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){state={}} }
 let initials="";
-try{initials=localStorage.getItem("rally-initials")||""}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+if(!embedded){ try{initials=localStorage.getItem("rally-initials")||""}catch(e){} }
+function save(){ if(embedded) return; try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){} }
 
 let current="basics", phase="opening";
 const txt=i=>typeof i==="string"?i:i.t;
@@ -802,7 +807,7 @@ function renderPosition(p){
 }
 
 function bindPosition(p){
-  document.getElementById("ini").oninput=e=>{initials=e.target.value.toUpperCase();e.target.value=initials;try{localStorage.setItem("rally-initials",initials)}catch(_){}};
+  document.getElementById("ini").oninput=e=>{initials=e.target.value.toUpperCase();e.target.value=initials;if(embedded)return;try{localStorage.setItem("rally-initials",initials)}catch(_){}};
   document.querySelectorAll(".phases button").forEach(b=>b.onclick=()=>{phase=b.dataset.ph;render()});
   document.querySelectorAll(".item input").forEach(cb=>cb.onchange=()=>{
     const id=cb.dataset.id;
