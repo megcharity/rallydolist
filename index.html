@@ -5616,6 +5616,11 @@ function trnSignOffDay(dayNum){
       if(ok){
         trnLog(currentTrainee.id,'manager',by,'day_signed_off',{day:dayNum});
         showToast(dayNum===5 ? 'Training completed' : 'Day '+dayNum+' signed off');
+        // If a day pager pill was tapped earlier to review/jump to this day,
+        // trnViewDayNum stays pinned to it -- without clearing it here,
+        // signing off correctly saves but the view stays stuck on the day
+        // just completed instead of advancing to the new current day.
+        trnViewDayNum = null;
       }
       showScreen('s-trn-day'); renderTrnDay();
     });
