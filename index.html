@@ -700,6 +700,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-table{width:100%;border-collapse:collapse;min-width:760px;}
 .inv-table thead th{position:sticky;top:0;z-index:2;background:#fff;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:rgba(23,72,84,.4);font-weight:700;padding:10px 12px;border-bottom:1.5px solid var(--border);white-space:nowrap;}
 .inv-table thead th.num{text-align:right;}
+.inv-table thead th:first-child{position:sticky;left:0;z-index:3;}
+.inv-table tbody tr[data-item-id] td:first-child{position:sticky;left:0;z-index:1;background:#fff;box-shadow:2px 0 4px -2px rgba(23,72,84,.15);}
 .inv-table tbody tr{border-bottom:1px solid rgba(23,72,84,.07);}
 .inv-table tbody tr.inv-cat-head td{padding:10px 12px 5px;border-bottom:none;font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:500;color:#b87000;background:var(--cream);}
 .inv-table tbody tr.inv-section-head td{padding:14px 12px 4px;border-bottom:none;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);background:var(--cream-dark);}
@@ -9424,6 +9426,14 @@ function invSparkline(itemId) {
 function invIsCaseTracked(item) { return !!(item && item.item_code && /^x\d+$/.test(item.item_code.trim())); }
 function invPackSize(item) { const m = item && item.item_code && item.item_code.trim().match(/^x(\d+)$/); return m ? parseInt(m[1], 10) : 1; }
 function invIsKegTracked(item) { return !!(item && item.item_code && /keg/i.test(item.item_code)); }
+// Kegs never get a manually-entered order qty (you swap the whole thing,
+// never a fraction) — instead the order is a flat rule off how much of
+// the current keg is left: at or below half, order the replacement now;
+// above half, it'll make it through next week so don't order yet.
+function invKegOrderQty(cnt) {
+  if(!cnt || typeof cnt.current_count !== 'number') return 0;
+  return cnt.current_count <= 0.5 ? 1 : 0;
+}
 
 function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === invView); }
 function invCountFor(itemId, weekEnding) { return invCounts.find(c => c.item_id === itemId && c.week_ending === weekEnding); }
@@ -9516,7 +9526,10 @@ function renderInvBeverages() {
         const dash = '<span style="color:rgba(23,72,84,.25);">—</span>';
         // Case-packed: Par is in cases, so both an individual-can count AND an
         // editable case-order suggestion are shown. Kegs: a single fraction-
-        // remaining number, no order concept (you swap the whole keg).
+        // remaining number, and the order column is a read-only computed
+        // flag (invKegOrderQty) rather than a manual input — you never
+        // order a fraction of a keg, the rule just says whether a fresh
+        // one is needed off how much of the current one is left.
         // Everything else: the original current + order-qty model. For a
         // packaged item that ISN'T case-tracked yet, surface a direct link to
         // turn it on instead of a bare dash — this is the exact setting
@@ -9525,9 +9538,11 @@ function renderInvBeverages() {
         const unitsCell = caseTracked
           ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : (kegTracked ? dash : `<span class="inv-set-case-link" title="Set a Case Size on this item to track individual cans/bottles separately" onclick="openInvItemForm(${it.id})">+ Set case size</span>`);
+        const kegOrderQty = kegTracked ? invKegOrderQty(cnt) : 0;
         const orderCell = caseTracked
           ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
-          : kegTracked ? dash
+          : kegTracked
+            ? (curVal === '' ? dash : (kegOrderQty > 0 ? `<span style="color:#c0491f;font-weight:700;" title="Half a keg or less left — order a replacement">Order 1</span>` : `<span style="color:rgba(23,72,84,.35);" title="More than half a keg left — no order needed yet">0</span>`))
           : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`;
         const vendorCell = it.vendor
           ? `<span class="inv-vendor-val" title="Click to change the vendor" onclick="openInvItemForm(${it.id})">${calEsc(it.vendor)}</span>`
@@ -10059,25 +10074,32 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
 // shortfall (matches invOnCountInput's live auto-fill in the counting
 // sheet, which now rounds the same way at entry time, not just here at
 // email time). Only an order_qty that's already <=0 (on-hand at or above
-// par) is dropped. Kegs are skipped: there's no "order a fraction of a
-// keg" concept, you swap the whole thing.
+// par) is dropped. Kegs don't use order_qty at all — invKegOrderQty()
+// applies the flat half-keg-or-less rule off current_count instead.
 function invBuildOrderGroups(weekEnding) {
   const items = invItems.filter(i => i.active && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
   const sections = { bar: [], beerwine: [] };
   items.forEach(it => {
-    if(invIsKegTracked(it)) return;
     const cnt = invCountFor(it.id, weekEnding);
-    if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
-    const orderQty = Math.ceil(cnt.order_qty);
     const caseTracked = invIsCaseTracked(it);
+    const kegTracked = invIsKegTracked(it);
+    let orderQty;
+    if(kegTracked) {
+      orderQty = invKegOrderQty(cnt);
+      if(orderQty <= 0) return;
+    } else {
+      if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
+      orderQty = Math.ceil(cnt.order_qty);
+    }
     sections[it.sub_tab].push({
       name: it.name,
+      section: INV_SUBTAB_LABEL[it.sub_tab],
       vendor: it.vendor || null,
       // ABC SKU, Bar/liquor only — item_code means pack/keg size for Beer
       // & Wine (e.g. "x24", "50L keg"), not an order code, so it's left
       // out there rather than showing something misleading.
       abcCode: it.sub_tab === 'bar' ? (it.item_code || null) : null,
-      orderLabel: caseTracked ? `${orderQty} cs` : `${orderQty} btl`,
+      orderLabel: caseTracked ? `${orderQty} cs` : kegTracked ? `${orderQty} keg` : `${orderQty} btl`,
       parLabel: caseTracked ? `${it.par} cs` : String(it.par),
       onHandLabel: caseTracked
         ? `${cnt.current_count || 0} cs${typeof cnt.secondary_count === 'number' ? ', ' + cnt.secondary_count + ' loose' : ''}`
@@ -10089,29 +10111,36 @@ function invBuildOrderGroups(weekEnding) {
 }
 
 function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
-  const totalItems = INV_SUBTABS.reduce((n, st) => n + sections[st].length, 0);
-  const rowHtml = (r, showCode) => `
+  // One flat combined list across both sections — the manager reads this
+  // off the email to place the actual order and shouldn't have to open
+  // the app to see everything that needs ordering, so every item that
+  // needs ordering (Bar AND Beer & Wine, cases, bottles and kegs alike)
+  // goes in a single table, not two separate per-section ones.
+  const allRows = INV_SUBTABS.reduce((acc, st) => acc.concat(sections[st]), []);
+  const totalItems = allRows.length;
+  const rowHtml = r => `
     <tr>
       <td style="padding:8px 0;font-size:13px;color:#174854;border-bottom:1px solid #e8e0d4;">${calEsc(r.name)}</td>
-      ${showCode ? `<td style="padding:8px 0;font-size:12px;color:#999;border-bottom:1px solid #e8e0d4;">${r.abcCode ? calEsc(r.abcCode) : '—'}</td>` : ''}
+      <td style="padding:8px 0;font-size:11.5px;color:#999;border-bottom:1px solid #e8e0d4;">${calEsc(r.section)}</td>
+      <td style="padding:8px 0;font-size:12px;color:#999;border-bottom:1px solid #e8e0d4;">${r.abcCode ? calEsc(r.abcCode) : '—'}</td>
       <td style="padding:8px 0;font-size:12.5px;color:${r.vendor ? '#4e622c' : '#c0491f'};border-bottom:1px solid #e8e0d4;">${r.vendor ? calEsc(r.vendor) : '⚠ not set'}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.parLabel)}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.onHandLabel)}</td>
       <td style="padding:8px 0;font-size:13px;font-weight:600;color:#174854;border-bottom:1px solid #e8e0d4;text-align:right;white-space:nowrap;">${calEsc(r.orderLabel)}</td>
     </tr>`;
-  const sectionBlock = st => sections[st].length ? `
+  const listBlock = allRows.length ? `
   <tr><td style="padding:20px 32px 0;">
-    <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4e622c;margin-bottom:10px;">${calEsc(INV_SUBTAB_LABEL[st])}</div>
     <table width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th>
-        ${st === 'bar' ? '<th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">ABC Code</th>' : ''}
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Section</th>
+        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">ABC Code</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Vendor</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">On Hand</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Order</th>
       </tr>
-      ${sections[st].map(r => rowHtml(r, st === 'bar')).join('')}
+      ${allRows.map(rowHtml).join('')}
     </table>
   </td></tr>` : '';
 
@@ -10129,10 +10158,10 @@ function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
   </td></tr>
 
   <tr><td style="padding:22px 32px 0;">
-    <div style="font-size:13px;color:#174854;line-height:1.6;">${totalItems} item${totalItems===1?'':'s'} need${totalItems===1?'s':''} ordering this week, by section — vendor's right there in the list.</div>
+    <div style="font-size:13px;color:#174854;line-height:1.6;">${totalItems} item${totalItems===1?'':'s'} need${totalItems===1?'s':''} ordering this week — the full list, everything you need to place the order.</div>
   </td></tr>
 
-  ${INV_SUBTABS.map(sectionBlock).join('')}
+  ${listBlock}
 
   <tr><td style="background:#f0e9da;padding:16px 32px;text-align:center;border-top:1px solid #e0d8cc;">
     <div style="font-size:11px;color:#999;">Submitted via Rally Do List · <a href="https://rallydolist.netlify.app" style="color:#174854;">see the full sheet in the app</a></div>
