@@ -727,6 +727,8 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .inv-vendor-val{cursor:pointer;font-size:12.5px;color:rgba(23,72,84,.55);border-bottom:1px dashed rgba(23,72,84,.3);white-space:nowrap;}
 .inv-vendor-val:hover{color:var(--teal);border-bottom-color:var(--teal);}
 .inv-vendor-val.inv-vendor-unset{color:#c0491f;border-bottom-color:rgba(192,73,31,.4);font-weight:600;}
+.inv-set-case-link{cursor:pointer;font-size:11.5px;color:#c0491f;border-bottom:1px dashed rgba(192,73,31,.4);white-space:nowrap;font-weight:600;}
+.inv-set-case-link:hover{color:var(--teal);border-bottom-color:var(--teal);}
 .inv-vendor-val.inv-vendor-unset:hover{color:#a6420f;border-bottom-color:#a6420f;}
 .inv-spark{display:block;}
 .inv-spark .line{fill:none;stroke:rgba(23,72,84,.35);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
@@ -9461,13 +9463,17 @@ function renderInvBeverages() {
         const flagsHtml = flags.map(f => `<span class="inv-flagline">⚑ ${f}</span>`).join('');
         const parLabel = caseTracked ? `${it.par} cs` : it.par;
         const dash = '<span style="color:rgba(23,72,84,.25);">—</span>';
-        // Case-packed: Par is in cases, so both a loose-unit count AND an
+        // Case-packed: Par is in cases, so both an individual-can count AND an
         // editable case-order suggestion are shown. Kegs: a single fraction-
         // remaining number, no order concept (you swap the whole keg).
-        // Everything else: the original current + order-qty model.
+        // Everything else: the original current + order-qty model. For a
+        // packaged item that ISN'T case-tracked yet, surface a direct link to
+        // turn it on instead of a bare dash — this is the exact setting
+        // people kept missing, resorting to manually creating a second
+        // "(Individual Can)" line item instead of using it.
         const unitsCell = caseTracked
           ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
-          : dash;
+          : (kegTracked ? dash : `<span class="inv-set-case-link" title="Set a Case Size on this item to track individual cans/bottles separately" onclick="openInvItemForm(${it.id})">+ Set case size</span>`);
         const orderCell = caseTracked
           ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : kegTracked ? dash
@@ -9521,7 +9527,7 @@ function renderInvBeverages() {
       <table class="inv-table">
         <thead><tr>
           <th>Product</th><th>Criticality</th><th>Vendor</th><th class="num">Par</th>
-          <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">Loose Units</th><th class="num">Order</th>
+          <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">Individual Cans</th><th class="num">Order</th>
           <th>Trend</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
@@ -9810,7 +9816,7 @@ function buildInvHistoryCsv(startDate, endDate) {
     .sort((a,b) => (a.item.category||'').localeCompare(b.item.category||'')
       || a.item.name.localeCompare(b.item.name)
       || a.count.week_ending.localeCompare(b.count.week_ending));
-  const header = ['Category','Item','Criticality','Week Ending','Current Count','Loose Units','Order Qty','Par (as of export)','Status'];
+  const header = ['Category','Item','Criticality','Week Ending','Current Count','Individual Cans','Order Qty','Par (as of export)','Status'];
   const lines = [header.map(invCsvField).join(',')];
   rows.forEach(({item, count}) => {
     lines.push([
