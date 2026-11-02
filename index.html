@@ -1358,7 +1358,7 @@ async function flushSave(){
   if(isSaving){saveTimer=setTimeout(flushSave,400);return;}
   isSaving=true;
   try{
-    await fetch(`${SUPA_URL}/rest/v1/rally_state`,{
+    const res = await fetch(`${SUPA_URL}/rest/v1/rally_state`,{
       method:'POST',
       headers:{
         'apikey':SUPA_KEY,
@@ -1368,7 +1368,12 @@ async function flushSave(){
       },
       body:JSON.stringify({id:'app',data:{tasks,compLog,nextUid,nextTid,lastWeeklyReset,checklistStreak,personalStreaks,userPts:users.map(u=>({id:u.id,effortPts:u.effortPts||0,deadlinePts:u.deadlinePts||0,weeklyEffort:u.weeklyEffort||0,weeklyDeadline:u.weeklyDeadline||0}))},updated_at:new Date().toISOString()})
     });
-  }catch(e){console.warn('Save fail',e);}
+    // This is the main Do List save (every task add/edit/complete) — a
+    // failed write here used to go completely unnoticed, same as the
+    // checklist config bug. Now it surfaces instead of silently losing
+    // whatever just changed.
+    if(!res.ok){ console.warn('Save failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); }
+  }catch(e){console.warn('Save fail',e);showToast('⚠ Save failed — check connection');}
   isSaving=false;
 }
 function restoreDates(d){
@@ -2153,11 +2158,13 @@ async function saveAdminLogEntry() {
   const payload = { manager_name: currentManagerName(), log_date: logDate, notes };
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
+    let res;
     if(_adminLogEditId) {
-      await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${_adminLogEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${_adminLogEditId}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     } else {
-      await fetch(`${SUPA}/rest/v1/rally_admin_log`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${SUPA}/rest/v1/rally_admin_log`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     }
+    if(!res.ok) { console.warn('Admin log save failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); return; }
     closeAdminLogForm();
     showToast('Saved ✓');
     renderAdminLogTab();
@@ -2171,7 +2178,8 @@ async function deleteAdminLogEntry(id) {
   if(!confirm('Remove this admin log entry?')) return;
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
-    await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    const res = await fetch(`${SUPA}/rest/v1/rally_admin_log?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    if(!res.ok) { console.warn('Admin log delete failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Delete failed'); return; }
     showToast('Removed');
     renderAdminLogTab();
   } catch(e) {
@@ -2437,7 +2445,8 @@ async function tuDelete(id) {
   if(!confirm('Delete this team update? This cannot be undone.')) return;
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
-    await fetch(`${SUPA}/rest/v1/rally_team_updates?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    const res = await fetch(`${SUPA}/rest/v1/rally_team_updates?id=eq.${id}`, { method:'DELETE', headers: AL_HDRS() });
+    if(!res.ok) { console.warn('Team update delete failed', res.status, await res.text().catch(()=>'')); showToast('Could not delete — try again'); return; }
     await loadTeamUpdates();
     renderTrnTeamUpdatesMgr();
     showToast('Team update deleted');
@@ -2664,10 +2673,12 @@ async function saveAnnouncement() {
   let attachmentsSkipped = false;
   try {
     if(_annFormEditId) {
-      const { skipped } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }, ['link_url','doc_url','doc_name']);
+      const { res, skipped } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_announcements?id=eq.${_annFormEditId}`, 'PATCH', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }, ['link_url','doc_url','doc_name']);
+      if(!res.ok) { console.warn('Announcement update failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Post failed — check connection'); return; }
       attachmentsSkipped = skipped;
     } else {
       const { res, skipped } = await annSaveWithSchemaFallback(`${SUPA}/rest/v1/rally_announcements`, 'POST', { title, body, link_url: linkUrl, doc_url: docUrl, doc_name: docName, created_by: me, go_live_date: goLive, expires_on: expiresOn, required_managers: requiredManagers }, ['link_url','doc_url','doc_name']);
+      if(!res.ok) { console.warn('Announcement post failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Post failed — check connection'); return; }
       attachmentsSkipped = skipped;
       const rows = await res.json();
       const newId = Array.isArray(rows) && rows[0] && rows[0].id;
@@ -2695,7 +2706,8 @@ async function markAnnouncementRead(id) {
   const SUPA = window.RALLY_SUPABASE_URL;
   const me = currentManagerName();
   try {
-    await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ announcement_id: id, manager_name: me }) });
+    const res = await fetch(`${SUPA}/rest/v1/rally_announcement_reads`, { method:'POST', headers: {...AL_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ announcement_id: id, manager_name: me }) });
+    if(!res.ok) { console.warn('Mark as read failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not mark as read'); return; }
     await loadAnnouncements();
     renderAnnouncementAlert();
     if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
@@ -2797,7 +2809,8 @@ async function forceCloseAnnouncement(id) {
   if(!confirm('Force close this announcement? It will move to the archive even though not everyone has confirmed reading it.')) return;
   const SUPA = window.RALLY_SUPABASE_URL;
   try {
-    await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: true }) });
+    const res = await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: true }) });
+    if(!res.ok) { console.warn('Force close failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not close — check connection'); return; }
     await loadAnnouncements();
     renderAnnouncementAlert();
     if(document.getElementById('announcement-view-modal').style.display === 'flex') renderAnnouncementViewBody();
@@ -2813,7 +2826,8 @@ async function reopenAnnouncement(id) {
   try {
     // Clears both force_closed AND expires_on — either one alone can keep an
     // announcement resolved, so reopening has to undo whichever applies.
-    await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: false, expires_on: null }) });
+    const res = await fetch(`${SUPA}/rest/v1/rally_announcements?id=eq.${id}`, { method:'PATCH', headers: {...AL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ force_closed: false, expires_on: null }) });
+    if(!res.ok) { console.warn('Reopen failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not reopen — check connection'); return; }
     await loadAnnouncements();
     renderAnnouncementAlert();
     renderAnnouncementsArchiveTab();
@@ -5530,7 +5544,12 @@ window.addEventListener('message', function(e){
   if(e.data.rallyChapterSave){
     if(!currentTrainee) return;
     const merged = {...(currentTrainee.chapter_answers||{}), [e.data.chapterKey]: e.data.data};
-    trnPatchTraineeSoft({chapter_answers: merged});
+    // trnPatchTraineeSoft already checks res.ok and returns false on
+    // failure, but nothing used to surface that — the chapter page has
+    // no idea whether its answers actually saved. showToast() lives on
+    // this parent page, so this doesn't need every content page's
+    // cooperation to show something real when a save fails.
+    trnPatchTraineeSoft({chapter_answers: merged}).then(ok => { if(!ok) showToast('⚠ Answers could not be saved — check connection'); });
     return;
   }
 });
@@ -6585,6 +6604,27 @@ let clUploadedPhotoUrls = [];
 function getTodayStr() { const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function clIsWeekly(key) { return CL_LABELS[key] && CL_LABELS[key].type === 'Weekly'; }
 function clIsMonthly(key) { return CL_LABELS[key] && CL_LABELS[key].type === 'Monthly'; }
+// Section names otherwise render in whatever order items were first
+// added (plain object key order) — fine for most checklists, but a
+// weekly checklist's sections are usually days of the week, and adding
+// a day out of order (e.g. adding "Thursday" after Monday/Tuesday/
+// Wednesday already exist) landed it at the end instead of in
+// chronological order. Day-named sections now always sort Mon→Sun;
+// anything else keeps its original relative order, appended after.
+const CL_DAY_ORDER = { monday:0, tuesday:1, wednesday:2, thursday:3, friday:4, saturday:5, sunday:6 };
+function clSectionDayIndex(name) {
+  const m = String(name||'').toLowerCase().match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/);
+  return m ? CL_DAY_ORDER[m[1]] : null;
+}
+function clSortedSectionNames(sections) {
+  return Object.keys(sections).sort((a, b) => {
+    const da = clSectionDayIndex(a), db = clSectionDayIndex(b);
+    if(da !== null && db !== null) return da - db;
+    if(da !== null) return -1;
+    if(db !== null) return 1;
+    return 0; // both non-day: stable sort keeps original relative order
+  });
+}
 // Weekly checklists share one record for the whole week (keyed by that
 // week's Monday) instead of resetting every calendar day like daily
 // checklists do — otherwise checking Monday's item, then coming back
@@ -6817,7 +6857,8 @@ function renderChecklist(signedOff = false) {
   });
 
   let html = '';
-  Object.entries(sections).forEach(([sec, secItems]) => {
+  clSortedSectionNames(sections).forEach(sec => {
+    const secItems = sections[sec];
     const secId = sec.replace(/[^a-z0-9]/gi,'_');
     const allDone = secItems.every(i => i.type === 'check' ? !!((clState[i.id]||{}).done || (clState[i.id]||{}).na) : !!(clState[i.id]||{}).rating);
     html += `<div class="cl-section-header" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
@@ -7120,14 +7161,22 @@ async function saveClProgress(signedOff = false, extraFields = {}, photoUrls = n
     const KEY  = window.RALLY_SUPABASE_ANON_KEY;
     const hdrs = { 'apikey':KEY,'Authorization':`Bearer ${window.RALLY_SUPABASE_ANON_KEY}`,'Content-Type':'application/json','Prefer':'return=minimal' };
 
+    let saveRes;
     if(existingId) {
       // Update existing row
-      await fetch(`${SUPA}?id=eq.${existingId}`, { method:'PATCH', headers:hdrs, body:JSON.stringify(payload) });
+      saveRes = await fetch(`${SUPA}?id=eq.${existingId}`, { method:'PATCH', headers:hdrs, body:JSON.stringify(payload) });
     } else {
       // Insert new row
-      await fetch(SUPA, { method:'POST', headers:hdrs, body:JSON.stringify(payload) });
+      saveRes = await fetch(SUPA, { method:'POST', headers:hdrs, body:JSON.stringify(payload) });
     }
-  } catch(e) { console.warn('Checklist save failed', e); }
+    // This writes the actual sign-off record — every caller used to show
+    // "Checklist signed off! ✅" unconditionally regardless of whether this
+    // fetch actually succeeded, so a failed save here (bad network, RLS,
+    // whatever) looked identical to a real sign-off. Now callers check the
+    // return value before clearing state and navigating away.
+    if(!saveRes.ok) { console.warn('Checklist save failed', saveRes.status, await saveRes.text().catch(()=>'')); return false; }
+    return true;
+  } catch(e) { console.warn('Checklist save failed', e); return false; }
 }
 
 
@@ -7284,9 +7333,9 @@ function renderReadOnlyChecklistSection(label, shiftKey, row, accent, labelColor
     if(!sections[item.section]) sections[item.section] = [];
     sections[item.section].push(item);
   });
-  const itemsHtml = Object.entries(sections).map(([sec, secItems]) => `
+  const itemsHtml = clSortedSectionNames(sections).map(sec => `
     <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:14px 0 4px;">${sec}</div>
-    ${secItems.map(item => renderReadOnlyClItem(item, row.items || {})).join('')}
+    ${sections[sec].map(item => renderReadOnlyClItem(item, row.items || {})).join('')}
   `).join('');
 
   // Prefer the explicit MOD name (asked at Closing sign-off) over
@@ -7957,7 +8006,8 @@ async function signOffChecklist() {
       const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
       if(!confirm(msg)) return;
       const photoUrls = clUploadedPhotoUrls.concat(await uploadPendingClPhotos());
-      await saveClProgress(true, res.extraFields, photoUrls);
+      const saved = await saveClProgress(true, res.extraFields, photoUrls);
+      if(!saved) { showToast('⚠ Sign-off failed to save — check connection and try again'); return; }
       showToast('Checklist signed off! ✅');
       // This is the one deterministic moment we can be sure last night's
       // Closing is truly missing (not just not-yet-done) — the opening
@@ -8059,13 +8109,15 @@ async function signOffChecklist() {
         const closeNotes = document.getElementById('close-notes').value.trim();
         overlay.remove();
         const photoUrls = clUploadedPhotoUrls.concat(await uploadPendingClPhotos());
-        await saveClProgress(true, {}, photoUrls);
+        const saved = await saveClProgress(true, {}, photoUrls);
+        if(!saved) { resolve('savefailed'); return; }
         await submitWalkthroughScore(closer, selectedCloseRating, closeNotes);
         resolve();
       };
       document.getElementById('signoff-cancel').onclick = () => { overlay.remove(); resolve('cancel'); };
     }).then(async result => {
       if(result === 'cancel') return;
+      if(result === 'savefailed') { showToast('⚠ Sign-off failed to save — check connection and try again'); return; }
       showToast('Checklist signed off! ✅');
       // Opening sign-off is now the only trigger for the Daily Checklist
       // Report — it always pairs last night's Closing (just rated above)
@@ -8097,7 +8149,8 @@ async function signOffChecklist() {
 
     const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
     if(!confirm(msg)) return;
-    await saveClProgress(true, extraFields);
+    const savedClosing = await saveClProgress(true, extraFields);
+    if(!savedClosing) { showToast('⚠ Sign-off failed to save — check connection and try again'); return; }
     showToast('Checklist signed off! ✅');
     // The Daily Checklist Report no longer sends from here — it only fires
     // from Manager Opening's own sign-off now (see signOffChecklist()'s
@@ -8111,7 +8164,8 @@ async function signOffChecklist() {
 
   const msg = incomplete > 0 ? `${incomplete} items not completed. Sign off anyway?` : 'Sign off this checklist?';
   if(!confirm(msg)) return;
-  await saveClProgress(true);
+  const savedFinal = await saveClProgress(true);
+  if(!savedFinal) { showToast('⚠ Sign-off failed to save — check connection and try again'); return; }
   showToast('Checklist signed off! ✅');
   currentChecklistKey = null; clState = {};
   showScreen('s-mgr');
@@ -8305,9 +8359,9 @@ function clEditorRenderSection(key) {
 
   const itemsHtml = Object.keys(sections).length === 0
     ? `<div style="font-size:12px;color:rgba(23,72,84,.35);padding:10px 0;">No items yet — add one below.</div>`
-    : Object.entries(sections).map(([sec, secItems]) => `
+    : clSortedSectionNames(sections).map(sec => `
         <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(23,72,84,.4);margin:10px 0 4px;">${sec}</div>
-        ${secItems.map(item => `
+        ${sections[sec].map(item => `
           <div class="cl-editor-item">
             <div class="cl-editor-item-text">${item.text}</div>
             <span class="cl-editor-item-type">${item.type === 'rate' ? '⭐ rate' : '✓ check'}</span>
@@ -8981,21 +9035,24 @@ async function saveCalForm() {
     : { title: desc, category: selectedType, mod_name: modName, notes: callout, resource_link: resourceLink, document_url: finalDoc?.url || null, document_name: finalDoc?.name || null, start_date: start, end_date: end, created_by: createdBy };
 
   try {
+    let res;
     if(_calFormEditId && _calFormEditTableType) {
       const oldIsPto = _calFormEditTableType === 'pto';
       if(oldIsPto === isPto) {
         // Same table — simple update.
-        await fetch(`${CAL_SUPA}/rest/v1/${newTable}?id=eq.${_calFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+        res = await fetch(`${CAL_SUPA}/rest/v1/${newTable}?id=eq.${_calFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
       } else {
         // Type crossed the event/PTO boundary — move the row: delete from
         // the old table, insert into the new one.
         const oldTable = oldIsPto ? 'rally_pto' : 'rally_calendar_events';
-        await fetch(`${CAL_SUPA}/rest/v1/${oldTable}?id=eq.${_calFormEditId}`, { method:'DELETE', headers: CAL_HDRS() });
-        await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+        const delRes = await fetch(`${CAL_SUPA}/rest/v1/${oldTable}?id=eq.${_calFormEditId}`, { method:'DELETE', headers: CAL_HDRS() });
+        if(!delRes.ok) { console.warn('Calendar move (delete old) failed', delRes.status, await delRes.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); return; }
+        res = await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
       }
     } else {
-      await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${CAL_SUPA}/rest/v1/${newTable}`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     }
+    if(!res.ok) { console.warn('Calendar save failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); return; }
     await Promise.all([loadCalendarEvents(), loadPto()]);
     closeCalFormModal();
     renderCalGrid();
@@ -9011,7 +9068,8 @@ async function deleteCalEntry(type, id) {
   if(!confirm('Remove this entry?')) return;
   const table = type === 'event' ? 'rally_calendar_events' : 'rally_pto';
   try {
-    await fetch(`${CAL_SUPA}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    const res = await fetch(`${CAL_SUPA}/rest/v1/${table}?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    if(!res.ok) { console.warn('Calendar delete failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Delete failed'); return; }
     if(type === 'event') await loadCalendarEvents(); else await loadPto();
     closeCalViewModal();
     renderCalGrid();
@@ -9028,7 +9086,8 @@ async function deleteCalEntry(type, id) {
 async function confirmPto(id) {
   if(!isGM()) return;
   try {
-    await fetch(`${CAL_SUPA}/rest/v1/rally_pto?id=eq.${id}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ status: 'confirmed' }) });
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rally_pto?id=eq.${id}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ status: 'confirmed' }) });
+    if(!res.ok) { console.warn('PTO confirm failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not confirm — check connection'); return; }
     await loadPto();
     closeCalViewModal();
     renderCalGrid();
@@ -9067,11 +9126,13 @@ async function saveBirthdayForm() {
   const createdBy = (window.RallyAuth && window.RallyAuth.email()) || null;
   const payload = { name, month: mm, day: dd, created_by: createdBy };
   try {
+    let res;
     if(_bdayFormEditId) {
-      await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${_bdayFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${_bdayFormEditId}`, { method:'PATCH', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     } else {
-      await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays`, { method:'POST', headers: {...CAL_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     }
+    if(!res.ok) { console.warn('Birthday save failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); return; }
     await loadBirthdays();
     closeBirthdayFormModal();
     renderCalGrid();
@@ -9085,7 +9146,8 @@ async function deleteBirthday(id) {
   if(!isGM()) return;
   if(!confirm('Remove this birthday?')) return;
   try {
-    await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    const res = await fetch(`${CAL_SUPA}/rest/v1/rally_birthdays?id=eq.${id}`, { method:'DELETE', headers: CAL_HDRS() });
+    if(!res.ok) { console.warn('Birthday delete failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Delete failed'); return; }
     await loadBirthdays();
     renderCalGrid();
     const overlay = document.getElementById('bday-view-overlay');
@@ -9875,11 +9937,13 @@ async function saveInvItem() {
     vendor: document.getElementById('if-vendor').value.trim() || null,
   };
   try {
+    let res;
     if(_invItemFormEditId) {
-      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${_invItemFormEditId}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
+      res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${_invItemFormEditId}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
     } else {
-      await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ ...payload, created_by: currentManagerName() }) });
+      res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ ...payload, created_by: currentManagerName() }) });
     }
+    if(!res.ok) { console.warn('Inventory item save failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Save failed — check connection'); return; }
     closeInvItemForm();
     await loadInventoryItems();
     renderInvBeverages();
@@ -9893,7 +9957,8 @@ async function archiveInvItem(id) {
   if(!isGM()) return;
   if(!confirm('Archive this item? It drops off the active list but its count history is kept.')) return;
   try {
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ active:false }) });
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ active:false }) });
+    if(!res.ok) { console.warn('Inventory item archive failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not archive'); return; }
     await loadInventoryItems();
     renderInvBeverages();
     showToast('Archived');
@@ -9912,7 +9977,8 @@ async function toggleInvItemPause(id) {
   if(!item) return;
   const next = !item.paused;
   try {
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ paused: next }) });
+    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ paused: next }) });
+    if(!res.ok) { console.warn('Inventory item pause toggle failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not update — if this is the first try, the paused column may still need to be added in Supabase'); return; }
     await loadInventoryItems();
     renderInvBeverages();
     showToast(next ? 'Paused for the season — won\'t show up to order' : 'Resumed — back in the order list');
@@ -10287,8 +10353,11 @@ async function approveInvReview() {
     if(!isNaN(newPar) && newPar !== it.par) writes.push({ id: it.id, par: newPar });
   });
   try {
-    await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
-    await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:invView, last_reviewed_at: getTodayStr() }) });
+    const parResults = await Promise.all(writes.map(w => fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?id=eq.${w.id}`, { method:'PATCH', headers: {...INV_HDRS(), 'Prefer':'return=minimal'}, body: JSON.stringify({ par: w.par }) })));
+    const failedPar = parResults.find(r => !r.ok);
+    if(failedPar) { console.warn('Par review approve failed', failedPar.status, await failedPar.text().catch(()=>'')); showToast('⚠ Could not save — check connection'); return; }
+    const reviewStateRes = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_review_state`, { method:'POST', headers: {...INV_HDRS(), 'Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({ sub_tab:invView, last_reviewed_at: getTodayStr() }) });
+    if(!reviewStateRes.ok) { console.warn('Par review state save failed', reviewStateRes.status, await reviewStateRes.text().catch(()=>'')); showToast('⚠ Could not save — check connection'); return; }
 
     // Stakeholder report, built from the PRE-reload snapshot (items still
     // holds the old par values here — exactly what's needed for an
