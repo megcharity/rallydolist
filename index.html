@@ -9261,6 +9261,12 @@ async function loadInventoryReviewState() {
 const INV_SUBTABS = ['bar', 'beerwine'];
 const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine' };
 const INV_KEG_SIZES = ['1/6 Barrel Keg', '1/2 Barrel Keg'];
+// Categories otherwise sort alphabetically within their section — fine
+// normally, but a newly-added category like "Juices, Garnishes" landing
+// wherever "J" falls alphabetically (between House Vodka and Signature
+// Ingredient) isn't where it belongs on the physical shelf/count sheet.
+// Anything listed here always sorts after every other category instead.
+const INV_CATEGORIES_LAST = ['Juices, Garnishes'];
 function invToggleSection(st) {
   invSectionsOn[st] = !invSectionsOn[st];
   invApplyFilters();
@@ -9604,7 +9610,13 @@ function renderInvBeverages() {
     rows += `<tr class="inv-section-head"><td colspan="9">${INV_SUBTAB_LABEL[st]}</td></tr>`;
     const cats = {};
     stItems.forEach(it => { (cats[it.category || 'Uncategorized'] = cats[it.category || 'Uncategorized'] || []).push(it); });
-    Object.keys(cats).sort().forEach(cat => {
+    Object.keys(cats).sort((a, b) => {
+      const la = INV_CATEGORIES_LAST.includes(a), lb = INV_CATEGORIES_LAST.includes(b);
+      if(la && lb) return a.localeCompare(b);
+      if(la) return 1;
+      if(lb) return -1;
+      return a.localeCompare(b);
+    }).forEach(cat => {
       rows += `<tr class="inv-cat-head" data-sub-tab="${st}"><td colspan="9">${calEsc(cat)}</td></tr>`;
       cats[cat].sort((a,b) => a.name.localeCompare(b.name)).forEach(it => {
         const flags = invFlagsFor(it);
