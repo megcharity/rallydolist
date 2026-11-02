@@ -5573,10 +5573,26 @@ async function trnMarkRead(){
 }
 async function trnCloseViewer(){
   document.getElementById('trn-viewer-frame').src='about:blank';
-  if(trnViewerCtx) await trnMarkRead();
-  showScreen(trnViewerReturn);
-  if(trnViewerReturn==='s-trn-roster') renderTrnRoster();
-  else if(trnViewerReturn==='s-mgr') renderMgrTraining();
+  try {
+    if(trnViewerCtx) await trnMarkRead();
+  } catch(e) {
+    // Never let a failed save (slow/dropped connection, a stray error from
+    // the content page's own postMessage handling, etc.) block the trainee
+    // from getting back to their training -- that's exactly how "Back"
+    // ends up stranding someone or bouncing them further than intended.
+    console.warn('trnMarkRead failed on viewer close', e);
+  }
+  // Safety net: Back must never exit an active trainee's session entirely,
+  // no matter what trnViewerReturn ended up holding. If we're mid-training
+  // (currentTrainee set) and the target isn't one of the known in-training
+  // screens, always land on their Day view instead of the role picker.
+  const safeTargets = ['s-trn-day','s-trn-roster','s-mgr'];
+  let target = trnViewerReturn;
+  if(currentTrainee && !safeTargets.includes(target)) target = 's-trn-day';
+  if(!target) target = 's-trn-day';
+  showScreen(target);
+  if(target==='s-trn-roster') renderTrnRoster();
+  else if(target==='s-mgr') renderMgrTraining();
   else renderTrnDay();
 }
 
