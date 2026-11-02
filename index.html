@@ -9115,18 +9115,48 @@ let _invItemFormEditId = null;
 
 async function loadInventoryItems() {
   try {
-    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?select=*&order=category.asc,name.asc`, { headers: INV_HDRS() });
-    const data = await res.json();
-    invItems = (res.ok && Array.isArray(data)) ? data : [];
-    if(!res.ok) console.warn('Inventory items load failed', data);
+    // Paginated for the same reason loadInventoryCounts() is below: an
+    // un-paginated fetch silently caps at 1000 rows with no warning.
+    // Items grow much more slowly than counts, but there's no reason to
+    // let this table hit the same wall someday.
+    const pageSize = 1000;
+    let all = [], offset = 0;
+    while(true) {
+      const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_items?select=*&order=category.asc,name.asc&offset=${offset}&limit=${pageSize}`, { headers: INV_HDRS() });
+      const data = await res.json();
+      if(!res.ok) { console.warn('Inventory items load failed', data); break; }
+      if(!Array.isArray(data) || !data.length) break;
+      all = all.concat(data);
+      if(data.length < pageSize) break;
+      offset += pageSize;
+    }
+    invItems = all;
   } catch(e) { console.warn('Inventory items load failed', e); invItems = []; }
 }
+// This is the fix behind "my Nov 2 entries are blank": a plain fetch with
+// no limit gets capped by Supabase at exactly 1000 rows, full stop -- it
+// does NOT throw or warn, it just silently returns the first 1000 and
+// drops the rest. Ordered oldest-first, that means the MOST RECENT counts
+// are the ones that disappear first as the table grows past 1000 rows,
+// which is exactly what happened here (confirmed directly against the
+// DB: 1080 total rows, and the old un-paginated query returned only 10 of
+// Nov 2's 90). At ~90 rows added per week this will keep recurring every
+// few months unless the fetch itself loops through every page instead of
+// trusting a single request to return everything.
 async function loadInventoryCounts() {
   try {
-    const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts?select=*&order=week_ending.asc`, { headers: INV_HDRS() });
-    const data = await res.json();
-    invCounts = (res.ok && Array.isArray(data)) ? data : [];
-    if(!res.ok) console.warn('Inventory counts load failed', data);
+    const pageSize = 1000;
+    let all = [], offset = 0;
+    while(true) {
+      const res = await fetch(`${INV_SUPA}/rest/v1/rally_inventory_counts?select=*&order=week_ending.asc&offset=${offset}&limit=${pageSize}`, { headers: INV_HDRS() });
+      const data = await res.json();
+      if(!res.ok) { console.warn('Inventory counts load failed', data); break; }
+      if(!Array.isArray(data) || !data.length) break;
+      all = all.concat(data);
+      if(data.length < pageSize) break; // reached the last page
+      offset += pageSize;
+    }
+    invCounts = all;
   } catch(e) { console.warn('Inventory counts load failed', e); invCounts = []; }
 }
 async function loadInventoryReviewState() {
