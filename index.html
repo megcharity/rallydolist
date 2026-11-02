@@ -8208,7 +8208,7 @@ async function loadChecklistConfig() {
     const res = await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config?id=eq.all_checklists&select=data`, {
       headers: CL_HDRS()
     });
-    if (!res.ok) return;
+    if (!res.ok) { console.warn('Could not load checklist config:', res.status, await res.text().catch(()=>'')); return; }
     const rows = await res.json();
     if (rows && rows.length && rows[0].data) {
       const saved = rows[0].data;
@@ -8224,11 +8224,20 @@ async function loadChecklistConfig() {
 async function saveChecklistConfig() {
   clEditorShowSaving(true);
   try {
-    await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config`, {
+    const res = await fetch(`${CL_SUPA}/rest/v1/rally_checklists_config`, {
       method: 'POST',
       headers: { ...CL_HDRS(), 'Prefer': 'resolution=merge-duplicates' },
       body: JSON.stringify({ id: 'all_checklists', data: ALL_CHECKLISTS, updated_at: new Date().toISOString() })
     });
+    // A failed save here used to go completely unnoticed — the request
+    // could 404/400 and this code would still show the item as added,
+    // because only network-level exceptions were ever caught. Items
+    // added in the editor looked saved, then silently reverted to the
+    // hardcoded defaults on the next load.
+    if (!res.ok) {
+      console.warn('Could not save checklist config:', res.status, await res.text().catch(()=>''));
+      showToast('⚠ Save failed — check connection');
+    }
   } catch(e) {
     console.warn('Could not save checklist config:', e);
     showToast('⚠ Save failed — check connection');
