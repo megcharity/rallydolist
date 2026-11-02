@@ -9429,7 +9429,16 @@ function renderInvBeverages() {
   // function's own synchronous code continues, so this is safe to call
   // without awaiting it here.
   invFlushAutosave();
-  if(!invWeekEnding) invWeekEnding = getTodayStr();
+  // Default to the most recent date that actually has saved counts, not
+  // blindly to today. Nothing was ever deleted by this -- the date picker
+  // just silently defaulted to today's (usually blank) sheet, so reopening
+  // Inventory on any day after counting looked exactly like "everything
+  // was deleted" even though every count was safely saved under the date
+  // it was entered. Still falls back to today if no counts exist yet.
+  if(!invWeekEnding) {
+    const latestCounted = invCounts.reduce((max, c) => (!max || c.week_ending > max) ? c.week_ending : max, null);
+    invWeekEnding = latestCounted || getTodayStr();
+  }
 
   const bannerHtml = INV_SUBTABS.map(st => {
     const due = invReviewDue(st);
@@ -9511,6 +9520,7 @@ function renderInvBeverages() {
     <div class="inv-controls">
       <div class="inv-controls-left">
         <input class="inv-week-input" type="date" id="inv-week-input" value="${invWeekEnding}" onchange="invChangeWeek(this.value)"/>
+        ${invWeekEnding !== getTodayStr() ? `<span style="font-size:11px;font-weight:700;color:#b87000;background:rgba(248,154,28,.15);padding:4px 9px;border-radius:999px;white-space:nowrap;">Viewing ${fmtCalDate(invWeekEnding)}, not today</span>` : ''}
         <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Liquor</button>
         <button class="inv-filter-btn ${invSectionsOn.beerwine?'on':''}" data-catfilter="beerwine" onclick="invToggleSection('beerwine')">Beer &amp; Wine</button>
         <button class="inv-filter-btn ${invStatusOn.needsCount?'on':''}" data-filter="needsCount" onclick="invToggleStatus('needsCount')">Needs Count</button>
