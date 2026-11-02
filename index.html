@@ -1758,7 +1758,7 @@ function showMgrTab(tab, el) {
   document.getElementById('mgr-tab-adminlog').style.display = tab === 'adminlog' ? 'block' : 'none';
   if(tab === 'adminlog') renderAdminLogTab();
   document.getElementById('mgr-tab-inventory').style.display = tab === 'inventory' ? 'flex' : 'none';
-  if(tab === 'inventory') renderInvBeverages();
+  if(tab === 'inventory') invOpenTab();
   document.getElementById('mgr-tab-training').style.display = tab === 'training' ? 'block' : 'none';
   if(tab === 'training') renderMgrTraining();
   document.getElementById('mgr-tab-announcements').style.display = tab === 'announcements' ? 'block' : 'none';
@@ -9413,6 +9413,17 @@ function invDaysUntilReview(subTab = invView) {
   return Math.ceil((due - new Date()) / 86400000);
 }
 
+// Switching to the Inventory tab used to just re-render whatever was
+// already sitting in memory from whenever the page first loaded -- no
+// re-fetch. On a tab left open for a while, that meant anything someone
+// ELSE entered later in the day (or counts you entered earlier in a
+// different browser tab/device) stayed invisible until a full page
+// reload, which looked exactly like "my entries are gone." This refetches
+// fresh data every time the tab is opened, then renders.
+async function invOpenTab() {
+  await Promise.all([loadInventoryItems(), loadInventoryCounts(), loadInventoryReviewState()]);
+  renderInvBeverages();
+}
 // Bar and Beer & Wine render together in one combined table — merged
 // 2026-10-06 so a manager can't submit the weekly order having only ever
 // opened one of the two sections and leaving the other's counts blank.
