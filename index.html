@@ -2963,7 +2963,14 @@ async function renderMgrServerRatings() {
     <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:${pendingCredits?'#c0491f':'#174854'};line-height:1;">${pendingCredits}</div><div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:2px;">Credits pending</div></div>
   </div>`;
 
-  const mainHtml = mgrRatingsView === 'feed' ? mgrRatingsFeedHtml(mgrRatingsCreditFilter==='pending' ? mgrRatingsRows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? mgrRatingsRows.filter(r=>r.credit_applied) : mgrRatingsRows) : mgrRatingsByPersonHtml(servers);
+  const creditFilteredRows = mgrRatingsCreditFilter==='pending' ? mgrRatingsRows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? mgrRatingsRows.filter(r=>r.credit_applied) : mgrRatingsRows;
+  // A credit filter that narrows the Feed to zero rows (e.g. everyone's
+  // already credited and "Needs credit" is selected) used to just render
+  // an empty <div> below the stat tiles — looked exactly like a broken
+  // filter instead of "nothing matches, which is good news."
+  const mainHtml = mgrRatingsView === 'feed'
+    ? (creditFilteredRows.length ? mgrRatingsFeedHtml(creditFilteredRows) : mgrRatingsCreditFilterEmptyHtml())
+    : mgrRatingsByPersonHtml(servers);
 
   body.innerHTML = `<div style="padding:16px 16px 80px;">${headerHtml}${overviewHtml}${mainHtml}</div>`;
 }
@@ -2975,6 +2982,10 @@ function ratingCreditControlHtml(r) {
     return `<span style="font-size:11px;font-weight:700;color:var(--olive);white-space:nowrap;" title="${who?'By '+who:''}${who&&when?' · ':''}${when}">✓ Credited <a href="#" style="color:rgba(23,72,84,.4);font-weight:600;text-decoration:underline;margin-left:2px;" onclick="event.preventDefault();markRatingCredit(${r.id},false)">undo</a></span>`;
   }
   return `<button class="ov-abtn" style="white-space:nowrap;background:var(--orange);color:#1a1200;border-color:var(--orange);" onclick="markRatingCredit(${r.id},true)">🎁 Apply Credit</button>`;
+}
+function mgrRatingsCreditFilterEmptyHtml() {
+  const msg = mgrRatingsCreditFilter === 'pending' ? 'All caught up — every submission in this window has been credited.' : 'No credited submissions in this window yet.';
+  return `<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">${msg}</div>`;
 }
 
 function mgrRatingsFeedHtml(rows) {
@@ -3024,7 +3035,10 @@ function mgrRatingsByPersonHtml(servers) {
         </div>
         <div style="margin-top:12px;padding-top:12px;border-top:1.5px solid rgba(23,72,84,.1);">
           <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.5);margin-bottom:8px;">Submissions — for applying guest rewards</div>
-          ${(mgrRatingsCreditFilter==='pending' ? s.rows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? s.rows.filter(r=>r.credit_applied) : s.rows).slice(0,20).map(r => `
+          ${(() => {
+            const subRows = mgrRatingsCreditFilter==='pending' ? s.rows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? s.rows.filter(r=>r.credit_applied) : s.rows;
+            if(!subRows.length) return `<div style="font-size:12px;color:rgba(23,72,84,.4);">${mgrRatingsCreditFilter==='pending' ? 'All caught up — nothing pending for '+calEsc(s.name)+'.' : 'No credited submissions for '+calEsc(s.name)+' yet.'}</div>`;
+            return subRows.slice(0,20).map(r => `
             <div style="font-size:13px;color:#174854;margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
                 <span style="font-weight:600;">${calEsc(r.guest_name)}</span>
@@ -3033,7 +3047,8 @@ function mgrRatingsByPersonHtml(servers) {
               <div style="font-size:12px;color:rgba(23,72,84,.6);">${calEsc(r.guest_email)}</div>
               ${r.comment ? `<div style="font-style:italic;margin-top:3px;">"${calEsc(r.comment)}"</div>` : ''}
               <div style="margin-top:6px;">${ratingCreditControlHtml(r)}</div>
-            </div>`).join('')}
+            </div>`).join('');
+          })()}
         </div>
       ` : ''}
     </div>`;
