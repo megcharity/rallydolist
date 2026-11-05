@@ -4900,11 +4900,8 @@ const MGR_GROUPS = {
   team: { label: 'Team', subs: [
     {key:'training', label:'Training'},
     {key:'announcements', label:'Announcements'},
-    // 🏆 Team Performance / 👥 Roster — built, but held back from the live
-    // site until the Supabase migration (0018_server_ratings.sql, which now
-    // also includes the credit-applied columns/RPC) is run. Re-add these two
-    // entries to go live: {key:'teamperformance', label:'🏆 Team Performance'},
-    // {key:'roster', label:'👥 Roster'}
+    {key:'teamperformance', label:'🏆 Team Performance'},
+    {key:'roster', label:'👥 Roster'},
   ]},
 };
 const MGR_TAB_GROUP = { checklists:'operations', shiftreport:'operations', tasks:'operations', adminlog:'operations', inventory:'operations', training:'team', announcements:'team', teamperformance:'team', roster:'team', calendar:'calendar' };
