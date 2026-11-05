@@ -2854,6 +2854,7 @@ let mgrRatingsRange = 'all'; // 'all' | '30' | '7'
 let mgrRatingsRows = [];
 let mgrRatingsOpenServer = null;
 let mgrRatingsView = 'feed'; // 'feed' (every rating, newest first) | 'byPerson' (averages)
+let mgrRatingsCreditFilter = 'all'; // 'all' | 'pending' | 'applied' — filters which submissions LIST, never the star averages
 
 function ratingsStars(avg) {
   const n = Math.round(avg);
@@ -2866,7 +2867,7 @@ async function renderMgrServerRatings() {
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading ratings...</div>';
 
   const SUPA = window.RALLY_SUPABASE_URL;
-  let url = `${SUPA}/rest/v1/rally_server_ratings?select=server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at&order=created_at.desc`;
+  let url = `${SUPA}/rest/v1/rally_server_ratings?select=id,server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at,credit_applied,credit_applied_by,credit_applied_at&order=created_at.desc`;
   if(mgrRatingsRange !== 'all') {
     const since = new Date(Date.now() - Number(mgrRatingsRange)*86400000).toISOString();
     url += `&created_at=gte.${since}`;
@@ -2892,7 +2893,7 @@ async function renderMgrServerRatings() {
         <button class="ov-abtn" onclick="openRatingsQrModal()">📱 Show QR Code</button>
       </div>
     </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
       <div style="display:flex;gap:6px;">
         ${['all','30','7'].map(r => `<button class="ov-abtn" style="${mgrRatingsRange===r?'background:var(--teal);color:#fff;':''}" onclick="mgrRatingsSetRange('${r}')">${r==='all'?'All time':'Last '+r+' days'}</button>`).join('')}
       </div>
@@ -2900,6 +2901,9 @@ async function renderMgrServerRatings() {
         <button class="ov-abtn" style="${mgrRatingsView==='feed'?'background:var(--teal);color:#fff;':''}" onclick="mgrRatingsSetView('feed')">📋 Live Feed</button>
         <button class="ov-abtn" style="${mgrRatingsView==='byPerson'?'background:var(--teal);color:#fff;':''}" onclick="mgrRatingsSetView('byPerson')">👤 By Person</button>
       </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:16px;">
+      ${[['all','All submissions'],['pending','🎁 Needs credit'],['applied','✓ Credit applied']].map(([k,label]) => `<button class="ov-abtn" style="${mgrRatingsCreditFilter===k?'background:var(--teal);color:#fff;':''}" onclick="mgrRatingsSetCreditFilter('${k}')">${label}</button>`).join('')}
     </div>`;
 
   if(!mgrRatingsRows.length) {
@@ -2926,16 +2930,27 @@ async function renderMgrServerRatings() {
 
   const totalRatings = mgrRatingsRows.length;
   const venueAvg = mgrRatingsRows.reduce((sum,r) => sum + (r.overall||0), 0) / totalRatings;
+  const pendingCredits = mgrRatingsRows.filter(r => !r.credit_applied).length;
 
   const overviewHtml = `<div style="margin-bottom:16px;padding:14px 16px;background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;display:flex;gap:28px;flex-wrap:wrap;">
     <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#174854;line-height:1;">${totalRatings}</div><div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:2px;">Total ratings</div></div>
     <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#174854;line-height:1;">${venueAvg.toFixed(1)}</div><div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:2px;">Avg overall</div></div>
     <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#174854;line-height:1;">${servers.length}</div><div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:2px;">People rated</div></div>
+    <div><div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:${pendingCredits?'#c0491f':'#174854'};line-height:1;">${pendingCredits}</div><div style="font-size:11px;color:rgba(23,72,84,.55);margin-top:2px;">Credits pending</div></div>
   </div>`;
 
-  const mainHtml = mgrRatingsView === 'feed' ? mgrRatingsFeedHtml(mgrRatingsRows) : mgrRatingsByPersonHtml(servers);
+  const mainHtml = mgrRatingsView === 'feed' ? mgrRatingsFeedHtml(mgrRatingsCreditFilter==='pending' ? mgrRatingsRows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? mgrRatingsRows.filter(r=>r.credit_applied) : mgrRatingsRows) : mgrRatingsByPersonHtml(servers);
 
   body.innerHTML = `<div style="padding:16px 16px 80px;">${headerHtml}${overviewHtml}${mainHtml}</div>`;
+}
+
+function ratingCreditControlHtml(r) {
+  if(r.credit_applied) {
+    const who = r.credit_applied_by ? calEsc(r.credit_applied_by) : '';
+    const when = r.credit_applied_at ? new Date(r.credit_applied_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    return `<span style="font-size:11px;font-weight:700;color:var(--olive);white-space:nowrap;" title="${who?'By '+who:''}${who&&when?' · ':''}${when}">✓ Credited <a href="#" style="color:rgba(23,72,84,.4);font-weight:600;text-decoration:underline;margin-left:2px;" onclick="event.preventDefault();markRatingCredit(${r.id},false)">undo</a></span>`;
+  }
+  return `<button class="ov-abtn" style="white-space:nowrap;background:var(--orange);color:#1a1200;border-color:var(--orange);" onclick="markRatingCredit(${r.id},true)">🎁 Apply Credit</button>`;
 }
 
 function mgrRatingsFeedHtml(rows) {
@@ -2953,8 +2968,9 @@ function mgrRatingsFeedHtml(rows) {
           </div>`).join('')}
       </div>
       ${r.comment ? `<div style="font-size:13px;font-style:italic;color:#174854;margin-bottom:8px;">"${calEsc(r.comment)}"</div>` : ''}
-      <div style="font-size:12px;color:rgba(23,72,84,.6);padding-top:8px;border-top:1px solid rgba(23,72,84,.08);">
-        <span style="font-weight:600;color:#174854;">${calEsc(r.guest_name)}</span> · ${calEsc(r.guest_email)}
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:rgba(23,72,84,.6);padding-top:8px;border-top:1px solid rgba(23,72,84,.08);">
+        <span><span style="font-weight:600;color:#174854;">${calEsc(r.guest_name)}</span> · ${calEsc(r.guest_email)}</span>
+        ${ratingCreditControlHtml(r)}
       </div>
     </div>`).join('');
 }
@@ -2962,11 +2978,12 @@ function mgrRatingsFeedHtml(rows) {
 function mgrRatingsByPersonHtml(servers) {
   return servers.map(s => {
     const isOpen = mgrRatingsOpenServer === s.key;
+    const pending = s.rows.filter(r => !r.credit_applied).length;
     return `<div class="ann-card">
       <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="mgrRatingsToggleServer('${s.key.replace(/'/g,"\\'")}')">
         <div>
           <div style="font-weight:700;font-size:15px;color:#174854;">${calEsc(s.name)}${s.role==='manager'?' <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;vertical-align:middle;">MANAGER</span>':''}</div>
-          <div style="font-size:12px;color:rgba(23,72,84,.55);">${s.n} rating${s.n===1?'':'s'}</div>
+          <div style="font-size:12px;color:rgba(23,72,84,.55);">${s.n} rating${s.n===1?'':'s'}${pending?` · <span style="color:#c0491f;font-weight:700;">${pending} need${pending===1?'s':''} credit</span>`:''}</div>
         </div>
         <div style="text-align:right;">
           <div style="font-size:15px;">${ratingsStars(s.avgs.overall)}</div>
@@ -2983,7 +3000,7 @@ function mgrRatingsByPersonHtml(servers) {
         </div>
         <div style="margin-top:12px;padding-top:12px;border-top:1.5px solid rgba(23,72,84,.1);">
           <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.5);margin-bottom:8px;">Submissions — for applying guest rewards</div>
-          ${s.rows.slice(0,20).map(r => `
+          ${(mgrRatingsCreditFilter==='pending' ? s.rows.filter(r=>!r.credit_applied) : mgrRatingsCreditFilter==='applied' ? s.rows.filter(r=>r.credit_applied) : s.rows).slice(0,20).map(r => `
             <div style="font-size:13px;color:#174854;margin-bottom:10px;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
                 <span style="font-weight:600;">${calEsc(r.guest_name)}</span>
@@ -2991,6 +3008,7 @@ function mgrRatingsByPersonHtml(servers) {
               </div>
               <div style="font-size:12px;color:rgba(23,72,84,.6);">${calEsc(r.guest_email)}</div>
               ${r.comment ? `<div style="font-style:italic;margin-top:3px;">"${calEsc(r.comment)}"</div>` : ''}
+              <div style="margin-top:6px;">${ratingCreditControlHtml(r)}</div>
             </div>`).join('')}
         </div>
       ` : ''}
@@ -3000,7 +3018,28 @@ function mgrRatingsByPersonHtml(servers) {
 
 function mgrRatingsSetRange(r) { mgrRatingsRange = r; renderMgrServerRatings(); }
 function mgrRatingsSetView(v) { mgrRatingsView = v; renderMgrServerRatings(); }
+function mgrRatingsSetCreditFilter(f) { mgrRatingsCreditFilter = f; renderMgrServerRatings(); }
 function mgrRatingsToggleServer(key) { mgrRatingsOpenServer = mgrRatingsOpenServer === key ? null : key; renderMgrServerRatings(); }
+// Goes through the rally_mark_rating_credit RPC (security-definer, staff-only)
+// rather than a direct table update — there's deliberately no staff
+// update policy on rally_server_ratings at all, so a manager can't
+// touch a guest's actual score, only ever flip these three columns.
+async function markRatingCredit(id, applied) {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  try {
+    const res = await fetch(`${SUPA}/rest/v1/rpc/rally_mark_rating_credit`, {
+      method: 'POST',
+      headers: { ...AL_HDRS(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_id: id, p_applied: applied })
+    });
+    if(!res.ok) { console.warn('Mark credit failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not update — check connection'); return; }
+    await renderMgrServerRatings();
+    showToast(applied ? 'Marked as credited ✓' : 'Marked as not yet credited');
+  } catch(e) {
+    console.warn('Mark credit failed', e);
+    showToast('⚠ Could not update — check connection');
+  }
+}
 
 // ── QR modal ───────────────────────────────────────────────────────────────
 const RATINGS_QR_URL = 'https://rally-rate.netlify.app/';
