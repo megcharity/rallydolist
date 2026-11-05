@@ -3003,7 +3003,7 @@ function mgrRatingsSetView(v) { mgrRatingsView = v; renderMgrServerRatings(); }
 function mgrRatingsToggleServer(key) { mgrRatingsOpenServer = mgrRatingsOpenServer === key ? null : key; renderMgrServerRatings(); }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
-const RATINGS_QR_URL = 'https://rallyportal.netlify.app/rate/';
+const RATINGS_QR_URL = 'https://rally-rate.netlify.app/';
 let ratingsQrLibLoaded = false;
 function openRatingsQrModal() {
   document.getElementById('ratings-qr-modal').style.display = 'flex';
