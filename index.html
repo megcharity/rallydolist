@@ -2866,21 +2866,40 @@ function ratingsStars(avg) {
   return '<span style="color:#f89a1c;letter-spacing:1px;">' + '★'.repeat(n) + '</span><span style="color:rgba(23,72,84,.2);letter-spacing:1px;">' + '★'.repeat(5-n) + '</span>';
 }
 
+// Shared by Server Ratings and Team Scores — both read the full
+// rally_server_ratings table. PostgREST silently caps any unlimited
+// query at 1000 rows with no error, which is exactly what made
+// inventory counts look like they'd "disappeared" once that table grew
+// past 1000 — paginate here so a leaderboard or feed can never silently
+// drop older/newer ratings the same way once the table grows that big.
+async function loadAllServerRatings(range) {
+  const SUPA = window.RALLY_SUPABASE_URL;
+  let url = `${SUPA}/rest/v1/rally_server_ratings?select=id,server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at,credit_applied,credit_applied_by,credit_applied_at&order=created_at.desc`;
+  if(range && range !== 'all') {
+    const since = new Date(Date.now() - Number(range)*86400000).toISOString();
+    url += `&created_at=gte.${since}`;
+  }
+  const pageSize = 1000;
+  let all = [], offset = 0;
+  while(true) {
+    const res = await fetch(`${url}&offset=${offset}&limit=${pageSize}`, { headers: AL_HDRS() });
+    if(!res.ok) { console.warn('Server ratings load failed', res.status, await res.text().catch(()=>'')); throw new Error('load failed'); }
+    const data = await res.json();
+    if(!Array.isArray(data) || !data.length) break;
+    all = all.concat(data);
+    if(data.length < pageSize) break;
+    offset += pageSize;
+  }
+  return all;
+}
+
 async function renderMgrServerRatings() {
   const body = document.getElementById('mgr-ratings-body');
   if(!body) return;
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading ratings...</div>';
 
-  const SUPA = window.RALLY_SUPABASE_URL;
-  let url = `${SUPA}/rest/v1/rally_server_ratings?select=id,server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at,credit_applied,credit_applied_by,credit_applied_at&order=created_at.desc`;
-  if(mgrRatingsRange !== 'all') {
-    const since = new Date(Date.now() - Number(mgrRatingsRange)*86400000).toISOString();
-    url += `&created_at=gte.${since}`;
-  }
   try {
-    const res = await fetch(url, { headers: AL_HDRS() });
-    mgrRatingsRows = await res.json();
-    if(!Array.isArray(mgrRatingsRows)) mgrRatingsRows = [];
+    mgrRatingsRows = await loadAllServerRatings(mgrRatingsRange);
   } catch(e) {
     console.warn('Server ratings load failed', e);
     body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">⚠ Could not load ratings — check connection.</div>';
@@ -3063,12 +3082,8 @@ async function renderMgrTeamScores() {
   if(!body) return;
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading team scores...</div>';
 
-  const SUPA = window.RALLY_SUPABASE_URL;
-  const url = `${SUPA}/rest/v1/rally_server_ratings?select=id,server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at,credit_applied,credit_applied_by,credit_applied_at&order=created_at.desc`;
   try {
-    const res = await fetch(url, { headers: AL_HDRS() });
-    mgrTeamScoresRows = await res.json();
-    if(!Array.isArray(mgrTeamScoresRows)) mgrTeamScoresRows = [];
+    mgrTeamScoresRows = await loadAllServerRatings('all');
   } catch(e) {
     console.warn('Team scores load failed', e);
     body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">⚠ Could not load — check connection.</div>';
