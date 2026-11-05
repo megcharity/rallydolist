@@ -1317,6 +1317,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div id="mgr-tab-ratings" style="flex:1;overflow-y:auto;display:none;">
     <div class="mgr-body" id="mgr-ratings-body"></div>
   </div>
+  <div id="mgr-tab-teamscores" style="flex:1;overflow-y:auto;display:none;">
+    <div class="mgr-body" id="mgr-teamscores-body"></div>
+  </div>
   <div id="mgr-tab-roster" style="flex:1;overflow-y:auto;display:none;">
     <div class="mgr-body" id="mgr-roster-body"></div>
   </div>
@@ -1784,6 +1787,8 @@ function showMgrTab(tab, el) {
   if(tab === 'announcements') renderAnnouncementsArchiveTab();
   document.getElementById('mgr-tab-ratings').style.display = tab === 'ratings' ? 'block' : 'none';
   if(tab === 'ratings') renderMgrServerRatings();
+  document.getElementById('mgr-tab-teamscores').style.display = tab === 'teamscores' ? 'block' : 'none';
+  if(tab === 'teamscores') renderMgrTeamScores();
   document.getElementById('mgr-tab-roster').style.display = tab === 'roster' ? 'block' : 'none';
   if(tab === 'roster') renderMgrRoster();
 
@@ -3033,13 +3038,105 @@ async function markRatingCredit(id, applied) {
       body: JSON.stringify({ p_id: id, p_applied: applied })
     });
     if(!res.ok) { console.warn('Mark credit failed', res.status, await res.text().catch(()=>'')); showToast('⚠ Could not update — check connection'); return; }
-    await renderMgrServerRatings();
+    // The same card markup (and this same button) is reused on the Team
+    // Scores tab, so refresh whichever screen is actually on-screen rather
+    // than always the Server Ratings one.
+    if(mgrTab === 'teamscores') await renderMgrTeamScores();
+    else await renderMgrServerRatings();
     showToast(applied ? 'Marked as credited ✓' : 'Marked as not yet credited');
   } catch(e) {
     console.warn('Mark credit failed', e);
     showToast('⚠ Could not update — check connection');
   }
 }
+
+// ── TEAM SCORES ──────────────────────────────────────────────────────────
+// Same underlying rally_server_ratings data as Server Ratings, reframed
+// person-first: pick someone off the leaderboard, see their dashboard
+// (per-category averages) and every rating they've gotten, in the exact
+// same card format as the Server Ratings feed (reuses mgrRatingsFeedHtml).
+let mgrTeamScoresRows = [];
+let mgrTeamScoresSelected = null; // a server key from the leaderboard, or null = just the leaderboard
+
+async function renderMgrTeamScores() {
+  const body = document.getElementById('mgr-teamscores-body');
+  if(!body) return;
+  body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading team scores...</div>';
+
+  const SUPA = window.RALLY_SUPABASE_URL;
+  const url = `${SUPA}/rest/v1/rally_server_ratings?select=id,server_id,server_name,server_role,guest_name,guest_email,friendliness,attentiveness,speed,menu_knowledge,overall,comment,created_at,credit_applied,credit_applied_by,credit_applied_at&order=created_at.desc`;
+  try {
+    const res = await fetch(url, { headers: AL_HDRS() });
+    mgrTeamScoresRows = await res.json();
+    if(!Array.isArray(mgrTeamScoresRows)) mgrTeamScoresRows = [];
+  } catch(e) {
+    console.warn('Team scores load failed', e);
+    body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">⚠ Could not load — check connection.</div>';
+    return;
+  }
+
+  const headerHtml = `<div style="margin-bottom:14px;">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#174854;">🏆 Team Scores</div>
+    <div style="font-size:12px;color:rgba(23,72,84,.55);margin-top:2px;">Pick someone to see their full rating history.</div>
+  </div>`;
+
+  if(!mgrTeamScoresRows.length) {
+    body.innerHTML = `<div style="padding:16px 16px 80px;">${headerHtml}<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">No ratings yet.<br><span style="font-size:12px;margin-top:6px;display:block;">Hand out the QR code at the court to start collecting feedback.</span></div></div>`;
+    return;
+  }
+
+  // Same grouping/averaging as Server Ratings' By Person view.
+  const bySvr = {};
+  mgrTeamScoresRows.forEach(r => {
+    const key = r.server_id != null ? 'id:'+r.server_id : 'name:'+r.server_name;
+    if(!bySvr[key]) bySvr[key] = { name: r.server_name, role: r.server_role, rows: [] };
+    bySvr[key].rows.push(r);
+  });
+  const servers = Object.entries(bySvr).map(([key, s]) => {
+    const n = s.rows.length;
+    const avgs = {};
+    RATING_CATEGORIES.forEach(c => { avgs[c.key] = s.rows.reduce((sum,r) => sum + (r[c.key]||0), 0) / n; });
+    return { key, name: s.name, role: s.role, n, avgs, rows: s.rows };
+  }).sort((a,b) => b.avgs.overall - a.avgs.overall);
+
+  const selected = mgrTeamScoresSelected ? servers.find(s => s.key === mgrTeamScoresSelected) : null;
+
+  const leaderboardHtml = `<div class="ann-card" style="padding:4px 0;">
+    ${servers.map((s,i) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;${i < servers.length-1 ? 'border-bottom:1px solid rgba(23,72,84,.08);' : ''}cursor:pointer;${selected && selected.key===s.key ? 'background:var(--cream-dark);' : ''}" onclick="mgrTeamScoresSelect('${s.key.replace(/'/g,"\\'")}')">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(23,72,84,.35);width:22px;text-align:center;flex:none;">${i+1}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;font-size:14.5px;color:#174854;">${calEsc(s.name)}${s.role==='manager'?' <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;vertical-align:middle;">MANAGER</span>':''}</div>
+          <div style="font-size:11.5px;color:rgba(23,72,84,.5);">${s.n} rating${s.n===1?'':'s'}</div>
+        </div>
+        <div style="text-align:right;flex:none;">
+          <div style="font-size:14px;">${ratingsStars(s.avgs.overall)}</div>
+          <div style="font-size:12px;font-weight:700;color:#174854;">${s.avgs.overall.toFixed(1)}</div>
+        </div>
+      </div>`).join('')}
+  </div>`;
+
+  let dashHtml = '';
+  if(selected) {
+    dashHtml = `
+      <div style="margin:16px 0 10px;">
+        <button class="ov-abtn" onclick="mgrTeamScoresSelect(null)">← All team members</button>
+      </div>
+      <div style="margin-bottom:16px;padding:16px;background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#174854;margin-bottom:2px;">${calEsc(selected.name)}${selected.role==='manager'?' <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;vertical-align:middle;">MANAGER</span>':''}</div>
+        <div style="font-size:12px;color:rgba(23,72,84,.55);margin-bottom:14px;">${selected.n} rating${selected.n===1?'':'s'}</div>
+        <div style="display:flex;gap:22px;flex-wrap:wrap;">
+          ${RATING_CATEGORIES.map(c => `<div><div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#174854;line-height:1;">${selected.avgs[c.key].toFixed(1)}</div><div style="font-size:10.5px;color:rgba(23,72,84,.55);margin-top:2px;">${c.label}</div></div>`).join('')}
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.5);margin-bottom:8px;">All ratings</div>
+      ${mgrRatingsFeedHtml(selected.rows)}
+    `;
+  }
+
+  body.innerHTML = `<div style="padding:16px 16px 80px;">${headerHtml}${leaderboardHtml}${dashHtml}</div>`;
+}
+function mgrTeamScoresSelect(key) { mgrTeamScoresSelected = key; renderMgrTeamScores(); }
 
 // ── QR modal ───────────────────────────────────────────────────────────────
 const RATINGS_QR_URL = 'https://rally-rate.netlify.app/';
@@ -4813,12 +4910,14 @@ const MGR_GROUPS = {
   team: { label: 'Team', subs: [
     {key:'training', label:'Training'},
     {key:'announcements', label:'Announcements'},
-    // ⭐ Server Ratings / 👥 Roster — built, but held back from the live site until
-    // the Supabase migration (0018_server_ratings.sql) is run. Re-add these two
-    // entries to go live: {key:'ratings', label:'⭐ Server Ratings'}, {key:'roster', label:'👥 Roster'}
+    // ⭐ Server Ratings / 🏆 Team Scores / 👥 Roster — built, but held back
+    // from the live site until the Supabase migration (0018_server_ratings.sql,
+    // which now also includes the credit-applied columns/RPC) is run. Re-add
+    // these three entries to go live: {key:'ratings', label:'⭐ Server Ratings'},
+    // {key:'teamscores', label:'🏆 Team Scores'}, {key:'roster', label:'👥 Roster'}
   ]},
 };
-const MGR_TAB_GROUP = { checklists:'operations', shiftreport:'operations', tasks:'operations', adminlog:'operations', inventory:'operations', training:'team', announcements:'team', ratings:'team', roster:'team', calendar:'calendar' };
+const MGR_TAB_GROUP = { checklists:'operations', shiftreport:'operations', tasks:'operations', adminlog:'operations', inventory:'operations', training:'team', announcements:'team', ratings:'team', teamscores:'team', roster:'team', calendar:'calendar' };
 let mgrGroup = 'calendar';
 function syncMgrGroupNav(tab) {
   mgrGroup = MGR_TAB_GROUP[tab] || mgrGroup;
