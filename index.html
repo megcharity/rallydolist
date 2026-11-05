@@ -3062,8 +3062,17 @@ async function renderMgrTeamScores() {
   if(!body) return;
   body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">Loading team scores...</div>';
 
+  let activeRosterIds = null; // null = couldn't load roster; don't filter rather than hide everyone
   try {
-    mgrTeamScoresRows = await loadAllServerRatings('all');
+    const [ratingsResult, rosterResult] = await Promise.allSettled([
+      loadAllServerRatings('all'),
+      fetch(`${window.RALLY_SUPABASE_URL}/rest/v1/rally_roster?select=id,active`, { headers: AL_HDRS() }).then(r => r.json())
+    ]);
+    if(ratingsResult.status !== 'fulfilled') throw ratingsResult.reason;
+    mgrTeamScoresRows = ratingsResult.value;
+    if(rosterResult.status === 'fulfilled' && Array.isArray(rosterResult.value)) {
+      activeRosterIds = new Set(rosterResult.value.filter(p => p.active).map(p => p.id));
+    }
   } catch(e) {
     console.warn('Team scores load failed', e);
     body.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(23,72,84,.4);">⚠ Could not load — check connection.</div>';
@@ -3076,8 +3085,12 @@ async function renderMgrTeamScores() {
   }
 
   // Same grouping/averaging as the Reviews feed, rolled up per person.
+  // Deactivated roster members (left the team) are excluded from the
+  // leaderboard — their ratings stay in the Reviews feed and the
+  // database untouched, so Reactivate in Roster brings them right back.
   const bySvr = {};
   mgrTeamScoresRows.forEach(r => {
+    if(activeRosterIds && r.server_id != null && !activeRosterIds.has(r.server_id)) return;
     const key = r.server_id != null ? 'id:'+r.server_id : 'name:'+r.server_name;
     if(!bySvr[key]) bySvr[key] = { name: r.server_name, role: r.server_role, rows: [] };
     bySvr[key].rows.push(r);
@@ -3156,7 +3169,7 @@ function printRatingsQr() { window.print(); }
 // for now. Also powers the Server Ratings guest picker (everyone active
 // here is rateable).
 let mgrRosterRows = [];
-let mgrRosterShowInactive = false;
+let mgrRosterShowArchive = false;
 
 async function renderMgrRoster() {
   const body = document.getElementById('mgr-roster-body');
@@ -3195,23 +3208,50 @@ async function loadMgrRoster() {
 function renderMgrRosterList() {
   const list = document.getElementById('roster-list');
   if(!list) return;
-  const visible = mgrRosterRows.filter(p => mgrRosterShowInactive || p.active);
-  const toggleHtml = `<div style="text-align:right;margin-bottom:8px;"><button class="ov-abtn" onclick="rosterToggleShowInactive()">${mgrRosterShowInactive ? 'Hide inactive' : 'Show inactive'}</button></div>`;
-  if(!visible.length) {
+
+  // Archive view: people who've left. Kept separate from the main list
+  // (rather than mixed in, greyed out) so a departed employee doesn't
+  // linger where the team sees it day to day.
+  if(mgrRosterShowArchive) {
+    const archived = mgrRosterRows.filter(p => !p.active);
+    const header = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:rgba(23,72,84,.5);">Archive</div>
+      <button class="ov-abtn" onclick="rosterToggleArchive()">← Back to roster</button>
+    </div>`;
+    if(!archived.length) {
+      list.innerHTML = header + '<div style="padding:16px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">No one archived.</div>';
+      return;
+    }
+    list.innerHTML = header + archived.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid rgba(23,72,84,.08);opacity:.6;">
+        <div>
+          <span style="font-weight:600;font-size:13.5px;color:#174854;">${calEsc(p.name)}</span>
+          <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;margin-left:6px;vertical-align:middle;">${p.role === 'manager' ? 'MANAGER' : 'TEAM MEMBER'}</span>
+        </div>
+        <button class="ov-abtn" onclick="rosterSetActive(${p.id}, true)">Reactivate</button>
+      </div>`).join('');
+    return;
+  }
+
+  // Main view: active people only.
+  const active = mgrRosterRows.filter(p => p.active);
+  const archivedCount = mgrRosterRows.length - active.length;
+  const toggleHtml = `<div style="text-align:right;margin-bottom:8px;"><button class="ov-abtn" onclick="rosterToggleArchive()">Archive${archivedCount ? ' ('+archivedCount+')' : ''}</button></div>`;
+  if(!active.length) {
     list.innerHTML = toggleHtml + '<div style="padding:16px;text-align:center;color:rgba(23,72,84,.4);font-size:13px;">No one added yet.</div>';
     return;
   }
-  list.innerHTML = toggleHtml + visible.map(p => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid rgba(23,72,84,.08);${p.active ? '' : 'opacity:.5;'}">
+  list.innerHTML = toggleHtml + active.map(p => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-top:1px solid rgba(23,72,84,.08);">
       <div>
         <span style="font-weight:600;font-size:13.5px;color:#174854;">${calEsc(p.name)}</span>
         <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;margin-left:6px;vertical-align:middle;">${p.role === 'manager' ? 'MANAGER' : 'TEAM MEMBER'}</span>
       </div>
-      <button class="ov-abtn" onclick="rosterSetActive(${p.id}, ${!p.active})">${p.active ? 'Deactivate' : 'Reactivate'}</button>
+      <button class="ov-abtn" onclick="rosterSetActive(${p.id}, false)">Deactivate</button>
     </div>`).join('');
 }
 
-function rosterToggleShowInactive() { mgrRosterShowInactive = !mgrRosterShowInactive; renderMgrRosterList(); }
+function rosterToggleArchive() { mgrRosterShowArchive = !mgrRosterShowArchive; renderMgrRosterList(); }
 
 async function rosterAdd() {
   const nameEl = document.getElementById('roster-name');
