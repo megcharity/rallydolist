@@ -1133,11 +1133,14 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <div class="role-card-icon">🎓</div>
       <div class="role-card-name">Training</div>
     </div>
+    <!-- Team Updates — held back, not needed yet (Megan, 2026-11-05).
+    Re-add this card to bring it back:
     <div class="role-card" data-role="updates" onclick="openTeamUpdatesScreen()">
       <span class="nav-dot" id="role-updates-dot" hidden></span>
       <div class="role-card-icon">📣</div>
       <div class="role-card-name">Team Updates</div>
     </div>
+    -->
   </div>
   <button class="role-continue" id="role-continue" style="display:none;" onclick="goToPin()">Continue →</button>
 </div>
@@ -1300,7 +1303,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   <div id="mgr-tab-training" style="flex:1;overflow-y:auto;display:none;">
     <div style="display:flex;gap:0;padding:12px 16px 0;background:#fbf6ed;">
       <button id="trn-view-roster-btn" class="task-view-btn active" onclick="switchTrnMgrView('roster')">Roster</button>
+      <!-- Team Updates — held back, not needed yet (Megan, 2026-11-05).
+      Re-add this button (and the two lines in switchTrnMgrView() that
+      reference trn-view-updates-btn) to bring it back:
       <button id="trn-view-updates-btn" class="task-view-btn" onclick="switchTrnMgrView('updates')">📣 Team Updates</button>
+      -->
       <button id="trn-view-resources-btn" class="task-view-btn" onclick="switchTrnMgrView('resources')">🖨 Resources</button>
     </div>
     <div class="mgr-body" id="trn-mgr-body"></div>
@@ -5931,13 +5938,13 @@ let trnMgrExpandedId = null;
 const TRN_OVERVIEW_BTN = `<button class="trn-btn trn-btn-ghost" style="flex:none;margin-bottom:14px;" onclick="window.open('/training-content/journey-map.html?v='+Date.now(),'_blank')">📋 See the Full Training Overview</button>`;
 function switchTrnMgrView(view){
   document.getElementById('trn-view-roster-btn').classList.toggle('active', view==='roster');
-  document.getElementById('trn-view-updates-btn').classList.toggle('active', view==='updates');
+  // 'updates' (trn-view-updates-btn / trn-mgr-updates-outer) held back,
+  // not needed yet (Megan, 2026-11-05) — see the commented-out button
+  // above and the role-card near the top of the file.
   document.getElementById('trn-view-resources-btn').classList.toggle('active', view==='resources');
   document.getElementById('trn-mgr-body').style.display = view==='roster' ? 'block' : 'none';
-  document.getElementById('trn-mgr-updates-outer').style.display = view==='updates' ? 'block' : 'none';
   document.getElementById('trn-mgr-resources-body').style.display = view==='resources' ? 'block' : 'none';
   if(view==='resources') renderTrnResources();
-  if(view==='updates') { loadTeamUpdates().then(renderTrnTeamUpdatesMgr); renderTrnTeamUpdatesMgr(); }
 }
 const TRN_GROUP_LABEL = { core:'Core (every position)', Host:'Host', Bartender:'Bartender', Captain:'Captain', Barista:'Barista', Swarmer:'Swarmer', 'Team-Lead-Manager':'Team Lead / Manager' };
 function renderTrnResources(){
@@ -10521,7 +10528,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCalendarEvents();
   loadPto();
   loadBirthdays();
-  loadTeamUpdates();
+  // loadTeamUpdates() — held back, not needed yet (Megan, 2026-11-05).
   Promise.all([loadInventoryItems(), loadInventoryCounts(), loadInventoryReviewState()]);
 });
 </script>
