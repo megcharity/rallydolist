@@ -2866,6 +2866,7 @@ let mgrPerfView = 'reviews'; // 'reviews' | 'standings'
 let mgrRatingsRange = 'all'; // 'all' | '30' | '7'
 let mgrRatingsRows = [];
 let mgrRatingsCreditFilter = 'all'; // 'all' | 'pending' | 'applied' — filters which submissions LIST, never the star averages
+let mgrPerfSearchQuery = ''; // shared by Reviews + Standings — filters by server name, re-applied (not re-typed) across view switches
 
 function ratingsStars(avg) {
   const n = Math.round(avg);
@@ -2918,10 +2919,11 @@ function renderMgrTeamPerformance() {
         <button class="ov-abtn" onclick="openRatingsQrModal()">📱 Show QR Code</button>
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:4px;">
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
       <button class="ov-abtn" style="${mgrPerfView==='reviews'?'background:var(--teal);color:#fff;':''}" onclick="mgrPerfSetView('reviews')">📋 Reviews</button>
       <button class="ov-abtn" style="${mgrPerfView==='standings'?'background:var(--teal);color:#fff;':''}" onclick="mgrPerfSetView('standings')">🏆 Standings</button>
-    </div>`;
+    </div>
+    <input id="mgr-perf-search" type="text" placeholder="🔍 Search servers…" value="${calEsc(mgrPerfSearchQuery)}" oninput="mgrPerfSearchQuery=this.value;mgrPerfApplySearch()" style="width:100%;max-width:280px;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fff;margin-bottom:4px;">`;
 
   document.getElementById('mgr-ratings-body').style.display = mgrPerfView === 'reviews' ? '' : 'none';
   document.getElementById('mgr-teamscores-body').style.display = mgrPerfView === 'standings' ? '' : 'none';
@@ -2984,7 +2986,26 @@ async function renderMgrServerRatings() {
   // filter instead of "nothing matches, which is good news."
   const mainHtml = creditFilteredRows.length ? mgrRatingsFeedHtml(creditFilteredRows) : mgrRatingsCreditFilterEmptyHtml();
 
-  body.innerHTML = `<div style="padding:0 16px 80px;">${headerHtml}${overviewHtml}${mainHtml}</div>`;
+  body.innerHTML = `<div style="padding:0 16px 80px;">${headerHtml}${overviewHtml}${mainHtml}<div id="mgr-ratings-search-empty" style="display:none;padding:32px;text-align:center;color:rgba(23,72,84,.4);">No servers match that search.</div></div>`;
+  mgrPerfApplySearch();
+}
+
+// Filters the Reviews feed / Standings leaderboard by mgrPerfSearchQuery
+// without re-rendering either (toggles display on already-rendered
+// cards), so typing in the search box never steals its own focus.
+function mgrPerfApplySearch() {
+  const q = mgrPerfSearchQuery.trim().toLowerCase();
+  const containerId = mgrPerfView === 'reviews' ? 'mgr-ratings-body' : 'mgr-teamscores-body';
+  const emptyId = mgrPerfView === 'reviews' ? 'mgr-ratings-search-empty' : 'mgr-teamscores-search-empty';
+  const cards = document.querySelectorAll(`#${containerId} [data-server-name]`);
+  let anyVisible = false;
+  cards.forEach(c => {
+    const match = !q || c.dataset.serverName.includes(q);
+    c.style.display = match ? '' : 'none';
+    if(match) anyVisible = true;
+  });
+  const empty = document.getElementById(emptyId);
+  if(empty) empty.style.display = (q && !anyVisible) ? 'block' : 'none';
 }
 
 function ratingCreditControlHtml(r) {
@@ -3002,7 +3023,7 @@ function mgrRatingsCreditFilterEmptyHtml() {
 
 function mgrRatingsFeedHtml(rows) {
   return rows.map(r => `
-    <div class="ann-card">
+    <div class="ann-card" data-server-name="${calEsc(r.server_name).toLowerCase()}">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px;">
         <div style="font-weight:700;font-size:15px;color:#174854;">${calEsc(r.server_name)}${r.server_role==='manager'?' <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;vertical-align:middle;">MANAGER</span>':''}</div>
         <div style="font-size:11px;color:rgba(23,72,84,.45);white-space:nowrap;">${new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${new Date(r.created_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div>
@@ -3106,7 +3127,7 @@ async function renderMgrTeamScores() {
 
   const leaderboardHtml = `<div class="ann-card" style="padding:4px 0;">
     ${servers.map((s,i) => `
-      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;${i < servers.length-1 ? 'border-bottom:1px solid rgba(23,72,84,.08);' : ''}cursor:pointer;${selected && selected.key===s.key ? 'background:var(--cream-dark);' : ''}" onclick="mgrTeamScoresSelect('${s.key.replace(/'/g,"\\'")}')">
+      <div data-server-name="${calEsc(s.name).toLowerCase()}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;${i < servers.length-1 ? 'border-bottom:1px solid rgba(23,72,84,.08);' : ''}cursor:pointer;${selected && selected.key===s.key ? 'background:var(--cream-dark);' : ''}" onclick="mgrTeamScoresSelect('${s.key.replace(/'/g,"\\'")}')">
         <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:rgba(23,72,84,.35);width:22px;text-align:center;flex:none;">${i+1}</div>
         <div style="flex:1;min-width:0;">
           <div style="font-weight:700;font-size:14.5px;color:#174854;">${calEsc(s.name)}${s.role==='manager'?' <span style="font-size:10px;font-weight:700;color:var(--olive);background:var(--sage);padding:2px 7px;border-radius:9px;vertical-align:middle;">MANAGER</span>':''}</div>
@@ -3137,7 +3158,8 @@ async function renderMgrTeamScores() {
     `;
   }
 
-  body.innerHTML = `<div style="padding:0 16px 80px;">${leaderboardHtml}${dashHtml}</div>`;
+  body.innerHTML = `<div style="padding:0 16px 80px;">${leaderboardHtml}<div id="mgr-teamscores-search-empty" style="display:none;padding:32px;text-align:center;color:rgba(23,72,84,.4);">No servers match that search.</div>${dashHtml}</div>`;
+  mgrPerfApplySearch();
 }
 function mgrTeamScoresSelect(key) { mgrTeamScoresSelected = key; renderMgrTeamScores(); }
 
@@ -6002,6 +6024,7 @@ function renderTrnResources(){
     </div>`).join('');
 }
 let trnMgrShowArchived = false;
+let trnMgrSearchQuery = ''; // filters the rendered cards by name without re-rendering, so typing keeps focus
 function trnMgrToggleArchivedView(){
   trnMgrShowArchived = !trnMgrShowArchived;
   trnMgrExpandedId = null;
@@ -6015,12 +6038,26 @@ async function renderMgrTraining(){
   const archivedCount = trnTrainees.filter(t=>t.archived).length;
   const list = trnTrainees.filter(t=>trnMgrShowArchived ? t.archived : !t.archived);
   const toggleBtn = `<button class="trn-btn trn-btn-ghost" style="flex:none;margin-left:8px;" onclick="trnMgrToggleArchivedView()">${trnMgrShowArchived?'← Back to active':'📦 Archived ('+archivedCount+')'}</button>`;
-  const header = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">${TRN_OVERVIEW_BTN}${(archivedCount||trnMgrShowArchived)?toggleBtn:''}</div>`;
+  const header = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;">${TRN_OVERVIEW_BTN}${(archivedCount||trnMgrShowArchived)?toggleBtn:''}</div>
+    <input id="trn-mgr-search" type="text" placeholder="🔍 Search trainees…" value="${calEsc(trnMgrSearchQuery)}" oninput="trnMgrSearchQuery=this.value;trnMgrApplyFilter()" style="width:100%;max-width:280px;padding:9px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:13px;font-family:inherit;color:#174854;background:#fff;margin-bottom:14px;">`;
   if(!list.length){
     body.innerHTML = header + `<div style="padding:30px 16px;text-align:center;color:rgba(23,72,84,.45);">${trnMgrShowArchived ? 'No archived trainees.' : 'No trainees yet. Add one from the Training kiosk screen (role picker → Training).'}</div>`;
     return;
   }
-  body.innerHTML = header + list.map(t=>trnMgrCardHTML(t)).join('');
+  body.innerHTML = header + list.map(t=>trnMgrCardHTML(t)).join('') + `<div id="trn-mgr-search-empty" style="display:none;padding:30px 16px;text-align:center;color:rgba(23,72,84,.45);">No trainees match that search.</div>`;
+  trnMgrApplyFilter();
+}
+function trnMgrApplyFilter(){
+  const q = trnMgrSearchQuery.trim().toLowerCase();
+  const cards = document.querySelectorAll('#trn-mgr-body .trn-mgr-card');
+  let anyVisible = false;
+  cards.forEach(c => {
+    const match = !q || (c.dataset.name||'').includes(q);
+    c.style.display = match ? '' : 'none';
+    if(match) anyVisible = true;
+  });
+  const empty = document.getElementById('trn-mgr-search-empty');
+  if(empty) empty.style.display = (q && !anyVisible) ? 'block' : 'none';
 }
 function trnMgrCardHTML(t){
   const posName=(TRAINING_PLANS[t.position]&&TRAINING_PLANS[t.position].name)||t.position;
@@ -6028,7 +6065,7 @@ function trnMgrCardHTML(t){
   const best=trnBestScore(t);
   const quizCount=(t.quiz_results||[]).length;
   const open = trnMgrExpandedId===t.id;
-  return `<div class="trn-mgr-card">
+  return `<div class="trn-mgr-card" data-name="${calEsc(t.name).toLowerCase()}">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
       <div style="flex:1;cursor:pointer;" onclick="trnMgrToggleOpen(${t.id})">
         <div style="font-weight:700;color:#174854;font-size:14px;">${calEsc(t.name)} <span class="trn-pill trn-pill-${status}">${TRN_STATUS_LABEL[status]}</span></div>
