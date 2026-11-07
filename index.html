@@ -2865,7 +2865,7 @@ const RATING_CATEGORIES = [
 let mgrPerfView = 'reviews'; // 'reviews' | 'standings'
 let mgrRatingsRange = 'all'; // 'all' | '30' | '7'
 let mgrRatingsRows = [];
-let mgrRatingsCreditFilter = 'all'; // 'all' | 'pending' | 'applied' — filters which submissions LIST, never the star averages
+let mgrRatingsCreditFilter = 'pending'; // 'all' | 'pending' | 'applied' — filters which submissions LIST, never the star averages; defaults to pending so managers land on what needs action
 let mgrPerfSearchQuery = ''; // shared by Reviews + Standings — filters by server name, re-applied (not re-typed) across view switches
 
 function ratingsStars(avg) {
