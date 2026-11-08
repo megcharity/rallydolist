@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bar Opening & Closing Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#174854; --olive:#4e622c; --orange:#f89a1c; --cream:#fbf6ed;
+  --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+.topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
+h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
+h1{font-size:clamp(40px,7vw,60px);line-height:.98}
+h2{font-size:clamp(26px,4.5vw,34px);line-height:1.05}
+h3{font-size:16px;font-family:"Hanken Grotesk",sans-serif;font-weight:700;line-height:1.1;margin-bottom:2px;letter-spacing:0}
+h1 em,h2 em{font-style:italic}
+p{margin:0}
+.hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
+
+.frame{border:2px solid var(--navy)}
+.sec{padding:24px 28px;border-top:2px solid var(--navy)}
+.sec:first-child{border-top:0}
+.sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:4px}
+
+.hero{padding:28px 28px}
+.hero p{margin-top:12px;font-size:16px;max-width:62ch}
+.link-back{display:inline-block;margin-top:14px;font-size:13.5px;font-weight:600;color:var(--navy)}
+
+.event-num{display:inline-grid;place-content:center;width:30px;height:30px;border-radius:50%;background:var(--orange);font-family:"Instrument Serif",serif;font-size:19px;margin-right:10px;flex:none;vertical-align:-7px}
+
+.group{margin-top:18px}
+.group:first-of-type{margin-top:14px}
+.group-label{font-family:"Gochi Hand",cursive;font-size:15px;letter-spacing:.05em;color:var(--olive);margin-bottom:6px}
+
+ul.cl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.cl label{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:2px 0 0;flex:none}
+input[type=checkbox]::after{content:"";width:10px;height:5.5px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+input[type=checkbox]:checked{background:var(--navy)}
+input[type=checkbox]:checked::after{opacity:1}
+input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+
+.sticker{display:inline-block;font-family:"Gochi Hand",cursive;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(245,134,100,.25);border:2px solid var(--coral);border-radius:999px;padding:2px 10px 1px;margin-left:4px;transform:rotate(-2deg);white-space:nowrap;vertical-align:1px;}
+
+footer{padding:20px 4px 0;font-size:13px;color:#4c6c73}
+footer a{color:#4c6c73}
+
+@media (max-width:720px){
+  .sec{padding:20px 18px}
+  .hero{padding:24px 20px}
+}
+@media print{
+  .link-back{display:none}
+  .sec-head{break-after:avoid}
+  .group{break-inside:avoid}
+  li{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><span>Bartender</span><span>Rally</span></div>
+  <div class="frame">
+    <div class="hero">
+      <div class="hand">Quick reference</div>
+      <h1 style="margin-top:8px">Opening &amp; Closing<br><em>Checklist</em></h1>
+      <p>Print this and initial each section as you go. Opening, during-service and closing — including cleaning.</p>
+      <a class="link-back" href="/training-content/bar-side-work-training.html">&larr; Full side work training guide</a> &nbsp;·&nbsp;
+      <a class="link-back" href="/training-content/bar-cleaning-schedule.html">Weekly &amp; monthly cleaning schedule &rarr;</a>
+    </div>
+
+    <!-- OPENING -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">1</span><em>Opening</em></h2></div>
+      <p class="label" style="margin-bottom:10px;">Goal: the bar is ready before the first guest walks up.</p>
+
+      <div class="group">
+        <div class="group-label">Wells</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Dish machine running</span></label></li>
+          <li><label><input type="checkbox"><span>Ice in the wells</span></label></li>
+          <li><label><input type="checkbox"><span>Juices and syrups set</span></label></li>
+          <li><label><input type="checkbox"><span>First-touch bottles stocked</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Stations</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Tools set up</span></label></li>
+          <li><label><input type="checkbox"><span>Garnishes, fruit and mint prepped</span></label></li>
+          <li><label><input type="checkbox"><span>Straws, napkins and mats stocked</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Backbar + coolers</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Wine stocked</span></label></li>
+          <li><label><input type="checkbox"><span>Call spirits stocked</span></label></li>
+          <li><label><input type="checkbox"><span>Glassware stocked</span></label></li>
+          <li><label><input type="checkbox"><span>Beer and NA stocked</span></label></li>
+          <li><label><input type="checkbox"><span>Syrups stocked</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Freezers + POS</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Menus set</span></label></li>
+          <li><label><input type="checkbox"><span>Check presenters ready</span></label></li>
+          <li><label><input type="checkbox"><span>Glassware ready</span></label></li>
+          <li><label><input type="checkbox"><span>Ice stocked</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Misc</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Dining and take-away mise set</span></label></li>
+          <li><label><input type="checkbox"><span>Radio on</span></label></li>
+          <li><label><input type="checkbox"><span>Bins set</span></label></li>
+          <li><label><input type="checkbox"><span>Line-up, BEOs and 86 list reviewed</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DURING SERVICE -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">2</span>During <em>Service</em></h2></div>
+      <p class="label" style="margin-bottom:10px;">Goal: never run out of anything, and clean as you go.</p>
+      <ul class="cl">
+        <li><label><input type="checkbox"><span>Keep ice wells and garnishes full</span></label></li>
+        <li><label><input type="checkbox"><span>Change kegs and keep backup liquor stocked</span></label></li>
+        <li><label><input type="checkbox"><span>Wash glassware, clear the bar top <span class="sticker">clean as you go</span></span></label></li>
+        <li><label><input type="checkbox"><span>Run bus tubs — emptied and organized</span></label></li>
+        <li><label><input type="checkbox"><span>Restock top sellers and package coolers</span></label></li>
+        <li><label><input type="checkbox"><span>Make garnish and syrups for PM service</span></label></li>
+        <li><label><input type="checkbox"><span>Keep running notes for closers and the MOD</span></label></li>
+      </ul>
+    </div>
+
+    <!-- CLOSING -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">3</span><em>Closing</em></h2></div>
+      <p class="label" style="margin-bottom:10px;">Goal: the opener walks into a clean, reset, stocked bar.</p>
+
+      <div class="group">
+        <div class="group-label">Wells</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Burn ice</span></label></li>
+          <li><label><input type="checkbox"><span>Sanitize wells</span></label></li>
+          <li><label><input type="checkbox"><span>Scrub bottles and rails</span></label></li>
+          <li><label><input type="checkbox"><span>Clean soda guns and tools</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Stations</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Discard old garnishes</span></label></li>
+          <li><label><input type="checkbox"><span>Store fruit and herbs</span></label></li>
+          <li><label><input type="checkbox"><span>Wash mats and sinks</span></label></li>
+          <li><label><input type="checkbox"><span>Sweep</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Backbar + coolers</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Cap, pump and date wine</span></label></li>
+          <li><label><input type="checkbox"><span>Restock</span></label></li>
+          <li><label><input type="checkbox"><span>Wipe down</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Freezers + POS</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Close tabs</span></label></li>
+          <li><label><input type="checkbox"><span>Reset menus</span></label></li>
+          <li><label><input type="checkbox"><span>Reset glassware</span></label></li>
+          <li><label><input type="checkbox"><span>Wipe down cooler and freezer fronts</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Daily cleaning <span class="sticker">every shift</span></div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Wipe all stainless steel</span></label></li>
+          <li><label><input type="checkbox"><span>Wash the soda spouts</span></label></li>
+          <li><label><input type="checkbox"><span>Wipe the draft handles</span></label></li>
+          <li><label><input type="checkbox"><span>Wipe down the door</span></label></li>
+          <li><label><input type="checkbox"><span>Wash the rubber pour caps</span></label></li>
+          <li><label><input type="checkbox"><span>Space out the back bar liquor</span></label></li>
+          <li><label><input type="checkbox"><span>Polish glasses — pull any with cracks or chips</span></label></li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <div class="group-label">Misc</div>
+        <ul class="cl">
+          <li><label><input type="checkbox"><span>Trash and recycling out</span></label></li>
+          <li><label><input type="checkbox"><span>Radio charging</span></label></li>
+          <li><label><input type="checkbox"><span>Kegs checked</span></label></li>
+          <li><label><input type="checkbox"><span>Tax stickers scratched off</span></label></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- HANDOFF -->
+    <div class="sec">
+      <div class="sec-head"><h2><span class="event-num">4</span>Handoff + <em>Check-out</em></h2></div>
+      <ul class="cl">
+        <li><label><input type="checkbox"><span>Brief the oncoming team</span></label></li>
+        <li><label><input type="checkbox"><span>Leave written notes for tomorrow's shifts</span></label></li>
+        <li><label><input type="checkbox"><span>Text your handoff report to the GroupMe</span></label></li>
+        <li><label><input type="checkbox"><span>Give the MOD a written list of anything out or running low</span></label></li>
+        <li><label><input type="checkbox"><span>Get checked out by the MOD</span></label></li>
+      </ul>
+    </div>
+  </div>
+  <footer>Rally · Bar Opening &amp; Closing Checklist — see <a href="/training-content/bar-cleaning-schedule.html">Bar Cleaning Schedule</a> for weekly &amp; monthly deep-clean tasks.</footer>
+</div>
+</body>
+</html>
