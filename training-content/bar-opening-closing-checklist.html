@@ -59,10 +59,32 @@ footer a{color:#4c6c73}
   ul.cl label span.init{width:34px}
 }
 @media print{
+  @page{ size: letter; margin: 0.35in; }
+  body{font-size:11px}
+  .wrap{max-width:100%;padding:0}
+  .topbar{padding:0 0 6px;font-size:12px}
+  .hero{padding:6px 2px 8px}
+  .hero .hand{font-size:10px}
+  h1{font-size:22px;line-height:1}
+  .hero p{font-size:10px;margin-top:3px}
   .link-back{display:none}
-  .sec-head{break-after:avoid}
-  .group{break-inside:avoid}
+  .frame{border-width:1.5px}
+  .sec{padding:8px 10px;column-count:2;column-gap:20px;border-top-width:1.5px}
+  .sec-head{column-span:all;margin-bottom:1px;break-after:avoid}
+  h2{font-size:14px}
+  .event-num{width:16px;height:16px;font-size:10px;margin-right:4px;vertical-align:-3px}
+  .init-col{column-span:all;font-size:7.5px;margin-bottom:1px}
+  .group{margin-top:7px;break-inside:avoid}
+  .group:first-of-type{margin-top:3px}
+  .group-label{font-size:9px;margin-bottom:1px}
+  ul.cl{gap:1px}
+  ul.cl label{gap:4px}
+  ul.cl label span.txt{font-size:9.5px;line-height:1.2}
+  ul.cl label span.init{width:24px;height:8px;margin:1px 0 0 2px}
+  input[type=checkbox]{width:10px;height:10px;border-width:1.3px;margin-top:0}
+  input[type=checkbox]::after{width:4.5px;height:2.5px}
   li{break-inside:avoid}
+  footer{font-size:8px;padding-top:6px}
 }
 </style>
 </head>
