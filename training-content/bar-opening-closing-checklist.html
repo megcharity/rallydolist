@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bar Opening & Closing Checklist</title>
+<title>Bartender Side Work Checklist</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:ital,wght@0,400;0,500;0,600;1,400&family=Gochi+Hand&display=swap" rel="stylesheet">
 <style>
@@ -12,51 +12,51 @@
   --coral:#f58664; --sage:#cee4cf; --line:#8fa6ac; --paper:#fffdf8;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.55}
-.wrap{max-width:900px;margin:0 auto;padding:0 16px 64px}
+html,body{margin:0;background:var(--cream);color:var(--navy);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px 64px}
 .topbar{display:flex;justify-content:space-between;align-items:baseline;font-family:"Gochi Hand",cursive;font-size:20px;letter-spacing:.14em;text-transform:uppercase;padding:22px 0 14px}
 h1,h2,h3{font-family:"Instrument Serif",Georgia,serif;font-weight:400;margin:0;letter-spacing:-.01em}
-h1{font-size:clamp(40px,7vw,60px);line-height:.98}
-h2{font-size:clamp(26px,4.5vw,34px);line-height:1.05}
-h3{font-size:16px;font-family:"Hanken Grotesk",sans-serif;font-weight:700;line-height:1.1;margin-bottom:2px;letter-spacing:0}
+h1{font-size:clamp(36px,6.5vw,54px);line-height:.98}
+h2{font-size:clamp(24px,4vw,30px);line-height:1.05}
 h1 em,h2 em{font-style:italic}
 p{margin:0}
 .hand{font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
 .label{font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
-.tag{display:inline-block;padding:3px 14px 1px;border-radius:999px;font-family:"Gochi Hand",cursive;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
-.t-sage{background:var(--sage)} .t-orange{background:var(--orange)} .t-coral{background:var(--coral)}
 
 .frame{border:2px solid var(--navy)}
-.sec{padding:24px 28px;border-top:2px solid var(--navy)}
+.sec{padding:22px 26px;border-top:2px solid var(--navy)}
 .sec:first-child{border-top:0}
 .sec-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:4px}
 
-.hero{padding:28px 28px}
-.hero p{margin-top:12px;font-size:16px;max-width:62ch}
-.link-back{display:inline-block;margin-top:14px;font-size:13.5px;font-weight:600;color:var(--navy)}
+.hero{padding:26px 26px}
+.hero p{margin-top:10px;font-size:15px;max-width:62ch}
+.link-back{display:inline-block;margin-top:12px;font-size:13px;font-weight:600;color:var(--navy)}
 
-.event-num{display:inline-grid;place-content:center;width:30px;height:30px;border-radius:50%;background:var(--orange);font-family:"Instrument Serif",serif;font-size:19px;margin-right:10px;flex:none;vertical-align:-7px}
+.event-num{display:inline-grid;place-content:center;width:28px;height:28px;border-radius:50%;background:var(--orange);font-family:"Instrument Serif",serif;font-size:18px;margin-right:9px;flex:none;vertical-align:-6px}
 
-.group{margin-top:18px}
-.group:first-of-type{margin-top:14px}
-.group-label{font-family:"Gochi Hand",cursive;font-size:15px;letter-spacing:.05em;color:var(--olive);margin-bottom:6px}
+.group{margin-top:16px}
+.group:first-of-type{margin-top:12px}
+.group-label{font-family:"Gochi Hand",cursive;font-size:14px;letter-spacing:.05em;color:var(--olive);margin-bottom:5px}
 
-ul.cl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-ul.cl label{display:flex;gap:11px;align-items:flex-start;cursor:pointer}
-input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:2px 0 0;flex:none}
-input[type=checkbox]::after{content:"";width:10px;height:5.5px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+ul.cl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+ul.cl label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+ul.cl label span.txt{flex:1;font-size:14px;line-height:1.4}
+ul.cl label span.init{flex:none;width:44px;height:15px;margin:2px 0 0 4px;border-bottom:1.5px solid rgba(23,72,84,.45)}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;width:18px;height:18px;border:2px solid var(--navy);border-radius:4px;background:var(--paper);cursor:pointer;display:inline-grid;place-content:center;margin:1px 0 0;flex:none}
+input[type=checkbox]::after{content:"";width:9px;height:5px;border-left:2.5px solid var(--cream);border-bottom:2.5px solid var(--cream);transform:rotate(-45deg) translate(1px,-1px);opacity:0}
 input[type=checkbox]:checked{background:var(--navy)}
 input[type=checkbox]:checked::after{opacity:1}
 input[type=checkbox]:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 
-.sticker{display:inline-block;font-family:"Gochi Hand",cursive;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--navy);background:rgba(245,134,100,.25);border:2px solid var(--coral);border-radius:999px;padding:2px 10px 1px;margin-left:4px;transform:rotate(-2deg);white-space:nowrap;vertical-align:1px;}
+.init-col{text-align:right;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(23,72,84,.5);margin-bottom:2px}
 
 footer{padding:20px 4px 0;font-size:13px;color:#4c6c73}
 footer a{color:#4c6c73}
 
 @media (max-width:720px){
-  .sec{padding:20px 18px}
-  .hero{padding:24px 20px}
+  .sec{padding:18px 16px}
+  .hero{padding:22px 18px}
+  ul.cl label span.init{width:34px}
 }
 @media print{
   .link-back{display:none}
@@ -71,165 +71,181 @@ footer a{color:#4c6c73}
   <div class="topbar"><span>Bartender</span><span>Rally</span></div>
   <div class="frame">
     <div class="hero">
-      <div class="hand">Quick reference</div>
-      <h1 style="margin-top:8px">Opening &amp; Closing<br><em>Checklist</em></h1>
-      <p>Print this and initial each section as you go. Opening, during-service and closing — including cleaning.</p>
+      <div class="hand">Steps of Service Training · Quick reference</div>
+      <h1 style="margin-top:8px">Bartender<br><em>Side Work</em></h1>
+      <p>Print this and initial each line as you go.</p>
       <a class="link-back" href="/training-content/bar-side-work-training.html">&larr; Full side work training guide</a> &nbsp;·&nbsp;
       <a class="link-back" href="/training-content/bar-cleaning-schedule.html">Weekly &amp; monthly cleaning schedule &rarr;</a>
     </div>
 
     <!-- OPENING -->
     <div class="sec">
-      <div class="sec-head"><h2><span class="event-num">1</span><em>Opening</em></h2></div>
-      <p class="label" style="margin-bottom:10px;">Goal: the bar is ready before the first guest walks up.</p>
+      <div class="sec-head"><h2><span class="event-num">1</span><em>Opening</em> Checklist</h2></div>
+      <div class="init-col">Initials</div>
 
       <div class="group">
         <div class="group-label">Wells</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Dish machine running</span></label></li>
-          <li><label><input type="checkbox"><span>Ice in the wells</span></label></li>
-          <li><label><input type="checkbox"><span>Juices and syrups set</span></label></li>
-          <li><label><input type="checkbox"><span>First-touch bottles stocked</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Turn on and fill dish machine. Check that chemical levels are good — replace if necessary.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Fill potable wells with ice. Fill juice wells with ice.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up juices and syrups. Marry low bottles, and wash old bottles.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Remove and wash speed pour covers. Store away when dry.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Replace and restock all first-touch bottles. Move low bottles to the service well for quickest sell-through.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
         <div class="group-label">Stations</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Tools set up</span></label></li>
-          <li><label><input type="checkbox"><span>Garnishes, fruit and mint prepped</span></label></li>
-          <li><label><input type="checkbox"><span>Straws, napkins and mats stocked</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up bar tools. Ensure they're clean and set for service, including "ice cream scoop" faucets on.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up garnish stations. Rotate oldest garnishes to service for quickest sell-through.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up fruit bowls. Rotate oldest fruit for garnish/juice for quickest sell-through.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Shock mint for 20 minutes (separating "shake" mint), and set up bouquets in warm water.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock beverage straws, napkins, and coasters. Ensure they're new and clean, and rotate containers.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up any mats and the service station.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
-        <div class="group-label">Backbar + coolers</div>
+        <div class="group-label">Backbar &amp; coolers</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Wine stocked</span></label></li>
-          <li><label><input type="checkbox"><span>Call spirits stocked</span></label></li>
-          <li><label><input type="checkbox"><span>Glassware stocked</span></label></li>
-          <li><label><input type="checkbox"><span>Beer and NA stocked</span></label></li>
-          <li><label><input type="checkbox"><span>Syrups stocked</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Remove Kleen-plugs from all taps, and soak in sanitizer. Store in a covered quart container.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Restock wines; check dates and taste-test any wines open over 7 days.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure "call" spirits on the backbar are stocked and pulled forward with best merchandising practices.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock all "first-touch" spirits for quick replenishment.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Make sure glassware is properly stocked and arranged.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock coolers with packaged beer, NA, and wines. Pull forward with best merchandising practices.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Organize all "production" syrups to keep presentable conditions for guests — check dates and discard old product.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Make syrups if we're low on anything.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash all older bottles/containers. Store out of guest view when dry.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
-        <div class="group-label">Freezers + POS</div>
+        <div class="group-label">Freezers &amp; POS</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Menus set</span></label></li>
-          <li><label><input type="checkbox"><span>Check presenters ready</span></label></li>
-          <li><label><input type="checkbox"><span>Glassware ready</span></label></li>
-          <li><label><input type="checkbox"><span>Ice stocked</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Collect the cash drawer from the manager, confirm it's $350, log in to POS, and place the drawer in the POS.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Organize menus, and stock in holders. Ensure they're clean and guest-ready.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure there are pens, postcards, paperclips, etc. for proper check presentation.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Fill freezer with glassware if necessary. Watch for chipped or broken glasses.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock fishtubs with ice cubes. If empty, clean and dry the fishtub before restocking.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
         <div class="group-label">Misc</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Dining and take-away mise set</span></label></li>
-          <li><label><input type="checkbox"><span>Radio on</span></label></li>
-          <li><label><input type="checkbox"><span>Bins set</span></label></li>
-          <li><label><input type="checkbox"><span>Line-up, BEOs and 86 list reviewed</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock all dining mise (share plates, roll-ups, etc.).</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock all take-away mise: small &amp; large boxes, soufflé cups/ramekins with tops, bags, etc.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure radio is charged and on.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Set up garbage and recycling bins.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Receive line-up, note any BEOs, update the 86 list, etc.</span><span class="init"></span></label></li>
         </ul>
       </div>
     </div>
 
-    <!-- DURING SERVICE -->
+    <!-- RUNNING SIDEWORK -->
     <div class="sec">
-      <div class="sec-head"><h2><span class="event-num">2</span>During <em>Service</em></h2></div>
-      <p class="label" style="margin-bottom:10px;">Goal: never run out of anything, and clean as you go.</p>
+      <div class="sec-head"><h2><span class="event-num">2</span>Running <em>Sidework</em></h2></div>
+      <p class="label" style="margin-bottom:10px;">Throughout the shift</p>
       <ul class="cl">
-        <li><label><input type="checkbox"><span>Keep ice wells and garnishes full</span></label></li>
-        <li><label><input type="checkbox"><span>Change kegs and keep backup liquor stocked</span></label></li>
-        <li><label><input type="checkbox"><span>Wash glassware, clear the bar top <span class="sticker">clean as you go</span></span></label></li>
-        <li><label><input type="checkbox"><span>Run bus tubs — emptied and organized</span></label></li>
-        <li><label><input type="checkbox"><span>Restock top sellers and package coolers</span></label></li>
-        <li><label><input type="checkbox"><span>Make garnish and syrups for PM service</span></label></li>
-        <li><label><input type="checkbox"><span>Keep running notes for closers and the MOD</span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Keep ice wells full.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Keep garnishes full.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Change kegs as needed.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Keep backup liquor stocked.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Help wash and put away glassware.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Clear empty glasses, dirty dishes, trash, etc.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Run full bus tubs to dish — empty and organize them, don't just drop off a full tub and walk away.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Organize and clean the walk-in cooler. Note any kegs that are light, and communicate with team and managers.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Ensure enough garnish and production syrups are made for PM service.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Re-stock as necessary — pay particular attention to package coolers and top sales items (vodka, tequila, etc.).</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Ensure QR codes are placed on tables and set up for service.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Continue to replenish any chemicals, fold towels, and maintain the bar top.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Keep running notes to communicate with closers and managers (86 items, guests, POS concerns, best jokes, etc.).</span><span class="init"></span></label></li>
       </ul>
     </div>
 
     <!-- CLOSING -->
     <div class="sec">
-      <div class="sec-head"><h2><span class="event-num">3</span><em>Closing</em></h2></div>
-      <p class="label" style="margin-bottom:10px;">Goal: the opener walks into a clean, reset, stocked bar.</p>
+      <div class="sec-head"><h2><span class="event-num">3</span><em>Closing</em> Checklist</h2></div>
+      <div class="init-col">Initials</div>
 
       <div class="group">
         <div class="group-label">Wells</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Burn ice</span></label></li>
-          <li><label><input type="checkbox"><span>Sanitize wells</span></label></li>
-          <li><label><input type="checkbox"><span>Scrub bottles and rails</span></label></li>
-          <li><label><input type="checkbox"><span>Clean soda guns and tools</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Burn any ice in juice wells, sanitize &amp; squeegee dry, wash black drop-ins. Scour and wash all surfaces.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Take up potable ice-well covers, wash and dry thoroughly. Sanitize around the ice well, burn ice if scheduled. Clean the well.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Clean all juice and syrup bottles. Marry any low bottles, and wash empties. Store away in backbar coolers.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Pull up all bottles, and scour and sanitize rails. Scrub all bottles and replace. Place speed pour covers on.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Scour and sanitize all soda guns, holsters, and hoses. Remove cap and scrub &amp; sanitize. Wipe dry and holster.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
         <div class="group-label">Stations</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Discard old garnishes</span></label></li>
-          <li><label><input type="checkbox"><span>Store fruit and herbs</span></label></li>
-          <li><label><input type="checkbox"><span>Wash mats and sinks</span></label></li>
-          <li><label><input type="checkbox"><span>Sweep</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash all tools. Wash drain board, and pour sanitizer down drain. Wash and replace grate.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Discard out-of-date garnishes. Combine all garnishes in quart containers in cooler. Wash service garnish containers.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash fruit bowls, and store fruit in walk-in.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wrap stems of all herbs in damp bev nap. Store upside down in quart containers in walk-in.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Discard any old straws and bev naps (if necessary), and wash containers.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash all mats, and allow to drip dry in 3-bay sinks. Scour and wash all sinks (hand and dump). Wash sanitizer buckets.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Sweep behind the bar — be sure to get under and behind equipment that can be accessed without moving it.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wipe down and sanitize all counters and the bar top.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
-        <div class="group-label">Backbar + coolers</div>
+        <div class="group-label">Backbar &amp; coolers</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Cap, pump and date wine</span></label></li>
-          <li><label><input type="checkbox"><span>Restock</span></label></li>
-          <li><label><input type="checkbox"><span>Wipe down</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash all beer taps, spouts, etc. and place Kleen-plugs in taps. Wash grate, flush hot water and sanitizer down drip tray and drain.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Restock wines, check dates and taste-test any wines over 7 days open.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure "call" spirits on backbar are stocked and pulled forward with best merchandising practices.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock all "first-touch" spirits for quick replenishment.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure all wines are properly capped and pumped. Get dates (opened) on all wine bottles.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Stock coolers with packaged beer, NA, and wines. Pull forward with best merchandising practices.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Organize all "production" syrups to maintain presentable conditions for guests. Check dates and discard old product.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Make syrups if we're low on anything.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wipe down back bar and all coolers. Use glass cleaner on cooler doors.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
-        <div class="group-label">Freezers + POS</div>
+        <div class="group-label">Freezers &amp; POS</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Close tabs</span></label></li>
-          <li><label><input type="checkbox"><span>Reset menus</span></label></li>
-          <li><label><input type="checkbox"><span>Reset glassware</span></label></li>
-          <li><label><input type="checkbox"><span>Wipe down cooler and freezer fronts</span></label></li>
-        </ul>
-      </div>
-
-      <div class="group">
-        <div class="group-label">Daily cleaning <span class="sticker">every shift</span></div>
-        <ul class="cl">
-          <li><label><input type="checkbox"><span>Wipe all stainless steel</span></label></li>
-          <li><label><input type="checkbox"><span>Wash the soda spouts</span></label></li>
-          <li><label><input type="checkbox"><span>Wipe the draft handles</span></label></li>
-          <li><label><input type="checkbox"><span>Wipe down the door</span></label></li>
-          <li><label><input type="checkbox"><span>Wash the rubber pour caps</span></label></li>
-          <li><label><input type="checkbox"><span>Space out the back bar liquor</span></label></li>
-          <li><label><input type="checkbox"><span>Polish glasses — pull any with cracks or chips</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Enter in all tips and close tabs. Count drawers to $350, run Shift Report, turn in to manager with: deposit, drawer, cash tips.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Organize menus, and stock in holders. Ensure they are clean and guest-ready.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure there are pens, postcards, paperclips, etc. for proper check presentation.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Fill freezer with glassware if necessary. Be on lookout for any chipped or broken glasses.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Wash fronts of coolers and freezers.</span><span class="init"></span></label></li>
         </ul>
       </div>
 
       <div class="group">
         <div class="group-label">Misc</div>
         <ul class="cl">
-          <li><label><input type="checkbox"><span>Trash and recycling out</span></label></li>
-          <li><label><input type="checkbox"><span>Radio charging</span></label></li>
-          <li><label><input type="checkbox"><span>Kegs checked</span></label></li>
-          <li><label><input type="checkbox"><span>Tax stickers scratched off</span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Empty garbage and recycling. Replace bin liners, and flip upside down. Wash all bin toppers.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Scour and wash all sinks. Pay attention to drains for any debris or grime.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Ensure radio is off and charging.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Check all kegs and communicate any other 86 items to manager.</span><span class="init"></span></label></li>
+          <li><label><input type="checkbox"><span class="txt">Scratch off the tax sticker before discarding empty liquor bottles in recycling.</span><span class="init"></span></label></li>
         </ul>
       </div>
     </div>
 
     <!-- HANDOFF -->
     <div class="sec">
-      <div class="sec-head"><h2><span class="event-num">4</span>Handoff + <em>Check-out</em></h2></div>
+      <div class="sec-head"><h2><span class="event-num">4</span>Handoff &amp; <em>Check-Out</em></h2></div>
       <ul class="cl">
-        <li><label><input type="checkbox"><span>Brief the oncoming team</span></label></li>
-        <li><label><input type="checkbox"><span>Leave written notes for tomorrow's shifts</span></label></li>
-        <li><label><input type="checkbox"><span>Text your handoff report to the GroupMe</span></label></li>
-        <li><label><input type="checkbox"><span>Give the MOD a written list of anything out or running low</span></label></li>
-        <li><label><input type="checkbox"><span>Get checked out by the MOD</span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Brief oncoming staff on any information or follow-up pertinent to operations during the next shift.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Provide written information for shifts beginning the following day.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Text your handoff report to the GroupMe.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Give the manager a written list of supplies that are out or getting low so a reorder can be done in a timely manner.</span><span class="init"></span></label></li>
+        <li><label><input type="checkbox"><span class="txt">Get checked out by a manager.</span><span class="init"></span></label></li>
       </ul>
     </div>
   </div>
-  <footer>Rally · Bar Opening &amp; Closing Checklist — see <a href="/training-content/bar-cleaning-schedule.html">Bar Cleaning Schedule</a> for weekly &amp; monthly deep-clean tasks.</footer>
+  <footer>Rally Pickleball · Bartender Side Work Checklist — see <a href="/training-content/bar-cleaning-schedule.html">Bar Cleaning Schedule</a> for weekly &amp; monthly deep-clean tasks.</footer>
 </div>
 </body>
 </html>
