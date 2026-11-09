@@ -9785,16 +9785,15 @@ function renderInvBeverages() {
   // function's own synchronous code continues, so this is safe to call
   // without awaiting it here.
   invFlushAutosave();
-  // Default to the most recent date that actually has saved counts, not
-  // blindly to today. Nothing was ever deleted by this -- the date picker
-  // just silently defaulted to today's (usually blank) sheet, so reopening
-  // Inventory on any day after counting looked exactly like "everything
-  // was deleted" even though every count was safely saved under the date
-  // it was entered. Still falls back to today if no counts exist yet.
-  if(!invWeekEnding) {
-    const latestCounted = invCounts.reduce((max, c) => (!max || c.week_ending > max) ? c.week_ending : max, null);
-    invWeekEnding = latestCounted || getTodayStr();
-  }
+  // Default to today, so a new day always starts from a blank sheet --
+  // nothing pre-filled from the last count that has to be cleared by hand
+  // first. (This used to default to the most recent counted date instead,
+  // to avoid "reopening Inventory looks like everything got deleted" --
+  // but that traded one confusion for the opposite one: a new day's sheet
+  // showed last week's numbers already in the boxes. Old data isn't
+  // hidden now, just not auto-loaded -- see the "Last counted" link below,
+  // which jumps straight to it without it being the default edit target.)
+  if(!invWeekEnding) invWeekEnding = getTodayStr();
 
   const bannerHtml = INV_SUBTABS.map(st => {
     const due = invReviewDue(st);
@@ -9896,6 +9895,7 @@ function renderInvBeverages() {
       <div class="inv-controls-left">
         <input class="inv-week-input" type="date" id="inv-week-input" value="${invWeekEnding}" onchange="invChangeWeek(this.value)"/>
         ${invWeekEnding !== getTodayStr() ? `<span style="font-size:11px;font-weight:700;color:#b87000;background:rgba(248,154,28,.15);padding:4px 9px;border-radius:999px;white-space:nowrap;">Viewing ${fmtCalDate(invWeekEnding)}, not today</span>` : ''}
+        ${(histDates.length && histMax !== invWeekEnding) ? `<span style="font-size:11px;font-weight:600;color:var(--navy);text-decoration:underline;cursor:pointer;white-space:nowrap;" onclick="invChangeWeek('${histMax}')">Last counted ${fmtCalDate(histMax)} — view</span>` : ''}
         <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Liquor</button>
         <button class="inv-filter-btn ${invSectionsOn.beerwine?'on':''}" data-catfilter="beerwine" onclick="invToggleSection('beerwine')">Beer &amp; Wine</button>
         <button class="inv-filter-btn ${invStatusOn.needsCount?'on':''}" data-filter="needsCount" onclick="invToggleStatus('needsCount')">Needs Count</button>
