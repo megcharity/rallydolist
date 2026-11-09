@@ -9721,18 +9721,19 @@ function invSparkline(itemId) {
 function invIsCaseTracked(item) { return !!(item && item.item_code && /^x\d+$/.test(item.item_code.trim())); }
 function invPackSize(item) { const m = item && item.item_code && item.item_code.trim().match(/^x(\d+)$/); return m ? parseInt(m[1], 10) : 1; }
 function invIsKegTracked(item) { return !!(item && item.item_code && /keg/i.test(item.item_code)); }
-// Kegs never get a manually-entered order qty (you swap the whole thing,
-// never a fraction) — instead the order is a flat rule off how far
-// current_count sits below par: at half a keg short or more, order
-// enough full kegs to get back to par; less than half short, it'll
-// make it through next week so don't order yet. This has to read the
-// item's own par, not assume 1 — a par-2 item (two kegs kept in
-// rotation) stays flagged until it's actually back up near 2, not just
-// whenever it dips under 0.5 of a single keg (that under-flagged par-2
-// items: e.g. 0.1 left against a par of 2 was a 1.9 deficit, clearly
-// needing an order, but a flat "<=0.5 means order 1" rule never caught
-// it because it only ever checked against a hardcoded par of 1).
-function invKegOrderQty(item, cnt) {
+// The shared "does this need an order yet" rule for every par-tracked item
+// (kegs, bottles, cases alike): off by less than half a unit from par,
+// it'll make it through to next week, so don't order yet; half a unit
+// short or more, order enough to get back to par. Kegs always run through
+// this as a read-only computed flag (you swap a whole keg, never a
+// fraction); bottles/cases use it only as the live auto-fill default in
+// invOnCountInput() below — the manager can still type over it. Has to
+// read the item's own par, not assume 1 — a par-2 item stays flagged
+// until it's actually back up near 2, not just whenever it dips under 0.5
+// (e.g. 0.1 left against a par of 2 is a 1.9 deficit, clearly needing an
+// order, but a flat "<=0.5 means order 1" rule never caught that because
+// it only ever checked against a hardcoded par of 1).
+function invParOrderQty(item, cnt) {
   if(!cnt || typeof cnt.current_count !== 'number') return 0;
   const par = (item && item.par) || 1;
   const deficit = par - cnt.current_count;
@@ -9839,7 +9840,7 @@ function renderInvBeverages() {
         // Case-packed: Par is in cases, so both an individual-can count AND an
         // editable case-order suggestion are shown. Kegs: a single fraction-
         // remaining number, and the order column is a read-only computed
-        // flag (invKegOrderQty) rather than a manual input — you never
+        // flag (invParOrderQty) rather than a manual input — you never
         // order a fraction of a keg, the rule just says whether a fresh
         // one is needed off how far current_count sits below this item's
         // own par. Everything else: the original current + order-qty
@@ -9853,7 +9854,7 @@ function renderInvBeverages() {
         const unitsCell = caseTracked
           ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : (kegTracked ? dash : `<span class="inv-set-case-link" title="Set a Case Size on this item to track individual cans/bottles separately" onclick="openInvItemForm(${it.id})">+ Set case size</span>`);
-        const kegOrderQty = (kegTracked && !isPaused) ? invKegOrderQty(it, cnt) : 0;
+        const kegOrderQty = (kegTracked && !isPaused) ? invParOrderQty(it, cnt) : 0;
         const orderCell = isPaused
           ? `<span class="inv-paused-note" title="Paused for the season — excluded from the order list">Paused</span>`
           : caseTracked
@@ -9944,9 +9945,12 @@ function invOnCountInput(itemId) {
   const ordInput = document.getElementById('inv-order-'+itemId);
   if(!ordInput) return; // kegs and paused items have no order field at all
   const cur = parseFloat(curInput.value);
-  // Always rounds UP — you can't order 0.8 of a bottle, and being short by
-  // any amount (even 0.2) still means a whole unit is needed, not none.
-  if(!isNaN(cur) && item) ordInput.value = Math.max(0, Math.ceil(item.par - cur));
+  // Same half-unit-short-of-par threshold as kegs (invParOrderQty): within
+  // half a unit of par, it'll make it through to next week, so don't
+  // suggest an order yet; half a unit short or more, suggest enough to
+  // get back to par, rounded up (you can't order 0.8 of a bottle/case).
+  // Still just a default — the manager can type over it either way.
+  if(!isNaN(cur) && item) ordInput.value = invParOrderQty(item, { current_count: cur });
   invScheduleAutosave();
 }
 
@@ -10415,16 +10419,14 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
 // Pulls this week's order quantities across BOTH sub-tabs (Bar + Beer &
 // Wine) — the order email is one weekly list, not per sub-tab — and
 // groups them by section (Bar / Beer & Wine), vendor shown per row.
-// Order quantities always round UP: you can't buy 0.8 of a bottle, and
-// being short by any amount — even 0.2 — still means a whole unit is
-// needed, not none, so this can never round down to 0 on a genuine
-// shortfall (matches invOnCountInput's live auto-fill in the counting
-// sheet, which now rounds the same way at entry time, not just here at
-// email time). Only an order_qty that's already <=0 (on-hand at or above
-// par) is dropped. Kegs don't use order_qty at all — invKegOrderQty()
-// applies the flat half-keg-or-more-short-of-par rule off current_count
-// instead. Paused items (seasonal, not currently ordered) never appear
-// here regardless of count.
+// order_qty here is whatever the manager left in the Order field — usually
+// invOnCountInput's live auto-fill (half a unit or more short of par),
+// but it's an editable input, so a manual override sticks too. Only an
+// order_qty that's already <=0 is dropped. Kegs don't use order_qty at
+// all — invParOrderQty() applies the same half-unit-short-of-par rule
+// directly off current_count instead, with no manual override. Paused
+// items (seasonal, not currently ordered) never appear here regardless
+// of count.
 function invBuildOrderGroups(weekEnding) {
   const items = invItems.filter(i => i.active && !i.paused && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
   const sections = { bar: [], beerwine: [] };
@@ -10434,7 +10436,7 @@ function invBuildOrderGroups(weekEnding) {
     const kegTracked = invIsKegTracked(it);
     let orderQty;
     if(kegTracked) {
-      orderQty = invKegOrderQty(it, cnt);
+      orderQty = invParOrderQty(it, cnt);
       if(orderQty <= 0) return;
     } else {
       if(!cnt || typeof cnt.order_qty !== 'number' || cnt.order_qty <= 0) return;
