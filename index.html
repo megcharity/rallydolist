@@ -930,6 +930,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
       <select id="if-subtab">
         <option value="bar">Liquor</option>
         <option value="beerwine">Beer &amp; Wine</option>
+        <option value="garnish">Garnishes &amp; Misc</option>
       </select>
     </div>
     <div class="fg full"><label>Category</label><input id="if-category" type="text" list="if-category-list" placeholder="e.g. House Gin"/><datalist id="if-category-list"></datalist></div>
@@ -9397,7 +9398,7 @@ let invCounts = [];       // rally_inventory_counts — every item's full weekly
 let invReviewState = {};  // { [sub_tab]: { sub_tab, last_reviewed_at } }
 let invView = 'bar';       // which section the Par Review modal / Add Item form currently targets
 let invStatusOn = { needsCount: false, flagged: false, paused: false }; // all off shows everything; each toggle narrows (OR'd together — an item can be more than one)
-let invSectionsOn = { bar: true, beerwine: true }; // independent toggles — both on shows everything, deselecting one hides just that section
+let invSectionsOn = { bar: true, beerwine: true, garnish: true }; // independent toggles — all on shows everything, deselecting one hides just that section
 let invWeekEnding = null; // YYYY-MM-DD currently selected in the count-entry column
 let invExportStart = null; // YYYY-MM-DD — persists across re-renders once the manager picks a range
 let invExportEnd = null;
@@ -9463,8 +9464,8 @@ async function loadInventoryReviewState() {
 // table (renderInvBeverages) with invSectionsOn just hiding/showing rows —
 // invView itself only matters for the Par Review modal and the Add Item
 // form's default Section, each of which sets it explicitly before use.
-const INV_SUBTABS = ['bar', 'beerwine'];
-const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine' };
+const INV_SUBTABS = ['bar', 'beerwine', 'garnish'];
+const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine', garnish: 'Garnishes & Misc' };
 const INV_KEG_SIZES = ['1/6 Barrel Keg', '1/2 Barrel Keg'];
 // Categories otherwise sort alphabetically within their section — fine
 // normally, but a newly-added category like "Juices, Garnishes" landing
@@ -9478,7 +9479,7 @@ function invToggleSection(st) {
   const btn = document.querySelector(`[data-catfilter="${st}"]`);
   if(btn) btn.classList.toggle('on', invSectionsOn[st]);
 }
-function invAllBeverageItems() { return invItems.filter(i => i.active && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine')); }
+function invAllBeverageItems() { return invItems.filter(i => i.active && INV_SUBTABS.includes(i.sub_tab)); }
 
 // Reconstructs each week-to-week usage interval for one item, chronological
 // oldest-first. Two distinct models, chosen by item type:
@@ -9899,6 +9900,7 @@ function renderInvBeverages() {
         ${(histDates.length && histMax !== invWeekEnding) ? `<span style="font-size:11px;font-weight:600;color:var(--navy);text-decoration:underline;cursor:pointer;white-space:nowrap;" onclick="invChangeWeek('${histMax}')">Last counted ${fmtCalDate(histMax)} — view</span>` : ''}
         <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Liquor</button>
         <button class="inv-filter-btn ${invSectionsOn.beerwine?'on':''}" data-catfilter="beerwine" onclick="invToggleSection('beerwine')">Beer &amp; Wine</button>
+        <button class="inv-filter-btn ${invSectionsOn.garnish?'on':''}" data-catfilter="garnish" onclick="invToggleSection('garnish')">Garnishes &amp; Misc</button>
         <button class="inv-filter-btn ${invStatusOn.needsCount?'on':''}" data-filter="needsCount" onclick="invToggleStatus('needsCount')">Needs Count</button>
         <button class="inv-filter-btn ${invStatusOn.flagged?'on':''}" data-filter="flagged" onclick="invToggleStatus('flagged')">Flagged</button>
         <button class="inv-filter-btn ${invStatusOn.paused?'on':''}" data-filter="paused" onclick="invToggleStatus('paused')">Paused</button>
@@ -10127,10 +10129,13 @@ function openInvItemForm(id) {
   document.getElementById('if-keg-size').value = kegSizeVal;
   document.getElementById('if-item-code').value = item ? ((codeMatch || kegSizeVal) ? '' : (item.item_code || '')) : '';
   document.getElementById('if-vendor').value = item ? (item.vendor || '') : '';
+  // Default to whichever section is the ONLY one currently filtered on
+  // (so adding from a filtered-down view lands the new item where you're
+  // looking) — with 3 sections now, that's "exactly one is on" rather
+  // than the old 2-way either/or; falls back to 'bar' when 0, 2, or 3 are on.
+  const onSections = INV_SUBTABS.filter(st => invSectionsOn[st]);
   document.getElementById('if-subtab').value = item ? item.sub_tab
-    : (invSectionsOn.bar && !invSectionsOn.beerwine) ? 'bar'
-    : (!invSectionsOn.bar && invSectionsOn.beerwine) ? 'beerwine'
-    : 'bar';
+    : (onSections.length === 1 ? onSections[0] : 'bar');
   invCaseSizeChanged();
   document.getElementById('inv-item-form-modal').style.display = 'flex';
 }
@@ -10416,9 +10421,9 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
   }
 }
 
-// Pulls this week's order quantities across BOTH sub-tabs (Bar + Beer &
-// Wine) — the order email is one weekly list, not per sub-tab — and
-// groups them by section (Bar / Beer & Wine), vendor shown per row.
+// Pulls this week's order quantities across every sub-tab (Bar + Beer &
+// Wine + Garnishes & Misc) — the order email is one weekly list, not per
+// sub-tab — and groups them by section, vendor shown per row.
 // order_qty here is whatever the manager left in the Order field — usually
 // invOnCountInput's live auto-fill (half a unit or more short of par),
 // but it's an editable input, so a manual override sticks too. Only an
@@ -10428,8 +10433,9 @@ async function sendInvParReviewReport(changes, flaggedUnchanged, items) {
 // items (seasonal, not currently ordered) never appear here regardless
 // of count.
 function invBuildOrderGroups(weekEnding) {
-  const items = invItems.filter(i => i.active && !i.paused && (i.sub_tab === 'bar' || i.sub_tab === 'beerwine'));
-  const sections = { bar: [], beerwine: [] };
+  const items = invItems.filter(i => i.active && !i.paused && INV_SUBTABS.includes(i.sub_tab));
+  const sections = {};
+  INV_SUBTABS.forEach(st => sections[st] = []);
   items.forEach(it => {
     const cnt = invCountFor(it.id, weekEnding);
     const caseTracked = invIsCaseTracked(it);
@@ -10462,11 +10468,11 @@ function invBuildOrderGroups(weekEnding) {
 }
 
 function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
-  // One flat combined list across both sections — the manager reads this
+  // One flat combined list across every section — the manager reads this
   // off the email to place the actual order and shouldn't have to open
   // the app to see everything that needs ordering, so every item that
-  // needs ordering (Bar AND Beer & Wine, cases, bottles and kegs alike)
-  // goes in a single table, not two separate per-section ones.
+  // needs ordering (any section, cases, bottles and kegs alike) goes in
+  // a single table, not one separate table per section.
   const allRows = INV_SUBTABS.reduce((acc, st) => acc.concat(sections[st]), []);
   const totalItems = allRows.length;
   const rowHtml = r => `
