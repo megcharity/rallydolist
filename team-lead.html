@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rally Team Lead</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--teal:#174854;--cream:#fbf6ed;--cream-dark:#f0e9da;--border:rgba(23,72,84,.16);--muted:rgba(23,72,84,.58);--green:#4e622c;--coral:#c04020}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--cream);color:var(--teal);font:14px 'DM Sans',sans-serif}
+    button,input,textarea,select{font:inherit}
+    button{cursor:pointer}
+    .wrap{max-width:900px;margin:0 auto;padding:18px 16px 70px}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 18px;border-bottom:1px solid var(--border)}
+    h1{font:500 27px 'Cormorant Garamond',serif;margin:0}
+    .sub,.hint{color:var(--muted);font-size:12px;line-height:1.55}
+    .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;margin-top:16px;box-shadow:0 6px 22px rgba(23,72,84,.04)}
+    .shift-tabs{display:flex;gap:8px;margin-top:14px}
+    .shift-tabs button,.secondary{padding:9px 14px;border:1px solid var(--border);background:#fff;color:var(--teal);border-radius:8px;font-weight:600}
+    .shift-tabs button.active,.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+    .section-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:22px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .field{margin:10px 0}
+    .field label{display:block;font-size:12px;font-weight:600;margin-bottom:5px}
+    .field input,.field textarea,.field select{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--teal);outline-color:var(--teal)}
+    .field textarea{min-height:74px;resize:vertical}
+    .wide{grid-column:1/-1}
+    .checklist{display:grid;gap:8px}
+    .check-item{display:flex;align-items:flex-start;gap:10px;padding:10px 11px;border:1px solid var(--border);border-radius:8px;line-height:1.4}
+    .check-item input{margin-top:2px;accent-color:var(--teal)}
+    .program-toggle{display:flex;flex-wrap:wrap;gap:8px}
+    .program-toggle button{padding:8px 11px;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--teal)}
+    .program-toggle button.active{background:#e8f1ed;border-color:#94b3a5}
+    .program-card{border:1px solid var(--border);border-radius:9px;padding:12px;margin:10px 0;background:#fff}
+    .program-card h3{margin:0 0 8px;font-size:13px}
+    .notice{padding:11px 13px;border-radius:8px;background:#f4efe4;color:var(--teal);line-height:1.5}
+    .notice.error{background:#fff1ed;color:var(--coral)}
+    .notice.success{background:#eef4e9;color:var(--green)}
+    .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+    .actions button,.top button{padding:10px 14px;border-radius:8px;border:1px solid var(--teal);font-weight:600}
+    .top button{background:transparent;color:var(--teal)}
+    .actions .primary{background:var(--teal);color:#fff}
+    .status{min-height:18px;color:var(--muted);font-size:12px;margin-top:8px}
+    .muted-lock{padding:22px 14px;text-align:center;border:1px dashed var(--border);border-radius:9px;color:var(--muted);line-height:1.6}
+    @media(max-width:640px){.grid{grid-template-columns:1fr}.top{align-items:flex-start}.card{padding:14px}.shift-tabs button{flex:1}}
+  </style>
+</head>
+<body>
+  <main class="wrap" id="app" aria-live="polite">
+    <header class="top">
+      <div>
+        <h1>Rally Shift Report</h1>
+        <div class="sub" id="today-label">Team Lead view</div>
+      </div>
+      <button id="sign-out" onclick="tlSignOut()" hidden>Sign out</button>
+    </header>
+    <div id="content" class="card"></div>
+  </main>
+  <script>
+    const PASSCODE_KEY = 'rally-team-lead-passcode';
+    const CHECK_ITEMS = [
+      ['tl_guests_clear', 'Final walkthrough: confirm guests and staff are out of all areas'],
+      ['tl_area_reset', 'Reset courts and lounges: clear glassware and plates, sweep courts, wipe rails, and straighten seating'],
+      ['tl_bathrooms', 'Check bathrooms and empty trash'],
+      ['tl_event_close', 'Close event spaces and return event materials'],
+      ['tl_toast_clockout', 'Confirm all employees are logged out of Toast and clocked out'],
+      ['tl_drawers_cash', 'Count bar and café drawers, complete the cash sheet, and file receipts'],
+      ['tl_shift_reviews', 'Collect associate shift reviews'],
+      ['tl_secure_doors', 'Secure all venue doors'],
+      ['tl_power_down', 'Turn off TVs, music, and nonessential equipment'],
+      ['tl_report_sent', 'Submit and email the completed shift report'],
+    ];
+    const state = { date: '', name: 'Team Lead', pm_assigned: false, pm_assigned_name: '', report_closed: false, am_taken: false, am: null, pm: null };
+    let activeShift = 'pm';
+    let saveTimer = null;
+    let saveQueue = Promise.resolve();
+    let revision = 0;
+    let dirty = false;
+    let sendingEmail = false;
+    let passcode = sessionStorage.getItem(PASSCODE_KEY) || '';
+    const RallyAuth = { token: () => passcode };
+
+    const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    const currentEntry = () => state[activeShift] || { data: {}, checklist: {}, submitted: false };
+    const value = key => currentEntry().data?.[key] ?? '';
+    function tlTodayDate() {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+      }).formatToParts(new Date());
+      const part = type => parts.find(item => item.type === type)?.value || '';
+      return `${part('year')}-${part('month')}-${part('day')}`;
+    }
+    const field = (key, label, type = 'text', wide = false, placeholder = '') =>
+      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><input id="${key}" type="${type}" value="${esc(value(key))}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)"></div>`;
+    const area = (key, label, wide = false, placeholder = '') =>
+      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><textarea id="${key}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)">${esc(value(key))}</textarea></div>`;
+    const select = (key, label, options) => {
+      const selected = String(value(key));
+      return `<div class="field"><label for="${key}">${label}</label><select id="${key}" ${currentEntry().submitted ? 'disabled' : ''} onchange="tlSet('${key}',this.value)"><option value="">Select…</option>${options.map(option => `<option value="${esc(option)}"${selected === option ? ' selected' : ''}>${esc(option)}</option>`).join('')}</select></div>`;
+    };
+    const textAreaFor = (key, label) => area(key, label, true);
+
+    function renderProgramming(prefix) {
+      const groups = [
+        ['events', 'Events', 6, 'event_count'],
+        ['activ', 'Activations', 5, 'activ_count'],
+        ['pickle', 'Pickleball programming', 6, 'pickle_count'],
+        ['incidents', 'Incidents', 5, 'incidents_count'],
+      ];
+      let out = '<div class="program-toggle">';
+      for (const [type, label] of groups) {
+        const enabled = value(`${prefix}_prog_${type}`) === 'true';
+        out += `<button type="button" class="${enabled ? 'active' : ''}" ${currentEntry().submitted ? 'disabled' : ''} onclick="tlToggleProgram('${prefix}','${type}')">${enabled ? '✓ ' : ''}${label}</button>`;
+      }
+      out += '</div>';
+      for (const [type, label, max, countName] of groups) {
+        if (value(`${prefix}_prog_${type}`) !== 'true') continue;
+        const countKey = `${prefix}_prog_${countName}`;
+        const count = Math.max(0, Math.min(max, Number.parseInt(value(countKey), 10) || 0));
+        out += `<div class="program-card"><h3>${label}</h3><div class="field"><label for="${countKey}">Number</label><select id="${countKey}" ${currentEntry().submitted ? 'disabled' : ''} onchange="tlSetCount('${prefix}','${countName}',this.value)">${Array.from({ length: max + 1 }, (_, index) => `<option value="${index}"${index === count ? ' selected' : ''}>${index}</option>`).join('')}</select></div>`;
+        for (let index = 1; index <= count; index++) {
+          if (type === 'events') out += renderEvent(prefix, index);
+          if (type === 'activ') out += renderActivation(prefix, index);
+          if (type === 'pickle') out += renderPickle(prefix, index);
+          if (type === 'incidents') out += renderIncident(prefix, index);
+        }
+        out += '</div>';
+      }
+      return out;
+    }
+
+    function renderEvent(prefix, index) {
+      const base = `${prefix}_ev${index}`;
+      return `<div class="program-card"><h3>Event ${index}</h3><div class="grid">${field(`${base}_name`, 'Event name')}${field(`${base}_rating`, 'Rating (1–5)', 'number')}${select(`${base}_need_followup`, 'Follow-up needed?', ['Yes', 'No'])}${area(`${base}_well`, 'What went well?')}${area(`${base}_improve`, 'What could improve?')}${area(`${base}_poc`, 'Point-of-contact feedback')}${area(`${base}_followup`, 'Follow-up notes', true)}</div></div>`;
+    }
+
+    function renderActivation(prefix, index) {
+      const base = `${prefix}_ac${index}`;
+      return `<div class="program-card"><h3>Activation ${index}</h3><div class="grid">${field(`${base}_name`, 'Activation name')}${field(`${base}_attendance`, 'Number of players', 'number')}${area(`${base}_notes`, 'Notes', true)}</div></div>`;
+    }
+
+    function renderPickle(prefix, index) {
+      const base = `${prefix}_pk_${index}`;
+      return `<div class="program-card"><h3>Pickleball program ${index}</h3><div class="grid">${field(`${base}_name`, 'Program name')}${field(`${base}_players`, 'Number of players', 'number')}${area(`${base}_notes`, 'Notes', true)}</div></div>`;
+    }
+
+    function renderIncident(prefix, index) {
+      const base = `${prefix}_inc${index}`;
+      return `<div class="program-card"><h3>Incident ${index}</h3><div class="grid">
+        ${field(`${base}_name`, 'Person involved')}${field(`${base}_phone`, 'Phone')}${field(`${base}_email`, 'Email', 'email')}
+        ${field(`${base}_date`, 'Incident date', 'date')}${field(`${base}_time`, 'Incident time', 'time')}
+        ${field(`${base}_location`, 'Location')}${field(`${base}_desc`, 'Brief description')}
+        ${select(`${base}_injuries`, 'Was anyone injured?', ['Yes', 'No'])}${area(`${base}_injuries_desc`, 'Injury details')}
+        ${select(`${base}_witnesses`, 'Were there witnesses?', ['Yes', 'No'])}${area(`${base}_witnesses_info`, 'Witness names and contact info')}
+        ${select(`${base}_police`, 'Police notified?', ['Yes', 'No'])}${select(`${base}_police_report`, 'Report filed?', ['Yes', 'No'])}
+        ${select(`${base}_medical`, 'Medical treatment provided?', ['Yes', 'No', 'Refused'])}${select(`${base}_medical_loc`, 'Treatment location', ['On site', 'Hospital', 'Other'])}
+        ${area(`${base}_notes`, 'Additional notes', true)}
+      </div></div>`;
+    }
+
+    function renderChecklist() {
+      const checklist = currentEntry().checklist || {};
+      return `<div class="section-title">Short Closing Checklist</div><div class="checklist">${CHECK_ITEMS.map(([id, label]) => id === 'tl_report_sent'
+        ? `<div class="check-item"><span>${checklist[id] ? '✓' : '○'}</span><span>${label}</span></div>`
+        : `<label class="check-item"><input type="checkbox" ${checklist[id] ? 'checked' : ''} ${currentEntry().submitted ? 'disabled' : ''} onchange="tlCheck('${id}',this.checked)"><span>${label}</span></label>`).join('')}</div>`;
+    }
+
+    function renderForm() {
+      const entry = currentEntry();
+      const prefix = activeShift;
+      const pm = prefix === 'pm';
+      const savedState = entry.submitted
+        ? `<div class="notice success">${pm ? (entry.email_sent_at ? 'The completed report has been emailed.' : 'The PM report is submitted. The email can be retried below.') : 'AM handoff saved and submitted.'}</div>`
+        : `<div class="hint">Your draft saves automatically. Team Leads share today’s AM and PM entries.</div>`;
+      let form = `<div class="notice">${pm ? 'PM closing report. Put your name in the Team Lead field under Team.' : 'AM handoff. Put your name in the Team Lead field under Team.'}</div>`;
+      form += `<div class="section-title">${pm ? 'PM Closing Report' : 'AM Handoff'}</div>`;
+      form += `<div class="grid">
+        ${field(`${prefix}_shift_start`, 'Shift start', 'time')}${field(`${prefix}_shift_end`, 'Shift end', 'time')}
+        ${field(`${prefix}_court_res`, pm ? 'PM court reservations' : 'AM court reservations', 'number')}
+        ${pm ? field('pm_covers', 'Covers on Toast', 'number') : field('am_count_time', 'Reservations counted through', 'time')}
+        ${pm ? field('pm_food_sales', 'Food sales ($)', 'number') : ''}
+        ${pm ? field('pm_bev_sales', 'Beverage sales ($)', 'number') : ''}
+        ${pm ? field('pm_pos_comps_amt', 'Positive comps ($)', 'number') : ''}
+        ${pm ? field('pm_neg_comps_amt', 'Negative comps ($)', 'number') : ''}
+        ${pm ? area('pm_comp_notes', 'Positive comp notes') : area('am_comp_notes', 'Comp notes')}
+        ${pm ? area('pm_neg_comp_notes', 'Negative comp notes (include approval)', true) : ''}
+        ${field(`${prefix}_peak_times`, 'Peak times', 'text', true)}
+      </div>`;
+      form += `<div class="section-title">Events & Programming</div>${renderProgramming(prefix)}`;
+      form += `<div class="section-title">Team</div><div class="grid">
+        ${field(`${prefix}_host_desk`, 'Host Desk')}${pm ? field(`${prefix}_captains`, 'Captain(s)') : field(`${prefix}_cafe`, 'Café')}
+        ${pm ? field(`${prefix}_team_lead`, 'Team Lead') : field(`${prefix}_team_lead`, 'Team Lead')}
+        ${field(`${prefix}_swarmer`, 'Swarmer')}${field(`${prefix}_bar`, 'Bar')}
+        ${field(`${prefix}_staffing`, 'Staffing adjustments', 'text', true)}
+        ${area(`${prefix}_coaching`, 'Coaching & feedback notes', true)}
+      </div>`;
+      form += `<div class="section-title">86’d Items</div><div class="grid">${area(`${prefix}_eighty_food`, 'Food')}${area(`${prefix}_eighty_bar`, 'Bar / beverage')}</div>`;
+      form += `<div class="section-title">Repairs, Maintenance & Cleaning</div>${textAreaFor(`${prefix}_rm_issues`, 'Maintenance issues, cleaning flags, and follow-ups')}`;
+      form += `<div class="section-title">${pm ? 'Shift Notes & Close' : 'Shift Notes & Handoff'}</div>${textAreaFor(`${prefix}_shift_notes`, pm ? 'What went well, what needs follow-up, and anything for tomorrow' : 'Notes for the next shift: wins, follow-ups, and anything PM needs to know')}`;
+      if (pm) form += renderChecklist();
+      const actions = entry.submitted
+        ? (pm && !entry.email_sent_at ? '<button class="primary" onclick="tlRetryEmail()">Retry sending report email</button>' : '')
+        : `<button class="primary" onclick="${pm ? 'tlSubmitPM()' : 'tlSubmitAM()'}">${pm ? 'Submit PM Report & Email' : 'Save AM Shift & Hand Off to PM →'}</button><button class="secondary" onclick="tlSaveDraft(false)">Save Draft</button>`;
+      const shiftTabs = state.report_closed ? '' : `<div class="shift-tabs"><button class="${!pm ? 'active' : ''}" onclick="tlSelectShift('am')">AM</button><button class="${pm ? 'active' : ''}" onclick="tlSelectShift('pm')">PM</button></div>`;
+      return `${savedState}${shiftTabs}<div id="shift-form">${form}<div class="actions">${actions}</div><div id="save-status" class="status"></div></div>`;
+    }
+
+    function render() {
+      document.getElementById('today-label').textContent = `${state.name} · ${state.date}`;
+      const content = document.getElementById('content');
+      if (state.report_closed && !(activeShift === 'pm' && state.pm?.submitted)) {
+        content.innerHTML = '<div class="notice">Today’s shift report has already been submitted. This Team Lead form is now closed.</div>';
+        return;
+      }
+      if (activeShift === 'pm' && !state.pm_assigned) {
+        content.innerHTML = `<div class="notice">A manager must assign you to close before you can open the PM report. You may still complete an AM handoff.</div><div class="shift-tabs"><button onclick="tlSelectShift('am')">AM</button><button class="active">PM</button></div><div class="actions"><button class="secondary" onclick="location.reload()">Refresh assignment</button></div>`;
+        return;
+      }
+      content.innerHTML = renderForm();
+    }
+
+    async function teamApi(action, body = {}, credential = passcode) {
+      const response = await fetch('/.netlify/functions/team-lead-api', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${credential}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, ...body }),
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        let message = text || `Request failed (${response.status})`;
+        try {
+          message = JSON.parse(text).error || message;
+        } catch {
+          // Keep the response text when the server does not return JSON.
+        }
+        const error = new Error(message);
+        error.status = response.status;
+        throw error;
+      }
+      return text ? JSON.parse(text) : null;
+    }
+
+    async function loadToday() {
+      const data = await teamApi('load');
+      Object.assign(state, data);
+      if (state.pm_assigned && !state.pm) state.pm = { data: {}, checklist: {}, submitted: false };
+      if (!state.am_taken && !state.am) state.am = { data: {}, checklist: {}, submitted: false };
+      activeShift = state.pm_assigned ? 'pm' : 'am';
+      render();
+    }
+
+    async function tlSelectShift(shift) {
+      if (dirty && !(await tlSaveDraft(false))) return;
+      activeShift = shift;
+      dirty = false;
+      clearTimeout(saveTimer);
+      render();
+    }
+
+    function tlSet(key, newValue) {
+      if (currentEntry().submitted) return;
+      currentEntry().data[key] = newValue;
+      dirty = true;
+      revision += 1;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => tlSaveDraft(false), 700);
+    }
+
+    function tlCheck(id, checked) {
+      if (currentEntry().submitted) return;
+      currentEntry().checklist[id] = checked;
+      dirty = true;
+      revision += 1;
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => tlSaveDraft(false), 400);
+    }
+
+    function tlToggleProgram(prefix, type) {
+      tlSet(`${prefix}_prog_${type}`, value(`${prefix}_prog_${type}`) === 'true' ? 'false' : 'true');
+      render();
+    }
+
+    function tlSetCount(prefix, type, count) {
+      tlSet(`${prefix}_prog_${type}`, count);
+      render();
+    }
+
+    async function tlSaveDraft(submit) {
+      clearTimeout(saveTimer);
+      if (state.date && tlTodayDate() !== state.date) {
+        location.reload();
+        return false;
+      }
+      const submittedEntry = currentEntry();
+      if (submittedEntry.submitted && !submit) return true;
+      const snapshot = {
+        shift: activeShift,
+        data: { ...(submittedEntry.data || {}) },
+        checklist: { ...(submittedEntry.checklist || {}) },
+      };
+      const savedRevision = revision;
+      const job = saveQueue.then(() => teamApi('save', { ...snapshot, submit }));
+      saveQueue = job.then(() => undefined, () => undefined);
+      const status = document.getElementById('save-status');
+      if (status) status.textContent = submit ? 'Submitting…' : 'Saving…';
+      try {
+        const result = await job;
+        if (savedRevision === revision) dirty = false;
+        if (submit) submittedEntry.submitted = !!result?.submitted;
+        if (status) status.textContent = savedRevision === revision ? (submit ? 'Submitted ✓' : 'Saved ✓') : 'New changes still saving…';
+        return true;
+      } catch (error) {
+        console.error('Team Lead report save failed', error);
+        if (status) status.textContent = `Save failed: ${error.message}`;
+        return false;
+      }
+    }
+
+    async function tlSubmitAM() {
+      if (!confirm('Save and hand off the AM contribution?')) return;
+      if (!(await tlSaveDraft(true))) return;
+      await loadToday();
+    }
+
+    async function tlSubmitPM() {
+      const checklist = currentEntry().checklist || {};
+      if (CHECK_ITEMS.some(([id]) => id !== 'tl_report_sent' && !checklist[id])) {
+        alert('Complete the closing checklist before submitting the report.');
+        return;
+      }
+      if (!confirm('Submit the full daily shift report and email it to the report list?')) return;
+      if (!(await tlSaveDraft(true))) return;
+      state.report_closed = true;
+      render();
+      await tlSendPMEmail();
+    }
+
+    async function tlRetryEmail() {
+      await tlSendPMEmail();
+    }
+
+    async function tlSendPMEmail() {
+      if (sendingEmail) return;
+      if (state.date && tlTodayDate() !== state.date) {
+        location.reload();
+        return;
+      }
+      sendingEmail = true;
+      const status = document.getElementById('save-status');
+      if (status) status.textContent = 'Sending the full daily report…';
+      try {
+        const response = await fetch('/.netlify/functions/team-lead-submit', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${RallyAuth.token()}` },
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `Email request failed (${response.status})`);
+        state.pm.email_sent_at = new Date().toISOString();
+        state.pm.checklist = { ...(state.pm.checklist || {}), tl_report_sent: true };
+        render();
+        const saveStatus = document.getElementById('save-status');
+        if (saveStatus) saveStatus.textContent = result.alreadySent ? 'Report was already emailed ✓' : 'Report emailed ✓';
+      } catch (error) {
+        console.error('Team Lead report email failed', error);
+        if (status) status.textContent = `Saved, but email failed: ${error.message}. Retry when ready.`;
+      } finally {
+        sendingEmail = false;
+      }
+    }
+
+    function renderLogin(error = '') {
+      document.getElementById('sign-out').hidden = true;
+      document.getElementById('today-label').textContent = 'Team Lead access';
+      document.getElementById('content').innerHTML = `
+        <form onsubmit="tlSignIn(event)" style="max-width:380px;margin:12px auto;text-align:center;">
+          <div class="section-title" style="margin-top:4px;">Team Lead Shift Review</div>
+          <p class="hint" style="margin:12px 0 18px;">Enter the Team Lead password to open today’s shared shift report.</p>
+          <div class="field"><label for="tl-passcode">Password</label><input id="tl-passcode" type="password" inputmode="numeric" autocomplete="current-password" required autofocus></div>
+          <div class="notice error" id="login-error" ${error ? '' : 'hidden'}>${esc(error)}</div>
+          <div class="actions" style="justify-content:center;"><button class="primary" type="submit">Continue</button></div>
+        </form>`;
+    }
+
+    async function tlSignIn(event) {
+      event.preventDefault();
+      const input = document.getElementById('tl-passcode');
+      const candidate = input.value;
+      const error = document.getElementById('login-error');
+      const button = event.currentTarget.querySelector('button[type="submit"]');
+      button.disabled = true;
+      try {
+        const data = await teamApi('load', {}, candidate);
+        passcode = candidate;
+        sessionStorage.setItem(PASSCODE_KEY, candidate);
+        Object.assign(state, data);
+        document.getElementById('sign-out').hidden = false;
+        if (state.pm_assigned && !state.pm) state.pm = { data: {}, checklist: {}, submitted: false };
+        if (!state.am_taken && !state.am) state.am = { data: {}, checklist: {}, submitted: false };
+        activeShift = state.pm_assigned ? 'pm' : 'am';
+        render();
+      } catch (requestError) {
+        error.hidden = false;
+        error.textContent = requestError.status === 401 ? 'Incorrect password. Try again.' : `Could not open the shift report: ${requestError.message}`;
+        input.value = '';
+        input.focus();
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function tlSignOut() {
+      passcode = '';
+      sessionStorage.removeItem(PASSCODE_KEY);
+      renderLogin();
+    }
+
+    if (passcode) {
+      loadToday().then(() => {
+        document.getElementById('sign-out').hidden = false;
+      }).catch(() => {
+        passcode = '';
+        sessionStorage.removeItem(PASSCODE_KEY);
+        renderLogin();
+      });
+    } else {
+      renderLogin();
+    }
+
+    setInterval(() => {
+      if (state.date && tlTodayDate() !== state.date) location.reload();
+    }, 60_000);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && state.date && tlTodayDate() !== state.date) location.reload();
+    });
+  </script>
+</body>
+</html>
