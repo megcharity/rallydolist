@@ -2558,6 +2558,8 @@ async function renderAnnouncementAlert() {
   const isNew = active.some(a => (new Date() - new Date(a.created_at)) < dayMs);
   const dot = document.getElementById('ann-nav-dot');
   if(dot) dot.hidden = !isNew;
+  // Refresh the Today at Rally card too, so its count and "new" tag never go stale.
+  if(document.getElementById('mgr-today-tiles')) renderMgrTodayCard();
   const wrap = document.getElementById('ann-alert-wrap');
   if(!wrap) return;
   if(!active.length) { wrap.innerHTML = ''; wrap.style.display = 'none'; return; }
@@ -5031,6 +5033,14 @@ async function renderMgrTodayCard() {
       <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#174854;line-height:1;margin:2px 0;">${value}</div>
       <div style="font-size:11px;color:rgba(23,72,84,.55);">${label}</div>
     </div>`;
+
+  // "📣 New announcement" tag next to the title — same 24h rule as the tile's NEW badge.
+  const newAnnTag = document.getElementById('mgr-today-new-ann');
+  if(newAnnTag) {
+    const newCount = activeAnnForTile.filter(a => annIsNew(a)).length;
+    newAnnTag.hidden = !newCount;
+    newAnnTag.textContent = newCount > 1 ? `📣 ${newCount} new announcements` : '📣 New announcement';
+  }
 
   tiles.innerHTML =
     tile('📋', tasksDueToday, 'Tasks Due Today', tasksDueToday?`calShowDayTasks('${today}')`:'') +
@@ -8917,7 +8927,10 @@ function renderCalendarHub(targetId, merged) {
     <div class="cl-hub-sub">Events, activations, and team PTO.</div>
     ${_calMergedMode ? `<div id="mgr-today-card" style="margin:14px 0;padding:14px 16px;background:#fff;border:1.5px solid rgba(23,72,84,.12);border-radius:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#174854;">Today at Rally</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#174854;">Today at Rally</div>
+          <span id="mgr-today-new-ann" hidden onclick="openAnnouncementViewModal()" style="cursor:pointer;background:#f58664;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;padding:4px 10px;border-radius:12px;">📣 New announcement</span>
+        </div>
         <div style="font-size:11px;color:rgba(23,72,84,.45);">Manager overview</div>
       </div>
       <div id="mgr-today-tiles" style="display:flex;gap:28px;flex-wrap:wrap;"></div>
@@ -8931,7 +8944,7 @@ function renderCalendarHub(targetId, merged) {
     <div class="cal-grid-wrap"></div>
   `;
   renderCalGrid();
-  if(_calMergedMode) { loadAnnouncements().then(renderAnnouncementAlert); renderMgrTodayCard(); }
+  if(_calMergedMode) { loadAnnouncements().then(renderAnnouncementAlert); }
 }
 
 function switchCalSubView(v) { calSubView = v; renderCalendarHub(); }
