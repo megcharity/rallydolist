@@ -59,16 +59,37 @@
   </main>
   <script>
     const PASSCODE_KEY = 'rally-team-lead-passcode';
-    const CHECK_ITEMS = [
+    // Fallback lists only — the live lists come from the server (editable in the do-list's Checklist Editor).
+    let OPEN_ITEMS = [
+      ['tl_open_doors', 'Unlock all doors (around 6:50am). Open garage doors if it’s above 45°F outside'],
+      ['tl_open_lights', 'Turn on all lights (including court number lights), TVs, and music'],
+      ['tl_open_floor', 'Reset the floor: stools off bar tops and chairs under tables'],
+      ['tl_open_outdoor', 'Set up outdoor area: cushions out, umbrellas out, tables wiped, TV covers off'],
+      ['tl_open_water', 'Reset all court lounges, including outdoor: menus and QR codes in place, water jugs filled with ice'],
+      ['tl_open_dish', 'Turn on dishwashers (bar and Captain’s Quarters) and test sanitizer with sani strips'],
+      ['tl_open_bar', 'Open the bar'],
+      ['tl_open_towels', 'Make sure towel roll-ups are ready in the bar fridge'],
+      ['tl_open_host', 'Set up host station: computer on, host TV on, take the host phone'],
+      ['tl_open_cash', 'Count the safe and put out bar and café drawers ($300 each). Complete the safe count sheet'],
+      ['tl_open_events', 'Check the reservation list and member list'],
+      ['tl_open_beo', 'Check Triple Seat and the Event Office for a BEO. If there’s an event, meet with the kitchen to review the BEO'],
+      ['tl_open_floorchart', 'Fill out the floor chart'],
+      ['tl_open_lineup', 'Review the lineup with every associate as they arrive'],
+    ];
+    let CHECK_ITEMS = [
       ['tl_guests_clear', 'Final walkthrough: confirm guests and staff are out of all areas'],
       ['tl_area_reset', 'Reset courts and lounges: clear glassware and plates, sweep courts, wipe rails, and straighten seating'],
+      ['tl_lounges_clean', 'Check all lounges and surrounding areas: no drink rings and no food on the floor'],
+      ['tl_lounges_reset', 'Reset all lounges with menus and QR codes, and empty all the water jugs'],
+      ['tl_pizza_oven', 'Turn off the pizza oven'],
+      ['tl_pizza_back', 'Behind pizza is clean and clear of dishes'],
       ['tl_bathrooms', 'Check bathrooms and empty trash'],
       ['tl_event_close', 'Close event spaces and return event materials'],
       ['tl_toast_clockout', 'Confirm all employees are logged out of Toast and clocked out'],
-      ['tl_drawers_cash', 'Count bar and café drawers, complete the cash sheet, and file receipts'],
-      ['tl_shift_reviews', 'Collect associate shift reviews'],
-      ['tl_secure_doors', 'Secure all venue doors'],
+      ['tl_drawers_cash', 'Count the cash drawers (bar and café), complete the cash sheet, and file receipts'],
+      ['tl_cleaners', 'Cleaners coming: put chairs up. No cleaners: turn off all the lights'],
       ['tl_power_down', 'Turn off TVs, music, and nonessential equipment'],
+      ['tl_secure_doors', 'Make sure all doors are locked'],
       ['tl_report_sent', 'Submit and email the completed shift report'],
     ];
     const state = { date: '', name: 'Team Lead', pm_assigned: false, pm_assigned_name: '', report_closed: false, am_taken: false, am: null, pm: null };
@@ -159,11 +180,11 @@
       </div></div>`;
     }
 
-    function renderChecklist() {
+    function renderChecklist(items = CHECK_ITEMS, title = 'Short Closing Checklist') {
       const checklist = currentEntry().checklist || {};
-      return `<div class="section-title">Short Closing Checklist</div><div class="checklist">${CHECK_ITEMS.map(([id, label]) => id === 'tl_report_sent'
-        ? `<div class="check-item"><span>${checklist[id] ? '✓' : '○'}</span><span>${label}</span></div>`
-        : `<label class="check-item"><input type="checkbox" ${checklist[id] ? 'checked' : ''} ${currentEntry().submitted ? 'disabled' : ''} onchange="tlCheck('${id}',this.checked)"><span>${label}</span></label>`).join('')}</div>`;
+      return `<div class="section-title">${title}</div><div class="checklist">${items.map(([id, label]) => id === 'tl_report_sent'
+        ? `<div class="check-item"><span>${checklist[id] ? '✓' : '○'}</span><span>${esc(label)}</span></div>`
+        : `<label class="check-item"><input type="checkbox" ${checklist[id] ? 'checked' : ''} ${currentEntry().submitted ? 'disabled' : ''} onchange="tlCheck('${id}',this.checked)"><span>${esc(label)}</span></label>`).join('')}</div>`;
     }
 
     function renderForm() {
@@ -198,7 +219,7 @@
       form += `<div class="section-title">86’d Items</div><div class="grid">${area(`${prefix}_eighty_food`, 'Food')}${area(`${prefix}_eighty_bar`, 'Bar / beverage')}</div>`;
       form += `<div class="section-title">Repairs, Maintenance & Cleaning</div>${textAreaFor(`${prefix}_rm_issues`, 'Maintenance issues, cleaning flags, and follow-ups')}`;
       form += `<div class="section-title">${pm ? 'Shift Notes & Close' : 'Shift Notes & Handoff'}</div>${textAreaFor(`${prefix}_shift_notes`, pm ? 'What went well, what needs follow-up, and anything for tomorrow' : 'Notes for the next shift: wins, follow-ups, and anything PM needs to know')}`;
-      if (pm) form += renderChecklist();
+      form += pm ? renderChecklist() : renderChecklist(OPEN_ITEMS, 'Short Opening Checklist');
       const actions = entry.submitted
         ? (pm && !entry.email_sent_at ? '<button class="primary" onclick="tlRetryEmail()">Retry sending report email</button>' : '')
         : `<button class="primary" onclick="${pm ? 'tlSubmitPM()' : 'tlSubmitAM()'}">${pm ? 'Submit PM Report & Email' : 'Save AM Shift & Hand Off to PM →'}</button><button class="secondary" onclick="tlSaveDraft(false)">Save Draft</button>`;
@@ -244,8 +265,19 @@
       return text ? JSON.parse(text) : null;
     }
 
+    function applyLists(data) {
+      if (Array.isArray(data?.opening_items) && data.opening_items.length) {
+        OPEN_ITEMS = data.opening_items.map(item => [item.id, item.text]);
+      }
+      if (Array.isArray(data?.closing_items) && data.closing_items.length) {
+        const sent = data.report_sent_item || { id: 'tl_report_sent', text: 'Submit and email the completed shift report' };
+        CHECK_ITEMS = [...data.closing_items.map(item => [item.id, item.text]), [sent.id, sent.text]];
+      }
+    }
+
     async function loadToday() {
       const data = await teamApi('load');
+      applyLists(data);
       Object.assign(state, data);
       if (state.pm_assigned && !state.pm) state.pm = { data: {}, checklist: {}, submitted: false };
       if (!state.am_taken && !state.am) state.am = { data: {}, checklist: {}, submitted: false };
@@ -300,7 +332,12 @@
       const snapshot = {
         shift: activeShift,
         data: { ...(submittedEntry.data || {}) },
-        checklist: { ...(submittedEntry.checklist || {}) },
+        // Only send items on the current list, so drafts saved before a checklist edit still save.
+        checklist: Object.fromEntries(
+          (activeShift === 'pm' ? CHECK_ITEMS : OPEN_ITEMS)
+            .filter(([id]) => typeof submittedEntry.checklist?.[id] === 'boolean')
+            .map(([id]) => [id, submittedEntry.checklist[id]]),
+        ),
       };
       const savedRevision = revision;
       const job = saveQueue.then(() => teamApi('save', { ...snapshot, submit }));
@@ -321,6 +358,11 @@
     }
 
     async function tlSubmitAM() {
+      const checklist = currentEntry().checklist || {};
+      if (OPEN_ITEMS.some(([id]) => !checklist[id])) {
+        alert('Complete the opening checklist before handing off the AM shift.');
+        return;
+      }
       if (!confirm('Save and hand off the AM contribution?')) return;
       if (!(await tlSaveDraft(true))) return;
       await loadToday();
@@ -396,6 +438,7 @@
         const data = await teamApi('load', {}, candidate);
         passcode = candidate;
         sessionStorage.setItem(PASSCODE_KEY, candidate);
+        applyLists(data);
         Object.assign(state, data);
         document.getElementById('sign-out').hidden = false;
         if (state.pm_assigned && !state.pm) state.pm = { data: {}, checklist: {}, submitted: false };

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { loadTeamLeadChecklists, DEFAULT_OPENING, DEFAULT_CLOSING, REPORT_SENT_ITEM } from '../lib/team-lead-checklists.mjs';
 
 const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID || 'service_yuz9zab';
 const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_SHIFT_REPORT_TEMPLATE_ID || 'template_0nxwpkt';
@@ -53,18 +54,6 @@ const PM_FIELDS = [
   ['pm_shift_notes', 'Closing notes'],
 ];
 
-const CHECKLIST_ITEMS = [
-  ['tl_guests_clear', 'Guests and staff are out of all areas'],
-  ['tl_area_reset', 'Courts and lounges reset'],
-  ['tl_bathrooms', 'Bathrooms checked and trash emptied'],
-  ['tl_event_close', 'Event spaces closed and materials returned'],
-  ['tl_toast_clockout', 'Employees logged out of Toast and clocked out'],
-  ['tl_drawers_cash', 'Bar and café drawers counted; cash sheet and receipts completed'],
-  ['tl_shift_reviews', 'Associate shift reviews collected'],
-  ['tl_secure_doors', 'Venue doors secured'],
-  ['tl_power_down', 'TVs, music, and nonessential equipment turned off'],
-  ['tl_report_sent', 'Shift report submitted and emailed'],
-];
 
 const html = value => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -147,7 +136,7 @@ function shiftSection(data, prefix, title, fields) {
   </section>`;
 }
 
-function reportHtml(data, date) {
+function reportHtml(data, date, lists = { opening: DEFAULT_OPENING, closing: DEFAULT_CLOSING }) {
   const day = new Date(`${date}T12:00:00-04:00`).toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York',
   });
@@ -164,7 +153,12 @@ function reportHtml(data, date) {
     ['Total', total ? `$${total.toFixed(2)}` : '—'],
     ['PPA', covers ? `$${(total / covers).toFixed(2)}` : '—'],
   ];
-  const checklistRows = CHECKLIST_ITEMS.map(([id, label]) =>
+  const openingRows = data.team_lead_opening_checklist
+    ? lists.opening.map(({ id, text: label }) =>
+      `<li style="margin:5px 0;">${data.team_lead_opening_checklist[id] ? '✓' : '○'} ${html(label)}</li>`
+    ).join('')
+    : '';
+  const checklistRows = [...lists.closing, REPORT_SENT_ITEM].map(({ id, text: label }) =>
     `<li style="margin:5px 0;">${data.team_lead_closing_checklist?.[id] ? '✓' : '○'} ${html(label)}</li>`
   ).join('');
   return `<!doctype html><html><body style="margin:0;background:#f5f0e8;font-family:Arial,sans-serif;color:#174854;">
@@ -182,6 +176,10 @@ function reportHtml(data, date) {
       </section>
       ${shiftSection(data, 'am', 'AM Shift', AM_FIELDS)}
       ${shiftSection(data, 'pm', 'PM Shift', PM_FIELDS)}
+      ${openingRows ? `<section style="padding:18px 24px;border-top:1px solid #e9e3d8;">
+        <h2 style="margin:0 0 8px;font-size:14px;">Team Lead Opening Checklist</h2>
+        <ul style="padding-left:20px;margin:0;font-size:12px;">${openingRows}</ul>
+      </section>` : ''}
       <section style="padding:18px 24px;border-top:1px solid #e9e3d8;">
         <h2 style="margin:0 0 8px;font-size:14px;">Team Lead Closing Checklist</h2>
         <ul style="padding-left:20px;margin:0;font-size:12px;">${checklistRows}</ul>
@@ -295,6 +293,7 @@ async function submitSharedReport(request, headers) {
       }
       reportData._team_lead_am = { name: amEntry.name, submitted_at: amEntry.submitted_at };
       reportData._team_lead_am_fields = mergedAmFields;
+      reportData.team_lead_opening_checklist = { ...(amEntry.checklist || {}) };
     }
     for (const key of Object.keys(reportData)) {
       if (key.startsWith('pm_') && !['pm_submitted', 'pm_submitted_by', 'pm_submitted_at'].includes(key)) {
@@ -333,7 +332,7 @@ async function submitSharedReport(request, headers) {
         user_id: EMAILJS_PUBLIC_KEY,
         template_params: {
           subject: `Rally Shift Report - ${new Date(`${date}T12:00:00-04:00`).toLocaleDateString('en-US', { weekday: 'long' })}`,
-          message: reportHtml(reportData, date),
+          message: reportHtml(reportData, date, await loadTeamLeadChecklists(path => supabaseFetch(path, { serviceKey }))),
           to_email: '',
         },
       }),
@@ -517,7 +516,7 @@ export default async function handler(request) {
         user_id: EMAILJS_PUBLIC_KEY,
         template_params: {
           subject: `Rally Shift Report - ${new Date(`${date}T12:00:00-04:00`).toLocaleDateString('en-US', { weekday: 'long' })}`,
-          message: reportHtml(reportData, date),
+          message: reportHtml(reportData, date, await loadTeamLeadChecklists(path => supabaseFetch(path, { serviceKey }))),
           to_email: '',
         },
       }),
