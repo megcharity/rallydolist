@@ -40,6 +40,8 @@
     .actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
     .actions button,.top button{padding:10px 14px;border-radius:8px;border:1px solid var(--teal);font-weight:600}
     .top button{background:transparent;color:var(--teal)}
+    .back-link{display:inline-flex;align-items:center;gap:6px;margin:4px 0 10px;font-size:13px;font-weight:600;color:var(--muted);text-decoration:none}
+    .back-link:hover{color:var(--teal)}
     .actions .primary{background:var(--teal);color:#fff}
     .status{min-height:18px;color:var(--muted);font-size:12px;margin-top:8px}
     .muted-lock{padding:22px 14px;text-align:center;border:1px dashed var(--border);border-radius:9px;color:var(--muted);line-height:1.6}
@@ -48,6 +50,7 @@
 </head>
 <body>
   <main class="wrap" id="app" aria-live="polite">
+    <a class="back-link" href="/">← Back</a>
     <header class="top">
       <div>
         <h1>Rally Shift Report</h1>
