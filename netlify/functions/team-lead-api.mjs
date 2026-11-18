@@ -20,7 +20,7 @@ function isValidPassword(request) {
     && timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
-async function supabaseFetch(path, { method = 'GET', body, serviceKey } = {}) {
+async function supabaseFetch(path, { method = 'GET', body, serviceKey, prefer } = {}) {
   const response = await fetch(`${SUPABASE_URL}${path}`, {
     method,
     headers: {
@@ -28,13 +28,17 @@ async function supabaseFetch(path, { method = 'GET', body, serviceKey } = {}) {
       Authorization: `Bearer ${serviceKey}`,
       'Content-Type': 'application/json',
       ...(method === 'POST' || method === 'PATCH'
-        ? { Prefer: method === 'POST' ? 'resolution=merge-duplicates,return=representation' : 'return=representation' }
+        ? { Prefer: prefer || (method === 'POST' ? 'resolution=merge-duplicates,return=representation' : 'return=representation') }
         : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
   const text = await response.text();
-  if (!response.ok) throw new Error(`Supabase request failed (${response.status}): ${text}`);
+  if (!response.ok) {
+    const error = new Error(`Supabase request failed (${response.status}): ${text}`);
+    error.status = response.status;
+    throw error;
+  }
   return text ? JSON.parse(text) : null;
 }
 
@@ -91,64 +95,91 @@ function cleanChecklist(checklist, items) {
   return Object.fromEntries(items.filter(item => typeof checklist[item.id] === 'boolean').map(item => [item.id, checklist[item.id]]));
 }
 
+// Several Team Leads can have the report open at once, so the page sends only
+// the fields it changed and they're merged into what's already saved. The write
+// only lands if nobody else saved since we read (checked with updated_at); if
+// someone did, we re-read and merge again, so one person's save never wipes out
+// another's entries.
 async function saveToday(body, serviceKey) {
   const date = todayInCharlotte();
-  const { shift, data, checklist: rawChecklist, submit = false } = body;
-  validateEntry(shift, data, rawChecklist);
+  const { shift, data: changedData, checklist: rawChecklist, submit = false } = body;
+  validateEntry(shift, changedData, rawChecklist);
   if (typeof submit !== 'boolean') throw new Error('Invalid submit flag');
-  const lists = await loadTeamLeadChecklists(path => supabaseFetch(path, { serviceKey }));
-  const items = shift === 'am' ? lists.opening : lists.closing;
-  const checklist = cleanChecklist(rawChecklist, items);
-  if (submit && items.some(item => checklist[item.id] !== true)) {
-    throw new Error(shift === 'am'
-      ? 'Complete the opening checklist before handing off the AM shift. If every box looks checked, refresh the page: the list was just updated.'
-      : 'Complete the closing checklist before submitting the report. If every box looks checked, refresh the page: the list was just updated.');
-  }
-  const [assignments, reportRows, existingRows] = await Promise.all([
+  const [lists, assignments] = await Promise.all([
+    loadTeamLeadChecklists(path => supabaseFetch(path, { serviceKey })),
     supabaseFetch(`/rest/v1/rally_team_lead_assignments?report_date=eq.${date}&select=email,name&limit=1`, { serviceKey }),
-    supabaseFetch(`/rest/v1/rally_shift_reports?date=eq.${date}&select=data&order=id.desc&limit=1`, { serviceKey }),
-    supabaseFetch(`/rest/v1/rally_team_lead_entries?report_date=eq.${date}&shift=eq.${shift}&select=*&limit=1`, { serviceKey }),
   ]);
+  const items = shift === 'am' ? lists.opening : lists.closing;
   const assignment = Array.isArray(assignments) ? assignments[0] : null;
-  const reportData = Array.isArray(reportRows) ? reportRows[0]?.data : null;
-  const existing = Array.isArray(existingRows) ? existingRows[0] : null;
-  if (reportData?.pm_submitted === true || (shift === 'pm' && existing?.submitted)) {
-    throw new Error('Today’s shift report has already been submitted');
-  }
-  if (existing?.submitted) {
-    const savedChecklist = shift === 'pm' ? { ...checklist, tl_report_sent: false } : checklist;
-    if (submit && JSON.stringify(existing.data) === JSON.stringify(data)
-        && JSON.stringify(existing.checklist) === JSON.stringify(savedChecklist)) {
-      await recordChecklistSignOff(supabaseFetch, serviceKey, { shift, date, name: existing.name, items, checklist });
-      return { submitted: true, email_sent_at: existing.email_sent_at };
+  const changedChecklist = cleanChecklist(rawChecklist, items);
+
+  for (let attempt = 0; attempt < 12; attempt++) {
+    // After a collision, wait a short random moment so simultaneous saves untangle.
+    if (attempt) await new Promise(resolve => setTimeout(resolve, 40 + Math.random() * 160 * Math.min(attempt, 4)));
+    const [reportRows, existingRows] = await Promise.all([
+      supabaseFetch(`/rest/v1/rally_shift_reports?date=eq.${date}&select=data&order=id.desc&limit=1`, { serviceKey }),
+      supabaseFetch(`/rest/v1/rally_team_lead_entries?report_date=eq.${date}&shift=eq.${shift}&select=*&limit=1`, { serviceKey }),
+    ]);
+    const reportData = Array.isArray(reportRows) ? reportRows[0]?.data : null;
+    const existing = Array.isArray(existingRows) ? existingRows[0] : null;
+    const data = { ...(existing?.data || {}), ...changedData };
+    const checklist = { ...cleanChecklist(existing?.checklist || {}, items), ...changedChecklist };
+    if (submit && items.some(item => checklist[item.id] !== true)) {
+      throw new Error(shift === 'am'
+        ? 'Complete the opening checklist before handing off the AM shift. If every box looks checked, refresh the page: the list was just updated.'
+        : 'Complete the closing checklist before submitting the report. If every box looks checked, refresh the page: the list was just updated.');
     }
-    throw new Error('This shift report has already been submitted');
-  }
-  const savedChecklist = shift === 'pm' ? { ...checklist, tl_report_sent: false } : checklist;
-  const savedAt = new Date().toISOString();
-  // Shown in manager screens and the daily checklist email, so keep it plain text.
-  const name = String(data[`${shift}_team_lead`] || (shift === 'pm' && assignment?.name) || 'Team Lead')
-    .replace(/[<>&"'`]/g, '').trim().slice(0, 120) || 'Team Lead';
-  const rows = await supabaseFetch('/rest/v1/rally_team_lead_entries', {
-    method: 'POST',
-    body: {
-      report_date: date,
-      shift,
-      user_id: null,
-      email: 'shared-team-lead',
+    if (reportData?.pm_submitted === true || (shift === 'pm' && existing?.submitted)) {
+      throw new Error('Today’s shift report has already been submitted');
+    }
+    const savedChecklist = shift === 'pm' ? { ...checklist, tl_report_sent: false } : checklist;
+    if (existing?.submitted) {
+      if (submit && JSON.stringify(existing.data) === JSON.stringify(data)
+          && JSON.stringify(existing.checklist) === JSON.stringify(savedChecklist)) {
+        await recordChecklistSignOff(supabaseFetch, serviceKey, { shift, date, name: existing.name, items, checklist });
+        return { submitted: true, email_sent_at: existing.email_sent_at, data: existing.data, checklist: existing.checklist };
+      }
+      throw new Error('This shift report has already been submitted');
+    }
+    const savedAt = new Date().toISOString();
+    // Shown in manager screens and the daily checklist email, so keep it plain text.
+    const name = String(data[`${shift}_team_lead`] || (shift === 'pm' && assignment?.name) || 'Team Lead')
+      .replace(/[<>&"'`]/g, '').trim().slice(0, 120) || 'Team Lead';
+    const fields = {
       name,
       data,
       checklist: savedChecklist,
       submitted: submit,
       submitted_at: submit ? savedAt : null,
       updated_at: savedAt,
-    },
-    serviceKey,
-  });
-  if (!Array.isArray(rows) || !rows.length) throw new Error('The shift report could not be saved');
-  // A submitted shift also counts as that shift's checklist sign-off for the daily checklist report.
-  if (submit) await recordChecklistSignOff(supabaseFetch, serviceKey, { shift, date, name, items, checklist });
-  return { submitted: !!submit, email_sent_at: rows[0].email_sent_at };
+    };
+    let rows;
+    if (existing) {
+      // Lands only if the row is unchanged since we read it.
+      rows = await supabaseFetch(
+        `/rest/v1/rally_team_lead_entries?report_date=eq.${date}&shift=eq.${shift}&updated_at=eq.${encodeURIComponent(existing.updated_at)}`,
+        { method: 'PATCH', body: fields, serviceKey },
+      );
+    } else {
+      try {
+        rows = await supabaseFetch('/rest/v1/rally_team_lead_entries', {
+          method: 'POST',
+          prefer: 'return=representation',
+          body: { report_date: date, shift, user_id: null, email: 'shared-team-lead', ...fields },
+          serviceKey,
+        });
+      } catch (error) {
+        if (error.status === 409) continue; // a teammate created it first — merge into theirs
+        throw error;
+      }
+    }
+    if (!Array.isArray(rows) || !rows.length) continue; // a teammate saved first — re-read and merge again
+    // A submitted shift also counts as that shift's checklist sign-off for the daily checklist report.
+    if (submit) await recordChecklistSignOff(supabaseFetch, serviceKey, { shift, date, name, items, checklist });
+    // Send back the merged entry so the page can pick up what teammates entered.
+    return { submitted: !!submit, email_sent_at: rows[0].email_sent_at, data: rows[0].data, checklist: rows[0].checklist };
+  }
+  throw new Error('Too many people saving at once. Please try again.');
 }
 
 export default async function handler(request) {

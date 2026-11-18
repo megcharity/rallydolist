@@ -96,8 +96,11 @@
     let activeShift = 'pm';
     let saveTimer = null;
     let saveQueue = Promise.resolve();
-    let revision = 0;
     let dirty = false;
+    // Changes not yet saved, per shift. Only these go to the server, which merges
+    // them into the shared entry, so teammates can't overwrite each other.
+    const pending = { am: { data: {}, checklist: {} }, pm: { data: {}, checklist: {} } };
+    const hasPending = shift => Object.keys(pending[shift].data).length + Object.keys(pending[shift].checklist).length > 0;
     let sendingEmail = false;
     let passcode = sessionStorage.getItem(PASSCODE_KEY) || '';
     const RallyAuth = { token: () => passcode };
@@ -113,9 +116,9 @@
       return `${part('year')}-${part('month')}-${part('day')}`;
     }
     const field = (key, label, type = 'text', wide = false, placeholder = '') =>
-      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><input id="${key}" type="${type}" value="${esc(value(key))}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)"></div>`;
+      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><input id="${key}" type="${type}" value="${esc(value(key))}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)" onchange="tlSet('${key}',this.value)"></div>`;
     const area = (key, label, wide = false, placeholder = '') =>
-      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><textarea id="${key}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)">${esc(value(key))}</textarea></div>`;
+      `<div class="field${wide ? ' wide' : ''}"><label for="${key}">${label}</label><textarea id="${key}" placeholder="${esc(placeholder)}" ${currentEntry().submitted ? 'disabled' : ''} oninput="tlSet('${key}',this.value)" onchange="tlSet('${key}',this.value)">${esc(value(key))}</textarea></div>`;
     const select = (key, label, options) => {
       const selected = String(value(key));
       return `<div class="field"><label for="${key}">${label}</label><select id="${key}" ${currentEntry().submitted ? 'disabled' : ''} onchange="tlSet('${key}',this.value)"><option value="">Select…</option>${options.map(option => `<option value="${esc(option)}"${selected === option ? ' selected' : ''}>${esc(option)}</option>`).join('')}</select></div>`;
@@ -184,7 +187,7 @@
       const checklist = currentEntry().checklist || {};
       return `<div class="section-title">${title}</div><div class="checklist">${items.map(([id, label]) => id === 'tl_report_sent'
         ? `<div class="check-item"><span>${checklist[id] ? '✓' : '○'}</span><span>${esc(label)}</span></div>`
-        : `<label class="check-item"><input type="checkbox" ${checklist[id] ? 'checked' : ''} ${currentEntry().submitted ? 'disabled' : ''} onchange="tlCheck('${id}',this.checked)"><span>${esc(label)}</span></label>`).join('')}</div>`;
+        : `<label class="check-item"><input type="checkbox" data-check="${id}" ${checklist[id] ? 'checked' : ''} ${currentEntry().submitted ? 'disabled' : ''} onchange="tlCheck('${id}',this.checked)"><span>${esc(label)}</span></label>`).join('')}</div>`;
     }
 
     function renderForm() {
@@ -199,14 +202,7 @@
       form += `<div class="grid">
         ${field(`${prefix}_shift_start`, 'Shift start', 'time')}${field(`${prefix}_shift_end`, 'Shift end', 'time')}
         ${field(`${prefix}_court_res`, pm ? 'PM court reservations' : 'AM court reservations', 'number')}
-        ${pm ? field('pm_covers', 'Covers on Toast', 'number') : field('am_count_time', 'Reservations counted through', 'time')}
-        ${pm ? field('pm_food_sales', 'Food sales ($)', 'number') : ''}
-        ${pm ? field('pm_bev_sales', 'Beverage sales ($)', 'number') : ''}
-        ${pm ? field('pm_pos_comps_amt', 'Positive comps ($)', 'number') : ''}
-        ${pm ? field('pm_neg_comps_amt', 'Negative comps ($)', 'number') : ''}
-        ${pm ? area('pm_comp_notes', 'Positive comp notes') : area('am_comp_notes', 'Comp notes')}
-        ${pm ? area('pm_neg_comp_notes', 'Negative comp notes (include approval)', true) : ''}
-        ${field(`${prefix}_peak_times`, 'Peak times', 'text', true)}
+        ${pm ? '' : field('am_count_time', 'Reservations counted through', 'time')}
       </div>`;
       form += `<div class="section-title">Events & Programming</div>${renderProgramming(prefix)}`;
       form += `<div class="section-title">Team</div><div class="grid">
@@ -241,9 +237,10 @@
       content.innerHTML = renderForm();
     }
 
-    async function teamApi(action, body = {}, credential = passcode) {
+    async function teamApi(action, body = {}, credential = passcode, keepalive = false) {
       const response = await fetch('/.netlify/functions/team-lead-api', {
         method: 'POST',
+        keepalive,
         headers: {
           Authorization: `Bearer ${credential}`,
           'Content-Type': 'application/json',
@@ -286,7 +283,7 @@
     }
 
     async function tlSelectShift(shift) {
-      if (dirty && !(await tlSaveDraft(false))) return;
+      if (hasPending(activeShift) && !(await tlSaveDraft(false))) return;
       activeShift = shift;
       dirty = false;
       clearTimeout(saveTimer);
@@ -295,9 +292,10 @@
 
     function tlSet(key, newValue) {
       if (currentEntry().submitted) return;
+      if (currentEntry().data[key] === newValue && !(key in pending[activeShift].data)) return;
       currentEntry().data[key] = newValue;
+      pending[activeShift].data[key] = newValue;
       dirty = true;
-      revision += 1;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => tlSaveDraft(false), 700);
     }
@@ -305,8 +303,8 @@
     function tlCheck(id, checked) {
       if (currentEntry().submitted) return;
       currentEntry().checklist[id] = checked;
+      pending[activeShift].checklist[id] = checked;
       dirty = true;
-      revision += 1;
       clearTimeout(saveTimer);
       saveTimer = setTimeout(() => tlSaveDraft(false), 400);
     }
@@ -321,43 +319,108 @@
       render();
     }
 
-    async function tlSaveDraft(submit) {
+    // Puts a teammate's saved values into this screen without touching
+    // anything typed here that isn't saved yet, or the box being typed in.
+    function mergeServerEntry(shift, entry) {
+      if (!entry) return false;
+      const local = state[shift] || (state[shift] = { data: {}, checklist: {}, submitted: false });
+      local.data = local.data || {};
+      local.checklist = local.checklist || {};
+      const mine = pending[shift];
+      const onScreen = shift === activeShift && !!document.getElementById('shift-form');
+      let layoutChanged = false;
+      for (const [key, val] of Object.entries(entry.data || {})) {
+        if (key in mine.data || local.data[key] === val) continue;
+        local.data[key] = val;
+        if (key.includes('_prog_')) layoutChanged = true;
+        const el = onScreen && document.getElementById(key);
+        if (el && el !== document.activeElement) el.value = val;
+      }
+      for (const [id, checked] of Object.entries(entry.checklist || {})) {
+        if (id in mine.checklist || local.checklist[id] === checked) continue;
+        local.checklist[id] = checked;
+        const box = onScreen && document.querySelector(`input[data-check="${id}"]`);
+        if (box) box.checked = !!checked;
+      }
+      if (entry.submitted && !local.submitted) { local.submitted = true; layoutChanged = true; }
+      if (entry.email_sent_at) local.email_sent_at = entry.email_sent_at;
+      return layoutChanged;
+    }
+
+    const typingInForm = () => !!document.activeElement?.closest?.('#shift-form')
+      && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+
+    async function tlSaveDraft(submit, { keepalive = false } = {}) {
       clearTimeout(saveTimer);
       if (state.date && tlTodayDate() !== state.date) {
         location.reload();
         return false;
       }
-      const submittedEntry = currentEntry();
-      if (submittedEntry.submitted && !submit) return true;
+      const shift = activeShift;
+      const entry = currentEntry();
+      if (entry.submitted && !submit) return true;
+      if (!submit && !hasPending(shift)) { dirty = false; return true; }
+      const listIds = new Set((shift === 'pm' ? CHECK_ITEMS : OPEN_ITEMS).map(([id]) => id));
+      const sent = pending[shift];
+      pending[shift] = { data: {}, checklist: {} };
       const snapshot = {
-        shift: activeShift,
-        data: { ...(submittedEntry.data || {}) },
+        shift,
+        // Only what changed here — the server merges it into the shared entry
+        // (for a submit too), so a stale screen can't overwrite a teammate.
+        data: sent.data,
         // Only send items on the current list, so drafts saved before a checklist edit still save.
-        checklist: Object.fromEntries(
-          (activeShift === 'pm' ? CHECK_ITEMS : OPEN_ITEMS)
-            .filter(([id]) => typeof submittedEntry.checklist?.[id] === 'boolean')
-            .map(([id]) => [id, submittedEntry.checklist[id]]),
-        ),
+        checklist: Object.fromEntries(Object.entries(sent.checklist)
+          .filter(([id, val]) => listIds.has(id) && typeof val === 'boolean')),
       };
-      const savedRevision = revision;
-      const job = saveQueue.then(() => teamApi('save', { ...snapshot, submit }));
+      const job = saveQueue.then(() => teamApi('save', { ...snapshot, submit }, passcode, keepalive));
       saveQueue = job.then(() => undefined, () => undefined);
       const status = document.getElementById('save-status');
       if (status) status.textContent = submit ? 'Submitting…' : 'Saving…';
       try {
         const result = await job;
-        if (savedRevision === revision) dirty = false;
-        if (submit) submittedEntry.submitted = !!result?.submitted;
-        if (status) status.textContent = savedRevision === revision ? (submit ? 'Submitted ✓' : 'Saved ✓') : 'New changes still saving…';
+        dirty = hasPending(shift);
+        if (submit) entry.submitted = !!result?.submitted;
+        if (mergeServerEntry(shift, result) && shift === activeShift && !typingInForm()) render();
+        const statusNow = document.getElementById('save-status');
+        if (statusNow) statusNow.textContent = dirty ? 'New changes still saving…' : (submit ? 'Submitted ✓' : 'Saved ✓');
         return true;
       } catch (error) {
+        // Put the unsaved changes back (anything typed since stays newer) so the next save retries them.
+        pending[shift] = {
+          data: { ...sent.data, ...pending[shift].data },
+          checklist: { ...sent.checklist, ...pending[shift].checklist },
+        };
+        dirty = true;
         console.error('Team Lead report save failed', error);
-        if (status) status.textContent = `Save failed: ${error.message}`;
+        const statusNow = document.getElementById('save-status');
+        if (statusNow) statusNow.textContent = `Not saved yet: ${error.message}. Your entries are still here; we'll keep trying.`;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => tlSaveDraft(false), 5000);
         return false;
       }
     }
 
+    // Every 30s, while nobody is typing here, pull in what teammates saved.
+    async function tlSyncFromServer() {
+      if (!passcode || !state.date || document.visibilityState !== 'visible') return;
+      if (hasPending('am') || hasPending('pm') || typingInForm()) return;
+      try {
+        const data = await teamApi('load');
+        if (data.date !== state.date) { location.reload(); return; }
+        const amChanged = mergeServerEntry('am', data.am);
+        const pmChanged = mergeServerEntry('pm', data.pm);
+        const closedNow = data.report_closed && !state.report_closed;
+        state.report_closed = data.report_closed;
+        if ((closedNow || (activeShift === 'am' ? amChanged : pmChanged)) && !typingInForm()) render();
+      } catch (error) {
+        console.warn('Could not refresh the shared report', error);
+      }
+    }
+
     async function tlSubmitAM() {
+      // Save anything typed here and pull in teammates' entries before checking the list.
+      if (!(await tlSaveDraft(false))) return;
+      await tlSyncFromServer();
       const checklist = currentEntry().checklist || {};
       if (OPEN_ITEMS.some(([id]) => !checklist[id])) {
         alert('Complete the opening checklist before handing off the AM shift.');
@@ -369,6 +432,9 @@
     }
 
     async function tlSubmitPM() {
+      // Save anything typed here and pull in teammates' entries before checking the list.
+      if (!(await tlSaveDraft(false))) return;
+      await tlSyncFromServer();
       const checklist = currentEntry().checklist || {};
       if (CHECK_ITEMS.some(([id]) => id !== 'tl_report_sent' && !checklist[id])) {
         alert('Complete the closing checklist before submitting the report.');
@@ -476,8 +542,13 @@
     setInterval(() => {
       if (state.date && tlTodayDate() !== state.date) location.reload();
     }, 60_000);
+    setInterval(tlSyncFromServer, 30_000);
+    const flushNow = () => { if (hasPending(activeShift)) tlSaveDraft(false, { keepalive: true }); };
+    window.addEventListener('pagehide', flushNow);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && state.date && tlTodayDate() !== state.date) location.reload();
+      if (document.visibilityState === 'hidden') { flushNow(); return; }
+      if (state.date && tlTodayDate() !== state.date) { location.reload(); return; }
+      tlSyncFromServer();
     });
   </script>
 </body>
