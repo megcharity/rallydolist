@@ -3370,6 +3370,17 @@ async function srLoadCompData() {
   } catch(e) { console.warn('SR comp load failed',e); }
 }
 
+// True when a report has any Toast numbers (covers or sales) filled in.
+function srHasToastNumbers(d) {
+  return !!d && ['pm_covers', 'pm_food_sales', 'pm_bev_sales'].some(function(k) {
+    return d[k] !== undefined && d[k] !== null && String(d[k]).trim() !== '';
+  });
+}
+// A submitted report closed by a Team Lead that's still missing its Toast numbers.
+function srNeedsToastNumbers(d) {
+  return !!d && !!d._team_lead_pm && !!d.pm_submitted && !srHasToastNumbers(d);
+}
+
 function srExtractMetrics(d) {
   if(!d) return null;
   const food  = parseFloat(d.pm_food_sales)||0;
@@ -4579,8 +4590,10 @@ async function srLoadTrailingAvg() {
       return;
     }
 
-    // Use all reports that have any data saved
-    const complete = rows.filter(function(r){ return r.data && Object.keys(r.data).length > 0; });
+    // Only nights that have Toast numbers. A night closed by a Team Lead has no
+    // covers/sales until a manager adds them the next day ("Add Toast numbers"
+    // on the past report), and counting it as $0 would drag every average down.
+    const complete = rows.filter(function(r){ return r.data && srHasToastNumbers(r.data); });
     const n = complete.length;
     if(!n) {
       metrics.innerHTML = '<div style="color:rgba(23,72,84,.35);font-size:13px;grid-column:1/-1;">Not enough data yet.</div>';
@@ -4688,6 +4701,7 @@ async function srLoadReportForDate(date, recordId) {
     const snap = r.data || {};
     srPastSnap = snap;
     srPastDate = date;
+    srPastId   = r.id;
 
     // Build a fully read-only view of this report
     const dateObj  = new Date(date+'T12:00:00');
@@ -4796,16 +4810,122 @@ async function srLoadReportForDate(date, recordId) {
         '</div>'+
         '<button onclick="srResendEmail()" id="sr-resend-btn" style="padding:6px 14px;background:#174854;color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">📧 Resend Email</button>'+
       '</div>'+
-      '<div class="sr-form" style="padding:14px;">'+amSection+pmSection+sumBlock+'<div style="height:60px;"></div></div>';
+      '<div class="sr-form" style="padding:14px;">'+srToastNumbersBanner(snap)+amSection+pmSection+sumBlock+'<div style="height:60px;"></div></div>';
   } catch(e) {
     panel.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(220,80,60,.6);">Failed to load report.<br><br><button onclick="srShowPastReports()" style="padding:8px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit;">← Pick date</button></div>';
     console.warn('srLoadReportForDate failed',e);
   }
 }
 
+// ── TOAST NUMBERS FOR TEAM-LEAD-CLOSED NIGHTS ──────────────────────────
+// Team Leads have no Toast back-end access, so a night they close is
+// submitted without covers/sales/comps. A manager adds them the next day
+// from that night's past report; the Today at Rally card reminds them.
+const SR_TOAST_FIELDS = [
+  ['pm_covers',        'Covers on Toast',                        'number'],
+  ['pm_food_sales',    'Food sales ($)',                         'number'],
+  ['pm_bev_sales',     'Beverage sales ($)',                     'number'],
+  ['pm_pos_comps_amt', 'Positive comps ($)',                     'number'],
+  ['pm_comp_notes',    'Positive comp notes',                    'textarea'],
+  ['pm_neg_comps_amt', 'Negative comps ($)',                     'number'],
+  ['pm_neg_comp_notes','Negative comp notes (include approval)', 'textarea'],
+  ['pm_peak_times',    'Peak times',                             'text'],
+];
+
+function srToastNumbersBanner(snap) {
+  if(!snap || !snap._team_lead_pm) return '';
+  const closer = calEsc((snap._team_lead_pm && snap._team_lead_pm.name) || 'a Team Lead');
+  if(srNeedsToastNumbers(snap)) {
+    return '<div style="margin:0 0 14px;padding:12px 14px;border-radius:9px;background:#fff1ed;border:1.5px solid rgba(245,134,100,.5);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'+
+      '<div><div style="font-weight:700;color:#c04020;font-size:13px;">⚠ Toast numbers needed</div>'+
+      '<div style="font-size:12px;color:rgba(23,72,84,.6);margin-top:2px;">Closed by '+closer+' (Team Lead). Add covers, sales, and comps from Toast.</div></div>'+
+      '<button onclick="srOpenToastNumbersForm()" style="padding:8px 14px;background:#174854;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">+ Add Toast numbers</button>'+
+    '</div>';
+  }
+  const by = snap.toast_numbers_added_by ? ' by '+calEsc(snap.toast_numbers_added_by) : '';
+  return '<div style="margin:0 0 14px;padding:10px 14px;border-radius:9px;background:rgba(78,98,44,.08);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">'+
+    '<div style="font-size:12px;color:#4e622c;font-weight:600;">Closed by '+closer+' (Team Lead) · Toast numbers added'+by+'</div>'+
+    '<button onclick="srOpenToastNumbersForm()" style="padding:6px 12px;background:#fff;color:#174854;border:1.5px solid rgba(23,72,84,.2);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Edit Toast numbers</button>'+
+  '</div>';
+}
+
+function srOpenToastNumbersForm() {
+  if(!srPastSnap || !srPastDate) { showToast('No report loaded'); return; }
+  const snap = srPastSnap;
+  const dayLabel = new Date(srPastDate+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});
+  const inputStyle = 'width:100%;padding:10px 12px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;font-size:16px;font-family:inherit;color:#174854;background:#fbf6ed;';
+  const fieldsHtml = SR_TOAST_FIELDS.map(function(f) {
+    const v = snap[f[0]] === undefined || snap[f[0]] === null ? '' : String(snap[f[0]]);
+    const input = f[2] === 'textarea'
+      ? '<textarea id="srtn-'+f[0]+'" rows="2" style="'+inputStyle+'resize:vertical;">'+calEsc(v)+'</textarea>'
+      : '<input id="srtn-'+f[0]+'" type="'+(f[2]==='number'?'number':'text')+'" '+(f[2]==='number'?'inputmode="decimal" step="any" min="0"':'')+' value="'+calEsc(v)+'" style="'+inputStyle+'">';
+    return '<label style="display:block;margin-bottom:10px;"><div style="font-size:12px;font-weight:700;color:#174854;margin-bottom:4px;">'+f[1]+'</div>'+input+'</label>';
+  }).join('');
+  const overlay = document.createElement('div');
+  overlay.id = 'sr-toast-numbers-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:500;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = '<div style="background:#fff;border-radius:14px;padding:22px;width:420px;max-width:94vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);">'+
+    '<div style="font-family:Cormorant Garamond,serif;font-size:22px;font-weight:500;color:#174854;">Toast numbers</div>'+
+    '<div style="font-size:12px;color:rgba(23,72,84,.55);margin:2px 0 16px;">'+dayLabel+' · from Toast</div>'+
+    fieldsHtml+
+    '<div style="display:flex;gap:8px;margin-top:6px;">'+
+      '<button id="srtn-save" onclick="srSaveToastNumbers()" style="flex:1;padding:12px;border:none;border-radius:8px;background:#174854;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Save</button>'+
+      '<button onclick="document.getElementById(\'sr-toast-numbers-overlay\').remove()" style="padding:12px 16px;border:1.5px solid rgba(23,72,84,.2);border-radius:8px;background:#fff;color:rgba(23,72,84,.6);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>'+
+    '</div></div>';
+  document.body.appendChild(overlay);
+}
+
+async function srSaveToastNumbers() {
+  const btn = document.getElementById('srtn-save');
+  const values = {};
+  SR_TOAST_FIELDS.forEach(function(f) {
+    const el = document.getElementById('srtn-'+f[0]);
+    if(el) values[f[0]] = el.value.trim();
+  });
+  if(!['pm_covers','pm_food_sales','pm_bev_sales'].some(function(k){ return values[k] !== ''; })) {
+    showToast('Enter at least covers or sales');
+    return;
+  }
+  if(btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const hdrs = { apikey: SR_KEY, Authorization: 'Bearer '+window.RALLY_SUPABASE_ANON_KEY, 'Content-Type': 'application/json' };
+    // Re-read the latest copy so nothing saved since this report was opened is lost.
+    const res = await fetch(SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+encodeURIComponent(srPastId)+'&select=id,data&limit=1', { headers: hdrs });
+    const rows = await res.json();
+    if(!res.ok || !Array.isArray(rows) || !rows[0]) throw new Error('Could not load the report');
+    const data = Object.assign({}, rows[0].data || {}, values, {
+      toast_numbers_added_by: currentManagerName(),
+      toast_numbers_added_at: new Date().toISOString(),
+    });
+    const save = await fetch(SR_SUPA+'/rest/v1/rally_shift_reports?id=eq.'+encodeURIComponent(srPastId), {
+      method: 'PATCH', headers: Object.assign({ Prefer: 'return=minimal' }, hdrs), body: JSON.stringify({ data: data }),
+    });
+    if(!save.ok) throw new Error('Save failed ('+save.status+')');
+    const overlay = document.getElementById('sr-toast-numbers-overlay');
+    if(overlay) overlay.remove();
+    showToast('Toast numbers saved ✓');
+    await srLoadReportForDate(srPastDate, srPastId);
+    if(document.getElementById('mgr-today-tiles')) renderMgrTodayCard();
+  } catch(e) {
+    console.warn('Saving Toast numbers failed', e);
+    showToast('⚠ Could not save — check connection and try again');
+    if(btn) { btn.disabled = false; btn.textContent = 'Save'; }
+  }
+}
+
+// Opens Shift Report → Past Reports on a given date (used by the Today at Rally reminder).
+async function srOpenPastReportFor(date) {
+  showMgrGroup('operations');
+  showMgrTab('shiftreport');
+  for(let i = 0; i < 40 && !document.getElementById('sr-past-btn'); i++) await new Promise(r => setTimeout(r, 100));
+  if(!srPastOpen) srTogglePastReports();
+  await srLoadReportForDate(date, null);
+}
+
 // Resend email for the currently viewed past report
 let srPastSnap = null; // stores the last loaded past report data
 let srPastDate = null;
+let srPastId = null;   // rally_shift_reports row id of the loaded past report
 
 // Email recipient options for resend
 const SR_RECIPIENTS = [
@@ -5034,6 +5154,9 @@ async function renderMgrTodayCard() {
       <div style="font-size:11px;color:rgba(23,72,84,.55);">${label}</div>
     </div>`;
 
+  // Reminder for Team-Lead-closed nights (last 14 days) still missing Toast numbers.
+  srRefreshToastReminder();
+
   // "📣 New announcement" tag next to the title — same 24h rule as the tile's NEW badge.
   const newAnnTag = document.getElementById('mgr-today-new-ann');
   if(newAnnTag) {
@@ -5047,6 +5170,27 @@ async function renderMgrTodayCard() {
     tile('📣', unreadAnn, 'Announcements', "openAnnouncementViewModal()", hasNewAnn ? 'NEW' : '') +
     tile('✅', incompleteCl, 'Checklists', "showMgrGroup('operations');showMgrTab('checklists')") +
     tile('🎂', birthdayValue, calEsc(birthdayLabel), '');
+}
+async function srRefreshToastReminder() {
+  const tag = document.getElementById('mgr-today-toast');
+  if(!tag) return;
+  try {
+    const since = new Date(); since.setDate(since.getDate() - 14);
+    const sinceStr = since.getFullYear()+'-'+String(since.getMonth()+1).padStart(2,'0')+'-'+String(since.getDate()).padStart(2,'0');
+    const res = await fetch(SR_SUPA+'/rest/v1/rally_shift_reports?date=gte.'+sinceStr+'&date=lt.'+getTodayStr()+'&select=date,data&order=date.desc',
+      { headers: { apikey: SR_KEY, Authorization: 'Bearer '+window.RALLY_SUPABASE_ANON_KEY } });
+    const rows = await res.json();
+    const missing = (Array.isArray(rows) ? rows : []).filter(r => srNeedsToastNumbers(r.data)).map(r => r.date);
+    const dates = [...new Set(missing)];
+    if(!dates.length) { tag.hidden = true; return; }
+    const oldest = dates[dates.length - 1];
+    const label = d => new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short', month:'numeric', day:'numeric'});
+    tag.textContent = dates.length === 1 ? `⚠ ${label(oldest)} needs Toast numbers` : `⚠ ${dates.length} nights need Toast numbers`;
+    tag.onclick = () => srOpenPastReportFor(oldest);
+    tag.hidden = false;
+  } catch(e) {
+    console.warn('Toast-number reminder check failed', e);
+  }
 }
 function goBackFromMgr(){
   const fab=document.getElementById('fab-add');if(fab)fab.classList.remove('visible');
@@ -8930,6 +9074,7 @@ function renderCalendarHub(targetId, merged) {
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <div style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;color:#174854;">Today at Rally</div>
           <span id="mgr-today-new-ann" hidden onclick="openAnnouncementViewModal()" style="cursor:pointer;background:#f58664;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;padding:4px 10px;border-radius:12px;">📣 New announcement</span>
+          <span id="mgr-today-toast" hidden style="cursor:pointer;background:#fff1ed;color:#c04020;border:1.5px solid rgba(245,134,100,.6);font-size:11px;font-weight:800;letter-spacing:.02em;padding:3px 10px;border-radius:12px;"></span>
         </div>
         <div style="font-size:11px;color:rgba(23,72,84,.45);">Manager overview</div>
       </div>

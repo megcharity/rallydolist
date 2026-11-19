@@ -11,6 +11,10 @@
     body{margin:0;background:var(--cream);color:var(--teal);font:14px 'DM Sans',sans-serif}
     button,input,textarea,select{font:inherit}
     button{cursor:pointer}
+    /* iPad/iPhone: Safari zooms the page when a box with text under 16px is tapped,
+       which made the form jump around. Also skip the double-tap-zoom delay on taps. */
+    input,textarea,select{font-size:16px}
+    button,label,input,select,textarea,.check-item{touch-action:manipulation}
     .wrap{max-width:900px;margin:0 auto;padding:18px 16px 70px}
     .top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 18px;border-bottom:1px solid var(--border)}
     h1{font:500 27px 'Cormorant Garamond',serif;margin:0}
@@ -237,7 +241,10 @@
         content.innerHTML = `<div class="notice">A manager must assign you to close before you can open the PM report. You may still complete an AM handoff.</div><div class="shift-tabs"><button onclick="tlSelectShift('am')">AM</button><button class="active">PM</button></div><div class="actions"><button class="secondary" onclick="location.reload()">Refresh assignment</button></div>`;
         return;
       }
+      // Keep the scroll position when the form redraws, so the page doesn't jump.
+      const scrollY = window.scrollY;
       content.innerHTML = renderForm();
+      window.scrollTo(0, scrollY);
     }
 
     async function teamApi(action, body = {}, credential = passcode, keepalive = false) {

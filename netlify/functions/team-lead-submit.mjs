@@ -33,11 +33,6 @@ const PM_FIELDS = [
   ['pm_shift_start', 'Shift start'],
   ['pm_shift_end', 'Shift end'],
   ['pm_court_res', 'Court reservations'],
-  ['pm_covers', 'Covers on Toast'],
-  ['pm_food_sales', 'Food sales'],
-  ['pm_bev_sales', 'Beverage sales'],
-  ['pm_pos_comps_amt', 'Positive comps'],
-  ['pm_neg_comps_amt', 'Negative comps'],
   ['pm_comp_notes', 'Positive comp notes'],
   ['pm_neg_comp_notes', 'Negative comp notes'],
   ['pm_eighty_food', "86'd food"],
@@ -140,18 +135,10 @@ function reportHtml(data, date, lists = { opening: DEFAULT_OPENING, closing: DEF
   const day = new Date(`${date}T12:00:00-04:00`).toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York',
   });
-  const food = Number.parseFloat(data.pm_food_sales) || 0;
-  const beverage = Number.parseFloat(data.pm_bev_sales) || 0;
-  const covers = Number.parseFloat(data.pm_covers) || 0;
+  // Team Leads have no Toast back-end access, so no covers/sales/comps here.
   const courts = (Number.parseInt(data.am_court_res, 10) || 0) + (Number.parseInt(data.pm_court_res, 10) || 0);
-  const total = food + beverage;
   const stats = [
-    ['Courts', courts || '—'],
-    ['Covers', covers || '—'],
-    ['Food', food ? `$${food.toFixed(2)}` : '—'],
-    ['Beverage', beverage ? `$${beverage.toFixed(2)}` : '—'],
-    ['Total', total ? `$${total.toFixed(2)}` : '—'],
-    ['PPA', covers ? `$${(total / covers).toFixed(2)}` : '—'],
+    ['Court reservations', courts || '—'],
   ];
   const openingRows = data.team_lead_opening_checklist
     ? lists.opening.map(({ id, text: label }) =>
