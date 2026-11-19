@@ -680,6 +680,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── Inventory ───────────────────────────────────────────────────────── */
 .inv-wrap{padding:16px 16px 80px;}
+.inv-group-tabs{display:flex;gap:6px;margin:0 0 14px;border-bottom:1.5px solid rgba(23,72,84,.12);}
+.inv-group-tab{padding:9px 18px;border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:rgba(23,72,84,.5);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1.5px;touch-action:manipulation;}
+.inv-group-tab.on{color:#174854;border-bottom-color:#174854;}
 .inv-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(248,154,28,.1);border:1.5px solid rgba(248,154,28,.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;cursor:pointer;transition:background .15s;}
 .inv-banner:hover{background:rgba(248,154,28,.17);}
 .inv-banner.due{background:rgba(245,134,100,.12);border-color:rgba(245,134,100,.45);}
@@ -927,10 +930,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     </div>
     <div class="fg full"><label>Name</label><input id="if-name" type="text" placeholder="e.g. Hendrick's Gin"/></div>
     <div class="fg full"><label>Section</label>
-      <select id="if-subtab">
+      <select id="if-subtab" onchange="invFormSectionChanged()">
         <option value="bar">Liquor</option>
         <option value="beerwine">Beer &amp; Wine</option>
         <option value="garnish">Garnishes &amp; Misc</option>
+        <option value="cafe">Café</option>
+        <option value="paper">Paper Goods</option>
       </select>
     </div>
     <div class="fg full"><label>Category</label><input id="if-category" type="text" list="if-category-list" placeholder="e.g. House Gin"/><datalist id="if-category-list"></datalist></div>
@@ -942,18 +947,21 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
           <option value="Low">Low</option>
         </select>
       </div>
-      <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="0" step="1" value="1"/></div>
+      <div class="fg"><label id="if-par-label">Starting Par</label><input id="if-par" type="number" min="0" step="any" value="1"/></div>
     </div>
-    <div class="fg full"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
-    <div class="fg full"><label>Case Size <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — e.g. 24 for a case of 24 cans/bottles)</span></label><input id="if-case-size" type="number" min="1" step="1" placeholder="e.g. 24" oninput="invCaseSizeChanged()"/></div>
-    <div class="fg full"><label>Keg Size <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — set this if it's a draft keg)</span></label>
+    <div class="fg full" id="if-unit-row" style="display:none;"><label>Count unit <span style="font-weight:400;color:rgba(23,72,84,.4);">(what you count and order in, e.g. cs for a case)</span></label>
+      <select id="if-unit" onchange="invCaseSizeChanged()"></select>
+    </div>
+    <div class="fg full if-bar-only"><label style="display:flex;align-items:center;gap:8px;font-weight:600;color:var(--teal);"><input type="checkbox" id="if-batched" style="width:16px;height:16px;"/> Batched item</label></div>
+    <div class="fg full if-bar-only"><label>Case Size <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — e.g. 24 for a case of 24 cans/bottles)</span></label><input id="if-case-size" type="number" min="1" step="1" placeholder="e.g. 24" oninput="invCaseSizeChanged()"/></div>
+    <div class="fg full if-bar-only"><label>Keg Size <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — set this if it's a draft keg)</span></label>
       <select id="if-keg-size" onchange="invCaseSizeChanged()">
         <option value="">— Not a keg —</option>
         <option value="1/6 Barrel Keg">1/6 Barrel</option>
         <option value="1/2 Barrel Keg">1/2 Barrel</option>
       </select>
     </div>
-    <div class="fg full"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — only if this item doesn't have a Case Size or Keg Size above)</span></label><input id="if-item-code" type="text"/></div>
+    <div class="fg full if-bar-only"><label>Item Code <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — only if this item doesn't have a Case Size or Keg Size above)</span></label><input id="if-item-code" type="text"/></div>
     <div class="fg full"><label>Vendor <span style="font-weight:400;color:rgba(23,72,84,.4);">(optional — who you order this from)</span></label><input id="if-vendor" type="text" list="if-vendor-list" placeholder="e.g. ABC"/><datalist id="if-vendor-list"></datalist></div>
     <div class="modal-actions">
       <button class="modal-btn primary" onclick="saveInvItem()">Save</button>
@@ -9631,7 +9639,7 @@ let invCounts = [];       // rally_inventory_counts — every item's full weekly
 let invReviewState = {};  // { [sub_tab]: { sub_tab, last_reviewed_at } }
 let invView = 'bar';       // which section the Par Review modal / Add Item form currently targets
 let invStatusOn = { needsCount: false, flagged: false, paused: false }; // all off shows everything; each toggle narrows (OR'd together — an item can be more than one)
-let invSectionsOn = { bar: true, beerwine: true, garnish: true }; // independent toggles — all on shows everything, deselecting one hides just that section
+let invSectionsOn = { bar: true, beerwine: true, garnish: true, cafe: true, paper: true }; // independent toggles — all on shows everything, deselecting one hides just that section
 let invWeekEnding = null; // YYYY-MM-DD currently selected in the count-entry column
 let invExportStart = null; // YYYY-MM-DD — persists across re-renders once the manager picks a range
 let invExportEnd = null;
@@ -9697,8 +9705,33 @@ async function loadInventoryReviewState() {
 // table (renderInvBeverages) with invSectionsOn just hiding/showing rows —
 // invView itself only matters for the Par Review modal and the Add Item
 // form's default Section, each of which sets it explicitly before use.
-const INV_SUBTABS = ['bar', 'beerwine', 'garnish'];
-const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine', garnish: 'Garnishes & Misc' };
+// Inventory is split into three main tabs (groups). Each group has its own
+// count sheet, Save/Submit Order (and order email), and par reviews.
+// INV_SUBTABS always holds the CURRENT group's sections, so everything that
+// reads it (rows, banners, order list, Add Item default) stays scoped to the
+// tab being viewed — a café order can never pick up bar rows or vice versa.
+const INV_GROUPS = {
+  bar:   { label: 'Bar',         subtabs: ['bar', 'beerwine', 'garnish'], orderTitle: 'Beverage' },
+  cafe:  { label: 'Café',        subtabs: ['cafe'],                       orderTitle: 'Café' },
+  paper: { label: 'Paper Goods', subtabs: ['paper'],                      orderTitle: 'Paper Goods' },
+};
+let invGroup = 'bar';
+let INV_SUBTABS = INV_GROUPS.bar.subtabs;
+const INV_SUBTAB_LABEL = { bar: 'Liquor', beerwine: 'Beer & Wine', garnish: 'Garnishes & Misc', cafe: 'Café', paper: 'Paper Goods' };
+// Café and Paper Goods are counted in the unit they're ordered in (case,
+// pack, sleeve...), stored in item_code. Pars can be fractional (.25 cs).
+const INV_UNIT_SUBTABS = ['cafe', 'paper'];
+const INV_UNITS = ['cs', 'pack', 'sleeve', 'box', 'bag', 'roll', 'ea', 'bottle', 'jar', 'can', 'carton', 'jug', 'gal', 'lb', 'stack', 'shaker', 'bunch', 'tea bags'];
+function invIsUnitTracked(item) { return !!item && INV_UNIT_SUBTABS.includes(item.sub_tab); }
+function invUnit(item) { return invIsUnitTracked(item) ? ((item.item_code || '').trim() || 'ea') : ''; }
+function invSetGroup(group) {
+  if(!INV_GROUPS[group] || group === invGroup) return;
+  invFlushAutosave();
+  invGroup = group;
+  INV_SUBTABS = INV_GROUPS[group].subtabs;
+  try { localStorage.setItem('rally-inv-group', group); } catch(e) {}
+  renderInvBeverages();
+}
 const INV_KEG_SIZES = ['1/6 Barrel Keg', '1/2 Barrel Keg'];
 // Categories otherwise sort alphabetically within their section — fine
 // normally, but a newly-added category like "Juices, Garnishes" landing
@@ -9892,7 +9925,10 @@ function invRecommendedPar(item) {
   const stats = invRollingStats4wk(item.id);
   if(stats === null) return null;
   const z = INV_SERVICE_Z[item.criticality] || INV_SERVICE_Z.Medium;
-  const rec = Math.ceil(stats.avg * INV_COVERAGE_WEEKS + z * stats.stdev * Math.sqrt(INV_COVERAGE_WEEKS));
+  const raw = stats.avg * INV_COVERAGE_WEEKS + z * stats.stdev * Math.sqrt(INV_COVERAGE_WEEKS);
+  // Café & Paper Goods pars can be partial cases — round up to the nearest quarter.
+  if(invIsUnitTracked(item)) return Math.max(0.25, Math.ceil(raw * 4) / 4);
+  const rec = Math.ceil(raw);
   // Never recommend down to 0, regardless of criticality or how little
   // usage has been observed — if it's worth tracking at all, it's worth
   // keeping at least 1 on hand. (A par of 0 effectively means "don't
@@ -9952,9 +9988,9 @@ function invSparkline(itemId) {
 // (you swap a whole keg, never reorder a fraction). Everything else
 // (Bar/liquor, wine sold loose by the bottle) keeps the original single
 // current-count + order-qty model.
-function invIsCaseTracked(item) { return !!(item && item.item_code && /^x\d+$/.test(item.item_code.trim())); }
+function invIsCaseTracked(item) { return !!(item && !invIsUnitTracked(item) && item.item_code && /^x\d+$/.test(item.item_code.trim())); }
 function invPackSize(item) { const m = item && item.item_code && item.item_code.trim().match(/^x(\d+)$/); return m ? parseInt(m[1], 10) : 1; }
-function invIsKegTracked(item) { return !!(item && item.item_code && /keg/i.test(item.item_code)); }
+function invIsKegTracked(item) { return !!(item && !invIsUnitTracked(item) && item.item_code && /keg/i.test(item.item_code)); }
 // The shared "does this need an order yet" rule for every par-tracked item
 // (kegs, bottles, cases alike): off by less than half a unit from par,
 // it'll make it through to next week, so don't order yet; half a unit
@@ -9969,6 +10005,13 @@ function invIsKegTracked(item) { return !!(item && item.item_code && /keg/i.test
 // it only ever checked against a hardcoded par of 1).
 function invParOrderQty(item, cnt) {
   if(!cnt || typeof cnt.current_count !== 'number') return 0;
+  // Café & Paper Goods: any amount below par orders enough whole units to
+  // get back to it — a .25 cs par is never half a unit short, so the
+  // half-unit rule below would never suggest an order for it.
+  if(invIsUnitTracked(item)) {
+    const short = (item.par || 0) - cnt.current_count;
+    return short > 0.0001 ? Math.ceil(short - 0.0001) : 0;
+  }
   const par = (item && item.par) || 1;
   const deficit = par - cnt.current_count;
   if(deficit < 0.5) return 0;
@@ -9978,9 +10021,17 @@ function invParOrderQty(item, cnt) {
 function invActiveItems() { return invItems.filter(i => i.active && i.sub_tab === invView); }
 function invCountFor(itemId, weekEnding) { return invCounts.find(c => c.item_id === itemId && c.week_ending === weekEnding); }
 
+// How many different count dates a section has (used to hold off the first
+// par review on a brand-new section until there's real usage to go on).
+function invCountDates(subTab) {
+  const ids = new Set(invItems.filter(i => i.sub_tab === subTab).map(i => i.id));
+  return new Set(invCounts.filter(c => ids.has(c.item_id)).map(c => c.week_ending)).size;
+}
 function invReviewDue(subTab = invView) {
   const state = invReviewState[subTab];
-  if(!state) return true;
+  // Never reviewed: the original bar sections were always "due"; a new
+  // section (Café, Paper Goods) waits for 4 weeks of counts first.
+  if(!state) return INV_UNIT_SUBTABS.includes(subTab) ? invCountDates(subTab) >= 4 : true;
   const last = new Date(state.last_reviewed_at + 'T00:00:00');
   const due = new Date(last.getTime() + 28*86400000);
   return new Date() >= due;
@@ -10001,6 +10052,10 @@ function invDaysUntilReview(subTab = invView) {
 // reload, which looked exactly like "my entries are gone." This refetches
 // fresh data every time the tab is opened, then renders.
 async function invOpenTab() {
+  try {
+    const saved = localStorage.getItem('rally-inv-group');
+    if(saved && INV_GROUPS[saved]) { invGroup = saved; INV_SUBTABS = INV_GROUPS[saved].subtabs; }
+  } catch(e) {}
   await Promise.all([loadInventoryItems(), loadInventoryCounts(), loadInventoryReviewState()]);
   renderInvBeverages();
 }
@@ -10039,7 +10094,7 @@ function renderInvBeverages() {
       <div class="inv-banner-sub">Tap to review current vs. recommended pars</div></div>
     </div>`).join('') + (notDueTabs.length ? `<div style="font-size:12px;color:rgba(23,72,84,.55);margin:0 0 12px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;">
       <span>🔔 Next par reviews:</span>
-      ${notDueTabs.map(st => { const d = invDaysUntilReview(st); return `<a href="#" onclick="openInvReviewModal('${st}');return false;" style="color:#174854;font-weight:600;text-decoration:underline;text-underline-offset:2px;">${INV_SUBTAB_LABEL[st]} in ${d} day${d===1?'':'s'}</a>`; }).join('')}
+      ${notDueTabs.map(st => { const d = invDaysUntilReview(st); const when = invReviewState[st] ? `in ${d} day${d===1?'':'s'}` : `after 4 weeks of counts (${invCountDates(st)} so far)`; return `<a href="#" onclick="openInvReviewModal('${st}');return false;" style="color:#174854;font-weight:600;text-decoration:underline;text-underline-offset:2px;">${INV_SUBTAB_LABEL[st]} ${when}</a>`; }).join('')}
     </div>` : '');
 
   const items = invAllBeverageItems();
@@ -10049,7 +10104,7 @@ function renderInvBeverages() {
   INV_SUBTABS.forEach(st => {
     const stItems = items.filter(it => it.sub_tab === st);
     if(!stItems.length) return;
-    rows += `<tr class="inv-section-head"><td colspan="9">${INV_SUBTAB_LABEL[st]}</td></tr>`;
+    if(INV_SUBTABS.length > 1) rows += `<tr class="inv-section-head"><td colspan="9">${INV_SUBTAB_LABEL[st]}</td></tr>`;
     const cats = {};
     stItems.forEach(it => { (cats[it.category || 'Uncategorized'] = cats[it.category || 'Uncategorized'] || []).push(it); });
     Object.keys(cats).sort((a, b) => {
@@ -10065,6 +10120,8 @@ function renderInvBeverages() {
         const cnt = invCountFor(it.id, invWeekEnding);
         const caseTracked = invIsCaseTracked(it);
         const kegTracked = invIsKegTracked(it);
+        const unitTracked = invIsUnitTracked(it);
+        const unit = invUnit(it);
         const isPaused = !!it.paused;
         const curVal = cnt && typeof cnt.current_count === 'number' ? cnt.current_count : '';
         const secVal = cnt && typeof cnt.secondary_count === 'number' ? cnt.secondary_count : '';
@@ -10072,7 +10129,7 @@ function renderInvBeverages() {
         const needsCount = curVal === '';
         const pausedBadge = isPaused ? `<span class="inv-paused-badge" title="Paused — won't show up to order until resumed">⏸ Paused for season</span>` : '';
         const flagsHtml = flags.map(f => `<span class="inv-flagline">⚑ ${f}</span>`).join('');
-        const parLabel = caseTracked ? `${it.par} cs` : it.par;
+        const parLabel = unitTracked ? `${it.par} ${calEsc(unit)}` : caseTracked ? `${it.par} cs` : it.par;
         const dash = '<span style="color:rgba(23,72,84,.25);">—</span>';
         // Case-packed: Par is in cases, so both an individual-can count AND an
         // editable case-order suggestion are shown. Kegs: a single fraction-
@@ -10088,7 +10145,9 @@ function renderInvBeverages() {
         // using it. Paused items (seasonal, not currently ordered) skip
         // all of that and just show a flat "Paused" note instead — still
         // countable, just excluded from every order suggestion.
-        const unitsCell = caseTracked
+        const unitsCell = unitTracked
+          ? `<span style="color:rgba(23,72,84,.55);">${calEsc(unit)}</span>`
+          : caseTracked
           ? `<input class="inv-units-input" type="number" step="1" min="0" value="${secVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
           : (kegTracked ? dash : `<span class="inv-set-case-link" title="Set a Case Size on this item to track individual cans/bottles separately" onclick="openInvItemForm(${it.id})">+ Set case size</span>`);
         const kegOrderQty = (kegTracked && !isPaused) ? invParOrderQty(it, cnt) : 0;
@@ -10096,6 +10155,8 @@ function renderInvBeverages() {
           ? `<span class="inv-paused-note" title="Paused for the season — excluded from the order list">Paused</span>`
           : caseTracked
             ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
+            : unitTracked
+              ? `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`
             : kegTracked
               ? (curVal === '' ? dash : (kegOrderQty > 0 ? `<span style="color:#c0491f;font-weight:700;" title="At or below half a keg short of par ${it.par} — order ${kegOrderQty}">Order ${kegOrderQty}</span>` : `<span style="color:rgba(23,72,84,.35);" title="Within half a keg of par — no order needed yet">0</span>`))
               : `<input class="inv-order-input" id="inv-order-${it.id}" type="number" step="0.1" min="0" value="${ordVal}" oninput="invScheduleAutosave()" onblur="invFlushAutosave()"/>`;
@@ -10107,7 +10168,7 @@ function renderInvBeverages() {
           <td><span class="inv-crit ${it.criticality}">${it.criticality}</span></td>
           <td>${vendorCell}</td>
           <td class="num"><span class="inv-par-val" title="Click to override the par" onclick="openInvItemForm(${it.id})">${parLabel}</span></td>
-          <td class="num"><input class="inv-count-input" type="number" step="${caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})" onblur="invFlushAutosave()"/></td>
+          <td class="num"><input class="inv-count-input" type="number" step="${unitTracked?'any':caseTracked?'1':'0.1'}" min="0" value="${curVal}" oninput="invOnCountInput(${it.id})" onblur="invFlushAutosave()"/></td>
           <td class="num">${unitsCell}</td>
           <td class="num">${orderCell}</td>
           <td>${invSparkline(it.id)}</td>
@@ -10121,22 +10182,25 @@ function renderInvBeverages() {
     });
   });
 
-  const histDates = invCounts.map(c => c.week_ending).sort();
+  const groupItemIds = new Set(invItems.filter(i => INV_SUBTABS.includes(i.sub_tab)).map(i => i.id));
+  const histDates = invCounts.filter(c => groupItemIds.has(c.item_id)).map(c => c.week_ending).sort();
+  if(!rows) rows = `<tr><td colspan="9" style="padding:28px 12px;text-align:center;color:rgba(23,72,84,.45);">No ${INV_GROUPS[invGroup].label} items yet — tap <strong>+ Add Item</strong> to start the list.</td></tr>`;
+  const groupTabs = `<div class="inv-group-tabs">${Object.keys(INV_GROUPS).map(g =>
+    `<button class="inv-group-tab${g === invGroup ? ' on' : ''}" onclick="invSetGroup('${g}')">${INV_GROUPS[g].label}</button>`).join('')}</div>`;
   const histMin = histDates[0] || getTodayStr();
   const histMax = histDates[histDates.length-1] || getTodayStr();
   if(invExportStart === null) invExportStart = histMin;
   if(invExportEnd === null) invExportEnd = histMax;
 
   body.innerHTML = `<div class="inv-wrap">
+    ${groupTabs}
     ${bannerHtml}
     <div class="inv-controls">
       <div class="inv-controls-left">
         <input class="inv-week-input" type="date" id="inv-week-input" value="${invWeekEnding}" onchange="invChangeWeek(this.value)"/>
         ${invWeekEnding !== getTodayStr() ? `<span style="font-size:11px;font-weight:700;color:#b87000;background:rgba(248,154,28,.15);padding:4px 9px;border-radius:999px;white-space:nowrap;">Viewing ${fmtCalDate(invWeekEnding)}, not today</span>` : ''}
         ${(histDates.length && histMax !== invWeekEnding) ? `<span style="font-size:11px;font-weight:600;color:var(--navy);text-decoration:underline;cursor:pointer;white-space:nowrap;" onclick="invChangeWeek('${histMax}')">Last counted ${fmtCalDate(histMax)} — view</span>` : ''}
-        <button class="inv-filter-btn ${invSectionsOn.bar?'on':''}" data-catfilter="bar" onclick="invToggleSection('bar')">Liquor</button>
-        <button class="inv-filter-btn ${invSectionsOn.beerwine?'on':''}" data-catfilter="beerwine" onclick="invToggleSection('beerwine')">Beer &amp; Wine</button>
-        <button class="inv-filter-btn ${invSectionsOn.garnish?'on':''}" data-catfilter="garnish" onclick="invToggleSection('garnish')">Garnishes &amp; Misc</button>
+        ${INV_SUBTABS.length > 1 ? INV_SUBTABS.map(st => `<button class="inv-filter-btn ${invSectionsOn[st]?'on':''}" data-catfilter="${st}" onclick="invToggleSection('${st}')">${calEsc(INV_SUBTAB_LABEL[st])}</button>`).join('') : ''}
         <button class="inv-filter-btn ${invStatusOn.needsCount?'on':''}" data-filter="needsCount" onclick="invToggleStatus('needsCount')">Needs Count</button>
         <button class="inv-filter-btn ${invStatusOn.flagged?'on':''}" data-filter="flagged" onclick="invToggleStatus('flagged')">Flagged</button>
         <button class="inv-filter-btn ${invStatusOn.paused?'on':''}" data-filter="paused" onclick="invToggleStatus('paused')">Paused</button>
@@ -10153,7 +10217,7 @@ function renderInvBeverages() {
       <table class="inv-table">
         <thead><tr>
           <th>Product</th><th>Criticality</th><th>Vendor</th><th class="num">Par</th>
-          <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">Individual Cans</th><th class="num">Order</th>
+          <th class="num">${fmtCalDate(invWeekEnding)}</th><th class="num">${invGroup === 'bar' ? 'Individual Cans' : 'Unit'}</th><th class="num">Order</th>
           <th>Trend</th><th></th>
         </tr></thead>
         <tbody>${rows}</tbody>
@@ -10371,14 +10435,46 @@ function openInvItemForm(id) {
   // than the old 2-way either/or; falls back to 'bar' when 0, 2, or 3 are on.
   const onSections = INV_SUBTABS.filter(st => invSectionsOn[st]);
   document.getElementById('if-subtab').value = item ? item.sub_tab
-    : (onSections.length === 1 ? onSections[0] : 'bar');
-  invCaseSizeChanged();
+    : (INV_SUBTABS.length === 1 ? INV_SUBTABS[0] : onSections.length === 1 ? onSections[0] : INV_SUBTABS[0]);
+  const unitSel = document.getElementById('if-unit');
+  const curUnit = item && invIsUnitTracked(item) ? invUnit(item) : 'cs';
+  unitSel.innerHTML = [...new Set([...INV_UNITS, curUnit])].map(u => `<option value="${calEsc(u)}"${u === curUnit ? ' selected' : ''}>${calEsc(u)}</option>`).join('');
+  if(item && invIsUnitTracked(item)) {
+    // item_code holds the unit for café/paper, not a case size or code
+    document.getElementById('if-case-size').value = '';
+    document.getElementById('if-keg-size').value = '';
+    document.getElementById('if-item-code').value = '';
+  }
+  invFormSectionChanged();
   document.getElementById('inv-item-form-modal').style.display = 'flex';
 }
 function invCaseSizeChanged() {
-  const hasCaseSize = !!document.getElementById('if-case-size').value.trim();
   const isNew = !_invItemFormEditId;
+  if(INV_UNIT_SUBTABS.includes(document.getElementById('if-subtab').value)) {
+    const unit = document.getElementById('if-unit').value || 'ea';
+    document.getElementById('if-par-label').textContent = `${isNew ? 'Starting Par' : 'Par'} (${unit})`;
+    return;
+  }
+  const hasCaseSize = !!document.getElementById('if-case-size').value.trim();
   document.getElementById('if-par-label').textContent = hasCaseSize ? (isNew?'Starting Case Par':'Case Par') : (isNew?'Starting Par':'Par');
+}
+// Café & Paper Goods use a count unit instead of the bar-only case/keg/code fields.
+const INV_FORM_EXAMPLES = {
+  bar:      { name: "e.g. Hendrick's Gin",     category: 'e.g. House Gin' },
+  beerwine: { name: 'e.g. Michelob Ultra',     category: 'e.g. Canned/Bottled Beer' },
+  garnish:  { name: 'e.g. Limes',              category: 'e.g. Juices, Garnishes' },
+  cafe:     { name: 'e.g. Oat Milk',           category: 'e.g. Milk & Dairy' },
+  paper:    { name: 'e.g. 12 oz Hot Cups',     category: 'e.g. Rally Dry Storage (where it lives)' },
+};
+function invFormSectionChanged() {
+  const sectionVal = document.getElementById('if-subtab').value;
+  const ex = INV_FORM_EXAMPLES[sectionVal] || INV_FORM_EXAMPLES.bar;
+  document.getElementById('if-name').placeholder = ex.name;
+  document.getElementById('if-category').placeholder = ex.category;
+  const unitSection = INV_UNIT_SUBTABS.includes(sectionVal);
+  document.getElementById('if-unit-row').style.display = unitSection ? '' : 'none';
+  document.querySelectorAll('#inv-item-form-modal .if-bar-only').forEach(el => { el.style.display = unitSection ? 'none' : ''; });
+  invCaseSizeChanged();
 }
 function closeInvItemForm(ev) { if(ev && ev.target.id !== 'inv-item-form-modal') return; document.getElementById('inv-item-form-modal').style.display = 'none'; }
 async function saveInvItem() {
@@ -10388,14 +10484,17 @@ async function saveInvItem() {
   const caseSize = document.getElementById('if-case-size').value.trim();
   const kegSize = document.getElementById('if-keg-size').value;
   const itemCode = document.getElementById('if-item-code').value.trim();
+  const subTab = document.getElementById('if-subtab').value;
+  const unitSection = INV_UNIT_SUBTABS.includes(subTab);
   const payload = {
     name,
-    sub_tab: document.getElementById('if-subtab').value,
+    sub_tab: subTab,
     category: document.getElementById('if-category').value.trim() || null,
     criticality: document.getElementById('if-criticality').value,
     par: parseFloat(document.getElementById('if-par').value) || 0,
-    batched: document.getElementById('if-batched').checked,
-    item_code: caseSize ? `x${parseInt(caseSize,10)}` : (kegSize || itemCode || null),
+    batched: unitSection ? false : document.getElementById('if-batched').checked,
+    item_code: unitSection ? (document.getElementById('if-unit').value || 'ea')
+      : caseSize ? `x${parseInt(caseSize,10)}` : (kegSize || itemCode || null),
     vendor: document.getElementById('if-vendor').value.trim() || null,
   };
   try {
@@ -10523,7 +10622,7 @@ function openInvReviewModal(subTab) {
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
         <span style="font-size:12px;color:rgba(23,72,84,.5);">Current: ${it.par}</span>
         ${deltaHtml}
-        <input class="inv-count-input" id="inv-rev-par-${it.id}" type="number" min="0" step="1" value="${rec===null?it.par:rec}" style="width:56px;"/>
+        <input class="inv-count-input" id="inv-rev-par-${it.id}" type="number" min="0" step="${invIsUnitTracked(it)?'any':'1'}" value="${rec===null?it.par:rec}" style="width:56px;"/>${invIsUnitTracked(it) ? `<span style="font-size:12px;color:rgba(23,72,84,.5);">${calEsc(invUnit(it))}</span>` : ''}
       </div>
     </div>`;
   }).join('') || '<div style="padding:24px;text-align:center;color:rgba(23,72,84,.4);">No active items to review.</div>';
@@ -10676,6 +10775,7 @@ function invBuildOrderGroups(weekEnding) {
     const cnt = invCountFor(it.id, weekEnding);
     const caseTracked = invIsCaseTracked(it);
     const kegTracked = invIsKegTracked(it);
+    const unit = invUnit(it);
     let orderQty;
     if(kegTracked) {
       orderQty = invParOrderQty(it, cnt);
@@ -10692,9 +10792,11 @@ function invBuildOrderGroups(weekEnding) {
       // & Wine (e.g. "x24", "50L keg"), not an order code, so it's left
       // out there rather than showing something misleading.
       abcCode: it.sub_tab === 'bar' ? (it.item_code || null) : null,
-      orderLabel: caseTracked ? `${orderQty} cs` : kegTracked ? `${orderQty} keg` : `${orderQty} btl`,
-      parLabel: caseTracked ? `${it.par} cs` : String(it.par),
-      onHandLabel: caseTracked
+      orderLabel: unit ? `${orderQty} ${unit}` : caseTracked ? `${orderQty} cs` : kegTracked ? `${orderQty} keg` : `${orderQty} btl`,
+      parLabel: unit ? `${it.par} ${unit}` : caseTracked ? `${it.par} cs` : String(it.par),
+      onHandLabel: unit
+        ? (typeof cnt.current_count === 'number' ? `${cnt.current_count} ${unit}` : '—')
+        : caseTracked
         ? `${cnt.current_count || 0} cs${typeof cnt.secondary_count === 'number' ? ', ' + cnt.secondary_count + ' loose' : ''}`
         : (typeof cnt.current_count === 'number' ? String(cnt.current_count) : '—'),
     });
@@ -10711,11 +10813,12 @@ function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
   // a single table, not one separate table per section.
   const allRows = INV_SUBTABS.reduce((acc, st) => acc.concat(sections[st]), []);
   const totalItems = allRows.length;
+  const showAbc = invGroup === 'bar';
   const rowHtml = r => `
     <tr>
       <td style="padding:8px 0;font-size:13px;color:#174854;border-bottom:1px solid #e8e0d4;">${calEsc(r.name)}</td>
       <td style="padding:8px 0;font-size:11.5px;color:#999;border-bottom:1px solid #e8e0d4;">${calEsc(r.section)}</td>
-      <td style="padding:8px 0;font-size:12px;color:#999;border-bottom:1px solid #e8e0d4;">${r.abcCode ? calEsc(r.abcCode) : '—'}</td>
+      ${showAbc ? `<td style="padding:8px 0;font-size:12px;color:#999;border-bottom:1px solid #e8e0d4;">${r.abcCode ? calEsc(r.abcCode) : '—'}</td>` : ''}
       <td style="padding:8px 0;font-size:12.5px;color:${r.vendor ? '#4e622c' : '#c0491f'};border-bottom:1px solid #e8e0d4;">${r.vendor ? calEsc(r.vendor) : '⚠ not set'}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.parLabel)}</td>
       <td style="padding:8px 0;font-size:13px;color:#999;border-bottom:1px solid #e8e0d4;text-align:right;">${calEsc(r.onHandLabel)}</td>
@@ -10727,7 +10830,7 @@ function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
       <tr>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Item</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Section</th>
-        <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">ABC Code</th>
+        ${showAbc ? '<th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">ABC Code</th>' : ''}
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:left;padding-bottom:6px;">Vendor</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">Par</th>
         <th style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#999;text-align:right;padding-bottom:6px;">On Hand</th>
@@ -10746,7 +10849,7 @@ function invBuildOrderEmailHTML(weekEnding, sections, submittedBy) {
 
   <tr><td style="background:#174854;padding:16px 32px;text-align:center;">
     <div style="font-size:10px;letter-spacing:0.16em;color:rgba(251,246,237,0.5);text-transform:uppercase;margin-bottom:4px;">Rally · Inventory</div>
-    <div style="font-size:17px;font-weight:600;color:#fbf6ed;margin-bottom:2px;">Weekly Order List</div>
+    <div style="font-size:17px;font-weight:600;color:#fbf6ed;margin-bottom:2px;">Weekly ${calEsc(INV_GROUPS[invGroup].orderTitle)} Order List</div>
     <div style="font-size:11.5px;color:rgba(251,246,237,0.6);">${fmtCalDate(weekEnding)} · submitted by ${calEsc(submittedBy)}</div>
   </td></tr>
 
@@ -10785,7 +10888,7 @@ async function submitInvOrder() {
       template_id: INV_REPORT_TEMPLATE_ID,
       user_id: CL_REPORT_PUBLIC_KEY,
       template_params: {
-        subject: `Rally Weekly Beverage Order - ${fmtCalDate(invWeekEnding)}`,
+        subject: `Rally Weekly ${INV_GROUPS[invGroup].orderTitle} Order - ${fmtCalDate(invWeekEnding)}`,
         message: html,
         to_email: INV_ORDER_EMAILS,
       },
