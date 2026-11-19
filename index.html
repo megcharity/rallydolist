@@ -10030,14 +10030,17 @@ function renderInvBeverages() {
   // which jumps straight to it without it being the default edit target.)
   if(!invWeekEnding) invWeekEnding = getTodayStr();
 
-  const bannerHtml = INV_SUBTABS.map(st => {
-    const due = invReviewDue(st);
-    const daysLeft = invDaysUntilReview(st);
-    return `<div class="inv-banner${due?' due':''}" onclick="openInvReviewModal('${st}')">
-      <div><div class="inv-banner-txt">${INV_SUBTAB_LABEL[st]} — ${due ? '⚠ Par review due now' : `🔔 Par review in ${daysLeft} day${daysLeft===1?'':'s'}`}</div>
-      <div class="inv-banner-sub">Click any time to review current vs. recommended pars</div></div>
-    </div>`;
-  }).join('');
+  // Big orange banner only for sections whose review is actually due; the
+  // rest collapse into one small line that can still be tapped to review early.
+  const dueTabs = INV_SUBTABS.filter(st => invReviewDue(st));
+  const notDueTabs = INV_SUBTABS.filter(st => !invReviewDue(st));
+  const bannerHtml = dueTabs.map(st => `<div class="inv-banner due" onclick="openInvReviewModal('${st}')">
+      <div><div class="inv-banner-txt">${INV_SUBTAB_LABEL[st]} — ⚠ Par review due now</div>
+      <div class="inv-banner-sub">Tap to review current vs. recommended pars</div></div>
+    </div>`).join('') + (notDueTabs.length ? `<div style="font-size:12px;color:rgba(23,72,84,.55);margin:0 0 12px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;">
+      <span>🔔 Next par reviews:</span>
+      ${notDueTabs.map(st => { const d = invDaysUntilReview(st); return `<a href="#" onclick="openInvReviewModal('${st}');return false;" style="color:#174854;font-weight:600;text-decoration:underline;text-underline-offset:2px;">${INV_SUBTAB_LABEL[st]} in ${d} day${d===1?'':'s'}</a>`; }).join('')}
+    </div>` : '');
 
   const items = invAllBeverageItems();
   const catNames = [...new Set(items.map(it => it.category || 'Uncategorized'))].sort();
